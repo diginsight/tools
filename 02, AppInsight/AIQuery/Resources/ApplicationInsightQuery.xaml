@@ -1,0 +1,68 @@
+<UserControl x:Class="TestClient.SampleControl"
+			 xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+			 xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+			 xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+			 xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+			 xmlns:local="clr-namespace:TestClient"
+			 mc:Ignorable="d"  
+			 >
+	<Grid>
+		<Viewbox Height="42" Width="42"  >
+			<Canvas Width="500" Height="500" Margin="4,2" >
+				<Canvas.RenderTransform>
+					<TranslateTransform X="0" Y="0" />
+				</Canvas.RenderTransform>
+				<Canvas>
+					<Canvas.RenderTransform>
+						<TranslateTransform X="0" Y="0"/>
+					</Canvas.RenderTransform>
+					<Canvas>
+						<Path Fill="White" Opacity="1" Stroke="#FF2B0000" OpacityMask="White"  StrokeThickness="5" Canvas.Top="145.326" Canvas.Left="154.673" >
+							<Path.Data>
+								<EllipseGeometry Center="50,50" RadiusX="150" RadiusY="150" />
+							</Path.Data>
+						</Path>
+						<Rectangle Canvas.Left="335" Canvas.Top="270" Width="173" Height="36" RadiusX="33.249443" RadiusY="18.08342" Fill="#FF2B0000" Opacity="0.8" >
+							<Rectangle.RenderTransform>
+								<TransformGroup>
+									<ScaleTransform ScaleX="0.97867373298851912" ScaleY="1.0000000013298813"/>
+									<SkewTransform AngleY="11.854136117384854"/>
+									<RotateTransform Angle="25.798"/>
+									<TranslateTransform/>
+								</TransformGroup>
+							</Rectangle.RenderTransform>
+						</Rectangle>
+					</Canvas>
+				</Canvas>
+			</Canvas>
+		</Viewbox>
+		<Viewbox Height="18" Width="18" Margin="13,9,15,19" Opacity="0.6" >
+			<Canvas 
+					Width="76" Height="76" >
+				<Path Fill="#FF0078D7" >
+					<!--Stroke="#FF68217A"-->
+					<Path.Data>
+						<PathGeometry Figures="M49.958 23.42h0v-.481c0-12.342-10.133-22.6-22.57-22.76-.307-.481-7.37.16-7.37.16h0C8.811 1.782.059 11.559.059 22.939c0 .321-1.228 9.296 7.523 16.83 3.992 3.686 8.137 13.624 8.752 16.509l.46.962h16.275l.461-.962c.614-2.885 4.913-12.823 8.752-16.349 8.752-7.694 7.677-16.189 7.677-16.509z" FillRule="NonZero" />
+					</Path.Data>
+				</Path>
+				<Path Fill="#FF7A7A7A">
+					<Path.Data>
+						<PathGeometry Figures="M17.102 63.01h16.275v5.45H17.102zM22.169 80h5.988l5.067-5.61H17.102z" FillRule="NonZero" />
+					</Path.Data>
+				</Path>
+				<Path Fill="#FFAAD9FF"  >
+					<!--Stroke="#FF7F428E"-->
+					<Path.Data>
+						<PathGeometry Figures="M29.231 56.438h-3.071V36.082h-2.61v20.196H20.48V36.082h-2.61c-3.071 0-5.681-2.725-5.681-5.931s2.456-5.93 5.681-5.93 5.681 2.725 5.681 5.93v2.725h2.61v-2.725c0-3.206 2.61-5.93 5.681-5.93s5.681 2.725 5.681 5.93-2.61 5.931-5.681 5.931h-2.61v20.356zM17.87 27.427c-1.382 0-2.61 1.122-2.61 2.725 0 1.443 1.228 2.725 2.61 2.725h2.61v-2.725c-.154-1.442-1.228-2.725-2.61-2.725zm13.972 0c-1.382 0-2.61 1.282-2.61 2.725v2.725h2.61c1.382 0 2.61-1.282 2.61-2.725s-1.075-2.725-2.61-2.725z" FillRule="NonZero" />
+					</Path.Data>
+				</Path>
+				<Path Fill="#FFAAD9FF"  >
+					<!--Stroke="#FF7F428E"-->
+					<Path.Data>
+						<PathGeometry Figures="M27.389.179c-.307-.481-7.37.16-7.37.16C8.811 1.782.06 11.559.06 22.939c0 .321-1.075 8.174 5.988 15.387L39.211 3.705C35.68 1.461 31.688.179 27.389.179z" FillRule="NonZero" />
+					</Path.Data>
+				</Path>
+			</Canvas>
+		</Viewbox>
+	</Grid>
+</UserControl>

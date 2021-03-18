@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "TelemetryViewer": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "ENVIRONMENT": "ms"
+      }
+    }
+  }
+}

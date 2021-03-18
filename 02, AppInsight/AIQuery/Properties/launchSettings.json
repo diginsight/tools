@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "ApplicationInsightQuery": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "ENVIRONMENT": "ms"
+      }
+    }
+  }
+}

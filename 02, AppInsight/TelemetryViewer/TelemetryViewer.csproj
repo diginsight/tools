@@ -1,0 +1,45 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net5.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="Resources\01. play.svg" />
+    <None Remove="Resources\01. play.vsdx" />
+    <None Remove="Resources\02. pause.svg" />
+    <None Remove="Resources\02. pause.vsdx" />
+    <None Remove="Resources\03. stop.svg" />
+    <None Remove="Resources\03. stop.vsdx" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Page Remove="Resources\01. play.xaml" />
+    <Page Remove="Resources\02. pause.xaml" />
+    <Page Remove="Resources\03. stop.xaml" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Common.Diagnostics" Version="1.0.1.55" />
+    <PackageReference Include="Common.Diagnostics.AppInsights" Version="1.0.1.55" />
+    <PackageReference Include="Common.Diagnostics.Log4net" Version="1.0.1.55" />
+    <PackageReference Include="Common.EntityBase" Version="1.0.0.89" />
+    <PackageReference Include="Common.PresentationBase" Version="1.0.0.89" />
+    <PackageReference Include="Common.PresentationBase.Azure" Version="1.0.0.89" />
+    <PackageReference Include="FontAwesome.WPF" Version="4.7.0.9" />
+    <PackageReference Include="log4net" Version="2.0.12" />
+    <PackageReference Include="Microsoft.Azure.ApplicationInsights.Query" Version="1.0.0" />
+    <PackageReference Include="Microsoft.Azure.OperationalInsights" Version="1.0.0" />
+    <PackageReference Include="Microsoft.Rest.ClientRuntime.Azure.Authentication" Version="2.4.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Page Update="MainControl.xaml">
+      <XamlRuntime>$(DefaultXamlRuntime)</XamlRuntime>
+      <SubType>Designer</SubType>
+    </Page>
+  </ItemGroup>
+
+</Project>

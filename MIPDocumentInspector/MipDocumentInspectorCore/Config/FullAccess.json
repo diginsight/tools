@@ -1,0 +1,38 @@
+{
+  "ProtectionType": 1,
+  "UserRoles": [],
+  "UserRights": [
+    {
+      "Users": [
+        "darioa@microsoft.com",
+        "alavil@microsoft.com"
+      ],
+      "Rights": [
+        "VIEW",
+        "DOCEDIT",
+        "EDIT",
+        "EXTRACT",
+        "PRINT",
+        "OBJMODEL",
+        "OWNER",
+        "EXPORT"
+      ]
+    }
+  ],
+  "TemplateId": "e67b320a-edd8-4f48-8fa7-2206ca6e3484",
+  "Owner": "admin@101SamplesTenant.OnMicrosoft.com",
+  "LabelId": "00000000-0000-0000-0000-000000000000",
+  "ContentId": "eb46b7ba-4931-4be6-bee4-8aead1a37efd",
+  "Name": "Restricted Access",
+  "Description": "Permission is currently restricted. Only specified users can access this content.",
+  "AllowOfflineAccess": false,
+  "Referrer": "",
+  "ContentValidUntil": "2020-08-22T22:00:00Z",
+  "EncryptedAppData": {
+    "MSODFLTUSER": "OBJMODEL,PRINT,EXTRACT,VIEW,8/22/2020 10:00:00 PM",
+    "MSOTPLDESC": "Permission is currently restricted. Only specified users can access this content.",
+    "MSOTPLNAME": "Restricted Access"
+  },
+  "SignedAppData": {},
+  "DoubleKeyUrl": ""
+}

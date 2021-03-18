@@ -1,0 +1,40 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net5.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="Resources\768px-Search_Icon.svg.png" />
+    <None Remove="Resources\application-insights.svg" />
+    <None Remove="Resources\ApplicationInsightQuery.ico" />
+    <None Remove="Resources\ApplicationInsightQuery.svg" />
+    <None Remove="Resources\ApplicationInsightQuery2.ico" />
+    <None Remove="Resources\ApplicationInsightQuery2.svg" />
+    <None Remove="Resources\ApplicationInsightQuery3.ico" />
+    <None Remove="Resources\ApplicationInsightQuery3.svg" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Page Remove="Resources\application-insights.xaml" />
+    <Page Remove="Resources\ApplicationInsightQuery.xaml" />
+    <Page Remove="Resources\Search_Icon.xaml" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Common.Diagnostics" Version="1.0.1.55" />
+    <PackageReference Include="Common.Diagnostics.AppInsights" Version="1.0.1.55" />
+    <PackageReference Include="Common.Diagnostics.Log4net" Version="1.0.1.55" />
+    <PackageReference Include="Common.EntityBase" Version="1.0.0.89" />
+    <PackageReference Include="Common.PresentationBase" Version="1.0.0.89" />
+    <PackageReference Include="Common.PresentationBase.Azure" Version="1.0.0.89" />
+    <PackageReference Include="FontAwesome.WPF" Version="4.7.0.9" />
+    <PackageReference Include="log4net" Version="2.0.12" />
+    <PackageReference Include="Microsoft.Azure.ApplicationInsights.Query" Version="1.0.0" />
+    <PackageReference Include="Microsoft.Azure.OperationalInsights" Version="1.0.0" />
+    <PackageReference Include="Microsoft.Rest.ClientRuntime.Azure.Authentication" Version="2.4.1" />
+  </ItemGroup>
+
+</Project>

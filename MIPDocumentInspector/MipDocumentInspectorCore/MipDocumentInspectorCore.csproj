@@ -1,0 +1,112 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
+
+	<PropertyGroup>
+		<GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+		<OutputType>WinExe</OutputType>
+		<TargetFramework>net5.0-windows</TargetFramework>
+		<RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
+		<UseWPF>true</UseWPF>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+		<Prefer32Bit>false</Prefer32Bit>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<None Remove="appsettings.dev1.json" />
+		<None Remove="appsettings.dev2.json" />
+		<None Remove="appsettings.json" />
+		<None Remove="Config\FullAccess.json" />
+		<None Remove="log4net.config" />
+		<None Remove="MIPInspector02.ico" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Content Include="appsettings.dev1.json">
+		  <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</Content>
+		<Content Include="appsettings.dev2.json">
+		  <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</Content>
+		<Content Include="appsettings.json">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</Content>
+		<Content Include="Config\FullAccess.json">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</Content>
+		<Content Include="log4net.config">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</Content>
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Common.Diagnostics" Version="1.0.1.55" />
+		<PackageReference Include="Common.Diagnostics.AppInsights" Version="1.0.1.55" />
+		<PackageReference Include="Common.Diagnostics.Log4net" Version="1.0.1.55" />
+		<PackageReference Include="Common.EntityBase" Version="1.0.0.89" />
+		<PackageReference Include="Common.PresentationBase" Version="1.0.0.89" />
+		<PackageReference Include="DocumentFormat.OpenXml" Version="2.12.3" />
+		<PackageReference Include="Microsoft.InformationProtection.File" Version="1.8.97" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Resource Include="MIPInspector02.ico" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ApplicationDefinition Update="App.xaml">
+			<SubType>Designer</SubType>
+			<Generator>MSBuild:Compile</Generator>
+		</ApplicationDefinition>
+	</ItemGroup>
+
+	<ItemGroup>
+		<Compile Update="App.xaml.cs">
+			<SubType>Code</SubType>
+			<DependentUpon>App.xaml</DependentUpon>
+		</Compile>
+		<Compile Update="MainWindow.xaml.cs">
+			<SubType>Code</SubType>
+			<DependentUpon>MainWindow.xaml</DependentUpon>
+		</Compile>
+		<Compile Update="Properties\AssemblyInfo.cs">
+			<SubType>Code</SubType>
+		</Compile>
+		<Compile Update="Properties\Resources.Designer.cs">
+			<DependentUpon>Resources.resx</DependentUpon>
+			<DesignTime>True</DesignTime>
+			<AutoGen>True</AutoGen>
+		</Compile>
+		<Compile Update="Properties\Settings.Designer.cs">
+			<DesignTimeSharedInput>True</DesignTimeSharedInput>
+			<DependentUpon>Settings.settings</DependentUpon>
+			<AutoGen>True</AutoGen>
+		</Compile>
+	</ItemGroup>
+
+	<ItemGroup>
+		<EmbeddedResource Update="Properties\Resources.resx">
+			<LastGenOutput>Resources.Designer.cs</LastGenOutput>
+			<Generator>ResXFileCodeGenerator</Generator>
+		</EmbeddedResource>
+	</ItemGroup>
+
+	<ItemGroup>
+		<None Update="Properties\Settings.settings">
+			<LastGenOutput>Settings.Designer.cs</LastGenOutput>
+			<Generator>SettingsSingleFileGenerator</Generator>
+		</None>
+	</ItemGroup>
+
+	<ItemGroup>
+		<Page Update="MainWindow.xaml">
+			<SubType>Designer</SubType>
+			<Generator>MSBuild:Compile</Generator>
+		</Page>
+	</ItemGroup>
+
+	<Target Name="PreBuild" BeforeTargets="PreBuildEvent">
+	  <Exec Command="set OutDir=$(OutDir)&#xD;&#xA;set ConfigurationName=$(ConfigurationName)&#xD;&#xA;set ProjectName=$(ProjectName)&#xD;&#xA;set TargetName=$(TargetName)&#xD;&#xA;set TargetPath=$(TargetPath)&#xD;&#xA;set ProjectPath=$(ProjectPath)&#xD;&#xA;set ProjectFileName=$(ProjectFileName)&#xD;&#xA;set TargetExt=$(TargetExt)&#xD;&#xA;set TargetFileName=$(TargetFileName)&#xD;&#xA;set DevEnvDir=$(DevEnvDir)&#xD;&#xA;set TargetDir=$(TargetDir)&#xD;&#xA;set ProjectDir=$(ProjectDir)&#xD;&#xA;set SolutionFileName=$(SolutionFileName)&#xD;&#xA;set SolutionPath=$(SolutionPath)&#xD;&#xA;set SolutionDir=$(SolutionDir)&#xD;&#xA;set SolutionName=$(SolutionName)&#xD;&#xA;set PlatformName=$(PlatformName)&#xD;&#xA;set ProjectExt=$(ProjectExt)&#xD;&#xA;set SolutionExt=$(SolutionExt)&#xD;&#xA;&quot;$(ProjectDir)prebuild.cmd&quot;" />
+	</Target>
+
+</Project>

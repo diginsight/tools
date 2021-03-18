@@ -1,0 +1,788 @@
+﻿<UserControl x:Class="TelemetryViewer.MainControl"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:glob="clr-namespace:System.Globalization;assembly=mscorlib"
+        xmlns:local="clr-namespace:TelemetryViewer"
+        xmlns:common="clr-namespace:Common;assembly=Common.PresentationBase"
+        xmlns:fa="clr-namespace:FontAwesome.WPF;assembly=FontAwesome.WPF"
+        mc:Ignorable="d" 
+        d:DesignHeight="450" d:DesignWidth="800" 
+        Background="#FFF0F0F0" Foreground="#FF201F35" 
+        MouseWheel="mainControl_MouseWheel" 
+        Initialized="mainControl_Initialized" 
+        Unloaded="mainControl_Unloaded" Name="mainControl" >
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Common.PresentationBase;component/Resources/DefaultSkin.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+            
+            <common:EventConverter x:Key="onChangeIsMouseOver" ConvertEvent="onChangeIsMouseOver_ConvertEvent" />
+            <common:EventConverter x:Key="getIdentityDescription" ConvertEvent="getIdentityDescription_ConvertEvent" />
+            <common:EventConverter x:Key="getTextStatusInfo" ConvertEvent="getTextStatusInfo_ConvertEvent" />
+        </ResourceDictionary>
+    </UserControl.Resources>
+    <UserControl.CommandBindings>
+        <!--<CommandBinding Command="{x:Static common:Commands.LoginToggle}" CanExecute="LoginToggleCanExecute" Executed="LoginToggleExecuted" />
+        <CommandBinding Command="{x:Static common:Commands.Login}" CanExecute="LoginCanExecute" Executed="LoginExecuted" />
+        <CommandBinding Command="{x:Static common:Commands.Logout}" CanExecute="LogoutCanExecute" Executed="LogoutExecuted" />-->
+        <CommandBinding Command="{x:Static common:Commands.Settings}" CanExecute="SettingsCanExecute" Executed="SettingsCommand" />
+        <CommandBinding Command="{x:Static common:Commands.HideSettings}" CanExecute="HideSettingsCanExecute" Executed="HideSettingsCommand" />
+        <CommandBinding Command="{x:Static common:Commands.Play}" CanExecute="PlayCanExecute" Executed="PlayCommand" />
+        <CommandBinding Command="{x:Static common:Commands.Pause}" CanExecute="PauseCanExecute" Executed="PauseCommand" />
+        <CommandBinding Command="{x:Static common:Commands.Stop}" CanExecute="StopCanExecute" Executed="StopCommand" />
+        <!--<CommandBinding Command="{x:Static local:LocalCommands.QueryRest}" CanExecute="QueryRestCanExecute" Executed="QueryRestCommand" />-->
+    </UserControl.CommandBindings>
+    <Grid
+        DataContext="{Binding ElementName=mainControl, Mode=OneWay}" >
+        <Grid.LayoutTransform>
+            <ScaleTransform  ScaleX="{Binding Zoom, Mode=OneWay, Source={x:Static Application.Current}}" 
+                             ScaleY="{Binding Zoom, Mode=OneWay, Source={x:Static Application.Current}}" />
+        </Grid.LayoutTransform>
+        
+        <Grid Grid.IsSharedSizeScope="True" >
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="auto" />
+                <ColumnDefinition Width="auto" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="auto" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="auto" />
+                <RowDefinition Height="auto" />
+                <RowDefinition Height="auto" />
+                <RowDefinition Height="auto" />
+                <RowDefinition Height="auto" />
+            </Grid.RowDefinitions>
+            <!--<Grid.LayoutTransform>
+                <ScaleTransform  ScaleX="{Binding Zoom, Mode=OneWay, Source={x:Static Application.Current}}" 
+                                     ScaleY="{Binding Zoom, Mode=OneWay, Source={x:Static Application.Current}}" />
+            </Grid.LayoutTransform>-->
+
+            <Grid Grid.Column="2" Grid.Row="0" Background="{StaticResource backgroundColorBrush}" >
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="auto" />
+                    <ColumnDefinition />
+                    <ColumnDefinition Width="auto" />
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="auto" />
+                    <RowDefinition />
+                    <RowDefinition />
+                    <RowDefinition Height="auto" />
+                </Grid.RowDefinitions>
+                <!--<Grid.LayoutTransform>
+                    <ScaleTransform ScaleX="1" ScaleY="1" />
+                </Grid.LayoutTransform>-->
+                <Menu Grid.Row="0"  Grid.Column="0" Background="{StaticResource backgroundColorBrush}" Focusable="True"
+                       FontFamily="Helvetica Neue eText Pro Light" FontSize="12" Foreground="#FF201F35" 
+                       Margin="0,0,0,0" VerticalAlignment="Center" >
+                    <MenuItem Header="File" common:Localization.Uid="{common:Localize TopMenu.File.Title, Property={x:Static MenuItem.HeaderProperty}}" Margin="-4,0,0,0" >
+                        <MenuItem Header="Minimize" 
+                                  common:Localization.Uid="{common:Localize TopMenu.File.Minimize.Title, Property={x:Static MenuItem.HeaderProperty}}" 
+                                  Command="{x:Static common:Commands.SetWindowState}" CommandParameter="{x:Static WindowState.Minimized}"   />
+                        <Separator />
+                        <MenuItem Header="Exit" 
+                                  common:Localization.Uid="{common:Localize TopMenu.File.Exit.Title, Property={x:Static MenuItem.HeaderProperty}}" 
+                                  Command="{x:Static common:Commands.Exit}" />
+                    </MenuItem>
+                    <MenuItem Header="Edit" common:Localization.Uid="{common:Localize TopMenu.Edit.Title, Property={x:Static MenuItem.HeaderProperty}}" >
+                        <MenuItem Command="ApplicationCommands.Copy" Header="Copy"
+                                  common:Localization.Uid="{common:Localize TopMenu.Edit.Copy.Title, Property={x:Static MenuItem.HeaderProperty}}" 
+                                  />
+                        <MenuItem Command="ApplicationCommands.Cut" 
+                                  Header="Cut"
+                                  common:Localization.Uid="{common:Localize TopMenu.Edit.Cut.Title, Property={x:Static MenuItem.HeaderProperty}}" 
+                                  />
+                        <MenuItem Command="ApplicationCommands.Paste" 
+                                  Header="Paste"
+                                  common:Localization.Uid="{common:Localize TopMenu.Edit.Paste.Title, Property={x:Static MenuItem.HeaderProperty}}" 
+                                  />
+                        <Separator/>
+                        <MenuItem Header="Clone" 
+                                  common:Localization.Uid="{common:Localize TopMenu.File.Clone.Title, Property={x:Static MenuItem.HeaderProperty}}" 
+                                  Command="{x:Static common:Commands.Clone}" />
+                        <Separator/>
+                        <!--DeviceStatus Stop-->
+                        <!--<MenuItem Header="Start listener" 
+                                  Command="{x:Static common:Commands.ToggleSimulator}"  />-->
+                    </MenuItem>
+                    <MenuItem Header="Tools"
+                              common:Localization.Uid="{common:Localize TopMenu.Tools.Title, Property={x:Static MenuItem.HeaderProperty}}" >
+                        <MenuItem Header="Develop" 
+                                  common:Localization.Uid="{common:Localize TopMenu.Tools.Develop.Title, Property={x:Static MenuItem.HeaderProperty}}" 
+                                  Command="{x:Static common:Commands.ToggleDeveloperTools}" >
+                            <MenuItem.Icon>
+                                <Border Height="16" Width="16" >
+                                    <CheckBox Style="{StaticResource checkBoxMenu}"
+                                            IsChecked="{Binding ShowDeveloperTools, FallbackValue={common:Boolean true}, Mode=OneWay, Source={x:Static Application.Current}}" 
+                                            Margin="0" Padding="0" Height="16" Width="16" IsEnabled="true" />
+                                </Border>
+                            </MenuItem.Icon>
+                        </MenuItem>
+                    </MenuItem>
+                    <MenuItem Header="Settings" 
+                              common:Localization.Uid="{common:Localize TopMenu.Settings.Title, Property={x:Static MenuItem.HeaderProperty}}" >
+                        <MenuItem Command="{x:Static common:Commands.Settings}" 
+                                      Header="Device Settings" 
+                                      common:Localization.Uid="{common:Localize TopMenu.Settings.DevSettings.Title, Property={x:Static MenuItem.HeaderProperty}}" >
+                            <MenuItem.Icon>
+                                <Border Height="12" Width="12" >
+                                    <Border.Background>
+                                        <VisualBrush Visual="{StaticResource moreCanvas}" Stretch="Uniform"  />
+                                    </Border.Background>
+                                </Border>
+                            </MenuItem.Icon>
+                        </MenuItem>
+                    </MenuItem>
+                </Menu>
+
+                <Grid Grid.Row="0" Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Stretch" ><!--Background="LightBlue"-->
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Label Grid.Column="0" VerticalAlignment="Center" VerticalContentAlignment="Center" Margin="10,0"
+                           FontWeight="Bold"
+                           FontSize="12" Foreground="{StaticResource Grey38}" Padding="0,0,0,0" Content="Telemetry viewer" />
+
+                    <Grid Grid.Row="1" Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Center" >
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <TextBox Grid.Row="0" Grid.Column="0" Name="txtTraceFilterGlobal" 
+                                 Foreground="{StaticResource Grey38}" 
+                                 FontFamily="Helvetica Neue eText Pro Light" FontSize="12" 
+                                 HorizontalAlignment="Left" VerticalAlignment="Stretch" VerticalContentAlignment="Center" 
+                                 Margin="10,6,0,6" BorderThickness="0" MinWidth="280" 
+                                 Text="{Binding Path=FilterGlobal, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                 GotFocus="TxtFilter_GotFocus"  GotMouseCapture="TxtFilter_GotMouseCapture"
+                                 >
+                        </TextBox>
+                        <Button Grid.Column="0"
+                                Style="{StaticResource SimpleButtonTemplate}" Focusable="False" 
+                                Margin="0" Padding="0,4"
+                                Foreground="{StaticResource Grey90}" Background="Transparent" 
+                                HorizontalAlignment="Right" Height="32" Width="32" >
+                            <Rectangle Margin="0" 
+                                        VerticalAlignment="Center" HorizontalAlignment="Center" Height="16" Width="16" >
+                                <Rectangle.Fill>
+                                    <VisualBrush Visual="{StaticResource searchCanvas}" Stretch="Uniform" />
+                                </Rectangle.Fill>
+                            </Rectangle>
+                        </Button>
+                    </Grid>
+                </Grid>
+
+                <StackPanel Grid.Row="0" Grid.Column="2" Orientation="Horizontal" Height="30"
+                                VerticalAlignment="Center" HorizontalAlignment="Right" >
+                            <!--Padding="0,0,0,3"-->
+                    <Button Style="{StaticResource IconsButtonTemplate}" Focusable="False" 
+                                    Margin="0" Height="32" Width="32" 
+                                    Command="{x:Static common:Commands.Idea}" HorizontalAlignment="Center"
+                                    Background="{StaticResource backgroundColorBrush}">
+                        <Rectangle Margin="0" Height="22" Width="22" >
+                            <Rectangle.Fill>
+                                <VisualBrush Visual="{StaticResource ideaCanvas}" Stretch="Uniform" />
+                            </Rectangle.Fill>
+                        </Rectangle>
+                    </Button>
+                    <!--<Button x:Name="btnDevicesList" Style="{StaticResource SimpleButtonTemplate}" Focusable="False" Margin="5,0,0,0"
+                                Foreground="{StaticResource Grey38}"  Background="{StaticResource backgroundColorBrush}" 
+                                Height="32" VerticalAlignment="Center" VerticalContentAlignment="Center">
+                        <Grid VerticalAlignment="Center" >
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="auto" />
+                                <ColumnDefinition Width="auto" />
+                            </Grid.ColumnDefinitions>
+                            <Label Grid.Column="0" VerticalAlignment="Center" VerticalContentAlignment="Center" 
+                                   FontSize="12" Foreground="{StaticResource Grey38}" Padding="0,0,0,0" Content="dev@microsoft.com"/>
+                            <Button Style="{StaticResource IconsButtonTemplate}" Focusable="False" Grid.Column="1"
+                                    Margin="0" Height="32" Width="32" 
+                                    HorizontalAlignment="Center"
+                                    Background="{StaticResource backgroundColorBrush}">
+                                <Rectangle Margin="0" Height="16" Width="16" >
+                                    <Rectangle.Fill>
+                                        <VisualBrush Visual="{StaticResource userCanvas}" Stretch="Uniform" />
+                                    </Rectangle.Fill>
+                                </Rectangle>
+                            </Button>
+                        </Grid>
+                    </Button>-->
+
+                    <Button Margin="10,4,10,8" Grid.Column="1" x:Name="minimizeButton" Style="{StaticResource WindowButtonStyle}" Content="0" 
+                                       Command="{x:Static common:Commands.Minimize}" />
+                    <Button Margin="10,4,10,8" Grid.Column="2" x:Name="restoreButton" Style="{StaticResource WindowButtonStyle}" Content="1" 
+                                       Command="{x:Static common:Commands.ToggleWindowState}" />
+                    <Button Margin="10,4,10,8" Grid.Column="3" x:Name="closeButton" Style="{StaticResource WindowButtonStyle}" Content="r" 
+                                       Command="{x:Static common:Commands.Close}" />
+
+
+                </StackPanel>
+
+                <Grid Grid.Row="1" Grid.Column="0" >
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="auto" />
+                        <ColumnDefinition Width="auto" />
+                        <ColumnDefinition Width="auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="auto" />
+                    </Grid.ColumnDefinitions>
+                    <Button Grid.Column="0" Style="{StaticResource SimpleButtonTemplateLight}" Focusable="False" 
+                                            Margin="0" Command="{x:Static common:Commands.Play}" CommandParameter="{Binding  ElementName=txtTrace, Path=., Mode=OneWay}" >
+                        <StackPanel Orientation="Horizontal" >
+                            <Rectangle Margin="2" VerticalAlignment="Center" HorizontalAlignment="Center" Height="13" Width="13" >
+                                <Rectangle.Fill>
+                                    <VisualBrush Visual="{StaticResource playCanvas1}" Stretch="Uniform" />
+                                </Rectangle.Fill>
+                            </Rectangle>
+                            <Label VerticalAlignment="Center" FontSize="10" Padding="2,0" 
+                                                           Content="Play" common:Localization.Uid="{common:Localize Common.Play.Title, Property={x:Static Label.ContentProperty}}"
+                                                           Foreground="{StaticResource Grey38}" />
+                        </StackPanel>
+                    </Button>
+                    <Button Grid.Column="1" Style="{StaticResource SimpleButtonTemplateLight}" Focusable="False" 
+                                            Margin="0" Command="{x:Static common:Commands.Pause}" CommandParameter="{Binding  ElementName=txtTrace, Path=., Mode=OneWay}" >
+                        <StackPanel Orientation="Horizontal" >
+                            <Rectangle Margin="2" VerticalAlignment="Center" HorizontalAlignment="Center" Height="12" Width="12"  >
+                                <Rectangle.Fill>
+                                    <VisualBrush Visual="{StaticResource pauseCanvas}" Stretch="Uniform" />
+                                </Rectangle.Fill>
+                            </Rectangle>
+                            <Label VerticalAlignment="Center" FontSize="10" Padding="2,0" 
+                                                           Content="Pause" common:Localization.Uid="{common:Localize Common.Pause.Title, Property={x:Static Label.ContentProperty}}"
+                                                           Foreground="{StaticResource Grey38}" />
+                        </StackPanel>
+                    </Button>
+                    <Button Grid.Column="2" Style="{StaticResource SimpleButtonTemplateLight}" Focusable="False" 
+                                            Margin="0" Command="{x:Static common:Commands.Stop}" CommandParameter="{Binding  ElementName=txtTrace, Path=., Mode=OneWay}" >
+                        <StackPanel Orientation="Horizontal" >
+                            <Rectangle Margin="2" VerticalAlignment="Center" HorizontalAlignment="Center" Height="12" Width="12"  >
+                                <Rectangle.Fill>
+                                    <VisualBrush Visual="{StaticResource stopCanvas1}" Stretch="Uniform" />
+                                </Rectangle.Fill>
+                            </Rectangle>
+                            <Label VerticalAlignment="Center" FontSize="10" Padding="2,0" 
+                                                           Content="Stop" common:Localization.Uid="{common:Localize Common.Stop.Title, Property={x:Static Label.ContentProperty}}"
+                                                           Foreground="{StaticResource Grey38}" />
+                        </StackPanel>
+                    </Button>
+
+                </Grid>
+                <Grid Grid.Row="1" Grid.Column="2" >
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="auto" />
+                        <ColumnDefinition Width="auto" />
+                        <ColumnDefinition Width="auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <Button Margin="10,2,10,7" Grid.Column="4" Grid.Row="1"  Style="{StaticResource WindowButtonStyle}"
+                            Command="{x:Static common:Commands.Settings}" >
+                                <fa:ImageAwesome Icon="EllipsisV" VerticalAlignment="Center" HorizontalAlignment="Center" 
+                                                 Width="10" Height="15"></fa:ImageAwesome>
+                    </Button>
+                </Grid>
+            </Grid>
+
+            <Grid Grid.Column="2" Grid.Row="1" Margin="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" >
+                <!--Height="{Binding (Canvas.Bottom), ElementName=splitterDeveloperWindow, Mode=OneWay}"-->
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="auto" />
+                    <RowDefinition />
+                    <RowDefinition Height="auto" />
+                </Grid.RowDefinitions>
+                <Border Grid.Row="1"  BorderThickness="0" Margin="0" ><!--Background="{StaticResource backgroundColorBrush}"-->
+                    <Grid Margin="0" >
+                        <TabControl Padding="0" Margin="0" 
+                                    TabStripPlacement="Bottom" BorderThickness="0" >
+                            <TabControl.Resources>
+                                <Style TargetType="{x:Type TabItem}" >
+                                    <Setter Property="Template" >
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="{x:Type TabItem}" >
+                                                <!--Background="{StaticResource backgroundColorBrush}" 1,1,1,0-->
+                                                <Border x:Name="Border" BorderThickness="0" Margin="0" 
+                                                        BorderBrush="Gainsboro" 
+                                                        CornerRadius="0" Padding="0" >
+                                                    <ContentPresenter x:Name="ContentSite" VerticalAlignment="Center" HorizontalAlignment="Center" 
+                                                                          ContentSource="Header" Margin="0" />
+                                                    <!--Margin="5,2"-->
+                                                </Border>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsSelected" Value="True">
+                                                        <Setter TargetName="Border" Property="Background" Value="{StaticResource Blue7}" />
+                                                        <Setter TargetName="Border" Property="TextElement.Foreground" Value="White" />
+                                                    </Trigger>
+                                                    <Trigger Property="IsSelected" Value="False">
+                                                        <Setter TargetName="Border" Property="Background" Value="GhostWhite" />
+                                                        <Setter TargetName="Border" Property="TextElement.Foreground" Value="{StaticResource Grey38}" />
+                                                    </Trigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Style>
+                            </TabControl.Resources>
+                            <TabItem  Name="tabItemTrace" Margin="0" 
+                                    Header="Trace" 
+                                    common:Localization.Uid="{common:Localize DevTools.Trace.Title, Property={x:Static TabItem.HeaderProperty}}"
+                                          
+                                    FontFamily="Helvetica Neue eText Pro Light" FontSize="13" 
+                                    Padding="0" Width="95" Height="25" >
+                                <Grid Margin="0" Background="{StaticResource backgroundColorBrush}" >
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="auto"/>
+                                        <RowDefinition Height="*"/>
+                                    </Grid.RowDefinitions>
+                                    <!--<Grid HorizontalAlignment="Stretch" Margin="0,0,0,5" >
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="auto" />
+                                            <ColumnDefinition Width="auto" />
+                                            <ColumnDefinition Width="43.667" />
+                                            <ColumnDefinition Width="16.333"/>
+                                            <ColumnDefinition Width="auto" />
+                                            <ColumnDefinition Width="auto" />
+                                            <ColumnDefinition Width="auto" />
+                                            <ColumnDefinition Width="auto" />
+                                            <ColumnDefinition Width="auto" />
+                                            <ColumnDefinition Width="auto" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <Button Grid.Column="0" Style="{StaticResource SimpleButtonTemplateLight}" Focusable="False" 
+                                                Margin="0" Command="{x:Static common:Commands.Play}" CommandParameter="{Binding  ElementName=txtTrace, Path=., Mode=OneWay}" >
+                                            <StackPanel Orientation="Horizontal" >
+                                                <Rectangle Margin="2" VerticalAlignment="Center" HorizontalAlignment="Center" Height="16" Width="16" >
+                                                    <Rectangle.Fill>
+                                                        <VisualBrush Visual="{StaticResource playCanvas}" Stretch="Uniform" />
+                                                    </Rectangle.Fill>
+                                                </Rectangle>
+                                                <Label VerticalAlignment="Center" FontSize="10" Padding="2,0" 
+                                                           Content="Play" common:Localization.Uid="{common:Localize Common.Play.Title, Property={x:Static Label.ContentProperty}}"
+                                                           Foreground="{StaticResource Grey38}" />
+                                            </StackPanel>
+                                        </Button>
+                                        <Button Grid.Column="1" Style="{StaticResource SimpleButtonTemplateLight}" Focusable="False" 
+                                                Margin="2,0,0,0" Command="{x:Static common:Commands.Stop}" CommandParameter="{Binding  ElementName=txtTrace, Path=., Mode=OneWay}" >
+                                            <StackPanel Orientation="Horizontal" >
+                                                <Rectangle Margin="2" 
+                                                       VerticalAlignment="Center" HorizontalAlignment="Center" Height="16" Width="16" >
+                                                    <Rectangle.Fill>
+                                                        <VisualBrush Visual="{StaticResource stopCanvas}" Stretch="Uniform" />
+                                                    </Rectangle.Fill>
+                                                </Rectangle>
+                                                <Label VerticalAlignment="Center" FontSize="10"  Foreground="{StaticResource Grey38}" Padding="2,0" 
+                                                           Content="Stop" 
+                                                           common:Localization.Uid="{common:Localize Common.Stop.Title, Property={x:Static Label.ContentProperty}}"
+                                                           />
+                                            </StackPanel>
+                                        </Button>
+                                        <Button Grid.Column="2" Style="{StaticResource SimpleButtonTemplateLight}"  Focusable="False" 
+                                                    Margin="2,0,0,0" 
+                                                    Command="{x:Static common:Commands.ClearWindow}" CommandParameter="{Binding  ElementName=txtTrace, Path=., Mode=OneWay}" Grid.ColumnSpan="2" >
+                                            <StackPanel Orientation="Horizontal" >
+                                                <Rectangle Margin="2" 
+                                                               VerticalAlignment="Center" HorizontalAlignment="Center" Height="16" Width="16" >
+                                                    <Rectangle.Fill>
+                                                        <VisualBrush Visual="{StaticResource deleteCanvas}" Stretch="Uniform" />
+                                                    </Rectangle.Fill>
+                                                </Rectangle>
+                                                <Label VerticalAlignment="Center" FontSize="10"  Foreground="{StaticResource Grey38}" Padding="2,0" 
+                                                           Content="Clear"
+                                                           common:Localization.Uid="{common:Localize Common.Clear.Title, Property={x:Static Label.ContentProperty}}"
+                                                           />
+                                            </StackPanel>
+                                        </Button>
+                                        <Label VerticalAlignment="Center" Margin="2,0" Grid.Column="4" FontSize="10" Foreground="{StaticResource Grey38}" 
+                                                   Content="Filter" 
+                                                   common:Localization.Uid="{common:Localize Common.Filter.Title, Property={x:Static Label.ContentProperty}}"
+                                                   />
+                                        <TextBox Name="txtTraceFilter" Margin="2,1" Grid.Column="5" MinWidth="200" BorderThickness="0"
+                                                     FontSize="10" VerticalAlignment="Stretch" VerticalContentAlignment="Center"
+                                                     GotMouseCapture="TxtFilter_GotMouseCapture" 
+                                                     Text="{Binding Path=FilterTrace, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                     >
+                                        </TextBox>
+                                        <Grid Grid.Column="11">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="auto" />
+                                                <ColumnDefinition Width="auto" />
+                                                <ColumnDefinition Width="auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <Label VerticalAlignment="Center" Margin="2,0" Grid.Column="3" FontSize="10" 
+                                                       Foreground="{StaticResource Grey38}" >
+                                                --><!--<Label.Content>
+                                                    <MultiBinding Converter="{StaticResource getDeveloperTextLineCount}" ConverterParameter="{}Lines: {1:#,##0}" >
+                                                        <Binding ElementName="txtTrace" Path="." Mode="OneWay" />
+                                                        <Binding ElementName="txtTrace" Path="Text" Mode="OneWay" />
+                                                    </MultiBinding>
+                                                </Label.Content>--><!--
+                                            </Label>
+                                        </Grid>
+                                    </Grid>-->
+                                    <Grid x:Name="grdOut" Grid.Row="1" >
+                                        <TextBox x:Name="txtTrace" BorderThickness="0" AcceptsReturn="True"
+                                                 TextWrapping="NoWrap" FontSize="10" FontFamily="Consolas" AutoWordSelection="True" 
+                                                 HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Background="LightYellow"  
+                                                 VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" >
+                                            <!--<common:AttachedProperties.Object0>
+                                                <MultiBinding Converter="{StaticResource onDeveloperTraceFilterChanged}" >
+                                                    <Binding RelativeSource="{RelativeSource Self}"  Path="." Mode="OneWay" />
+                                                    <Binding ElementName="txtTraceFilter"  Path="Text" Mode="OneWay" />
+                                                </MultiBinding>
+                                            </common:AttachedProperties.Object0>-->
+                                            <!--<TextBox.ContextMenu>
+                                                <ContextMenu Name="txtTraceCM1" >
+                                                    <MenuItem Command="ApplicationCommands.Copy" />
+                                                    <MenuItem Command="ApplicationCommands.Cut" />
+                                                    <MenuItem Command="ApplicationCommands.Paste" />
+                                                    <Separator/>
+                                                    <MenuItem Header="_Clear All" Command="{x:Static common:Commands.ClearWindow}" CommandParameter="{Binding  ElementName=txtTrace, Path=., Mode=OneWay}" />
+                                                </ContextMenu>
+                                            </TextBox.ContextMenu>-->
+                                        </TextBox>
+                                    </Grid>
+                                </Grid>
+                            </TabItem>
+                            <TabItem  
+                                    Header="RawData" 
+                                    common:Localization.Uid="{common:Localize DevTools.RawData.Title, Property={x:Static TabItem.HeaderProperty}}"
+                                    Width="95" 
+                                      FontFamily="Helvetica Neue eText Pro Light" FontSize="13" >
+                                <Grid Background="{StaticResource backgroundColorBrush}" Margin="0"  >
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="auto"/>
+                                        <RowDefinition Height="*"/>
+                                    </Grid.RowDefinitions>
+                                    <Grid HorizontalAlignment="Stretch" >
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="auto" />
+                                            <ColumnDefinition Width="auto" />
+                                            <ColumnDefinition Width="auto" />
+                                            <ColumnDefinition Width="auto" />
+                                            <ColumnDefinition Width="auto" />
+                                            <ColumnDefinition Width="auto" />
+                                            <ColumnDefinition Width="auto" />
+                                            <ColumnDefinition Width="auto" />
+                                            <ColumnDefinition Width="auto" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <Button Grid.Column="0" Grid.Row="3" Style="{StaticResource SimpleButtonTemplateLight}" Focusable="False" 
+                                                    Margin="2,0" Command="{x:Static common:Commands.Play}" CommandParameter="{Binding  ElementName=txtRawdata, Path=., Mode=OneWay}" >
+                                            <StackPanel Orientation="Horizontal" >
+                                                <Rectangle Margin="2" VerticalAlignment="Center" HorizontalAlignment="Center" Height="16" Width="16" >
+                                                    <Rectangle.Fill>
+                                                        <VisualBrush Visual="{StaticResource playCanvas}" Stretch="Uniform" />
+                                                    </Rectangle.Fill>
+                                                </Rectangle>
+                                                <Label VerticalAlignment="Center" FontSize="10"  Padding="2,0" 
+                                                           Content="Play" 
+                                                           common:Localization.Uid="{common:Localize Common.Play.Title, Property={x:Static Label.ContentProperty}}"
+                                                           Foreground="{StaticResource Grey38}" />
+                                            </StackPanel>
+                                        </Button>
+                                        <Button Grid.Column="1" Grid.Row="3" Style="{StaticResource SimpleButtonTemplateLight}" Focusable="False" 
+                                                Margin="2,0" Command="{x:Static common:Commands.Stop}" CommandParameter="{Binding  ElementName=txtRawdata, Path=., Mode=OneWay}" >
+                                            <StackPanel Orientation="Horizontal" >
+                                                <Rectangle Margin="2" 
+                                                       VerticalAlignment="Center" HorizontalAlignment="Center" Height="16" Width="16" >
+                                                    <Rectangle.Fill>
+                                                        <VisualBrush Visual="{StaticResource stopCanvas}" Stretch="Uniform" />
+                                                    </Rectangle.Fill>
+                                                </Rectangle>
+                                                <Label VerticalAlignment="Center" FontSize="10"  Foreground="{StaticResource Grey38}" Padding="2,0" 
+                                                           Content="Stop" 
+                                                           common:Localization.Uid="{common:Localize Common.Stop.Title, Property={x:Static Label.ContentProperty}}"
+                                                           />
+                                            </StackPanel>
+                                        </Button>
+                                        <Button Grid.Column="2" Grid.Row="3" Style="{StaticResource SimpleButtonTemplateLight}"  Focusable="False" 
+                                                Margin="2,0" Command="{x:Static common:Commands.ClearWindow}" CommandParameter="{Binding  ElementName=txtRawdata, Path=., Mode=OneWay}" >
+                                            <StackPanel Orientation="Horizontal" >
+                                                <Rectangle Margin="2" 
+                                                               VerticalAlignment="Center" HorizontalAlignment="Center" Height="16" Width="16" >
+                                                    <Rectangle.Fill>
+                                                        <VisualBrush Visual="{StaticResource deleteCanvas}" Stretch="Uniform" />
+                                                    </Rectangle.Fill>
+                                                </Rectangle>
+                                                <Label VerticalAlignment="Center" FontSize="10"  Foreground="{StaticResource Grey38}" Padding="2,0" 
+                                                           Content="Clear"
+                                                           common:Localization.Uid="{common:Localize Common.Clear.Title, Property={x:Static Label.ContentProperty}}"
+                                                           />
+                                            </StackPanel>
+                                        </Button>
+                                        <Label VerticalAlignment="Center" Margin="2,0" Grid.Column="3" FontSize="10" Foreground="{StaticResource Grey38}" 
+                                                   Content="Filter" 
+                                                   common:Localization.Uid="{common:Localize Common.Filter.Title, Property={x:Static Label.ContentProperty}}"
+                                                   />
+                                        <TextBox x:Name="txtRawdataFilter" Margin="2,1" Grid.Column="4" MinWidth="200" BorderThickness="0"
+                                                     VerticalAlignment="Stretch" VerticalContentAlignment="Center"
+                                                     Text="{Binding Path=FilterRawdata, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                     
+                                                     TextWrapping="NoWrap" FontSize="10" FontFamily="Consolas" AutoWordSelection="True"  >
+                                        </TextBox>
+                                        <Grid Grid.Column="10">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="auto" />
+                                                <ColumnDefinition Width="auto" />
+                                                <ColumnDefinition Width="auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <Label VerticalAlignment="Center" Margin="2,0" Grid.Column="3" FontSize="10" 
+                                                       Foreground="{StaticResource Grey38}" >
+                                                <!--<Label.Content>
+                                                    <MultiBinding Converter="{StaticResource getDeveloperTextLineCount}" ConverterParameter="{}Lines: {1:#,##0}" >
+                                                        <Binding ElementName="txtRawdata" Path="." Mode="OneWay" />
+                                                        <Binding ElementName="txtRawdata" Path="Text" Mode="OneWay" />
+                                                    </MultiBinding>
+                                                </Label.Content>-->
+                                                <!--Content="{Binding ElementName=txtTrace, Path=Text, Mode=OneWay, Converter={StaticResource getDeveloperTextLineCount}}"-->
+                                            </Label>
+                                        </Grid>
+                                    </Grid>
+                                    <TextBox x:Name="txtRawdata" Grid.Row="1" BorderThickness="0" AcceptsReturn="True" 
+                                                 HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto"
+                                                 HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Background="#FFE2EFD9" 
+                                                 TextWrapping="NoWrap" FontSize="10" FontFamily="Consolas" AutoWordSelection="True"  >
+                                        <TextBox.ContextMenu>
+                                            <ContextMenu Name="rawDataCM" >
+                                                <MenuItem Command="ApplicationCommands.Copy" />
+                                                <MenuItem Command="ApplicationCommands.Cut" />
+                                                <MenuItem Command="ApplicationCommands.Paste" />
+                                                <Separator/>
+                                                <MenuItem Header="_Clear All" Command="{x:Static common:Commands.ClearWindow}" CommandParameter="{Binding  ElementName=txtRawdata, Path=., Mode=OneWay}" />
+                                            </ContextMenu>
+                                        </TextBox.ContextMenu>
+                                        <!--<common:AttachedProperties.Object0>
+                                            <MultiBinding Converter="{StaticResource onDeveloperTraceFilterChanged}" >
+                                                <Binding RelativeSource="{RelativeSource Self}"  Path="." Mode="OneWay" />
+                                                <Binding ElementName="txtRawdataFilter"  Path="Text" Mode="OneWay" />
+                                            </MultiBinding>
+                                        </common:AttachedProperties.Object0>-->
+                                    </TextBox>
+                                </Grid>
+                            </TabItem>
+                            <TabItem  Header="Console" 
+                                          common:Localization.Uid="{common:Localize DevTools.Console.Title, Property={x:Static TabItem.HeaderProperty}}"
+                                          Width="95" 
+                                      FontFamily="Helvetica Neue eText Pro Light" FontSize="13" >
+                                <Grid Background="{StaticResource backgroundColorBrush}" Margin="0"  >
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="auto"/>
+                                        <RowDefinition Height="*"/>
+                                    </Grid.RowDefinitions>
+                                    <Grid.InputBindings>
+                                        <KeyBinding Key="Return" Command="{x:Static common:Commands.ExecuteCommand}" CommandParameter="{Binding ElementName=consoleBox, Path=., Mode=OneWay}" />
+                                        <KeyBinding Key="Up" Command="{x:Static common:Commands.ExecuteCommand}" CommandParameter="{Binding ElementName=consoleBox, Path=., Mode=OneWay}" />
+                                    </Grid.InputBindings>
+                                    <RichTextBox x:Name="consoleBox" Grid.Row="1" BorderThickness="0" 
+                                                     AcceptsReturn="False" 
+                                                     HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Background="{StaticResource backgroundColorBrush}" 
+                                                     HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto"
+                                                     FontSize="10" FontFamily="Consolas" AutoWordSelection="True" >
+                                        <RichTextBox.ContextMenu>
+                                            <ContextMenu Name="consoleCM1" >
+                                                <MenuItem Command="ApplicationCommands.Copy" />
+                                                <MenuItem Command="ApplicationCommands.Cut" />
+                                                <MenuItem Command="ApplicationCommands.Paste" />
+                                                <Separator/>
+                                                <MenuItem Header="_Clear All" Command="{x:Static common:Commands.ClearWindow}" CommandParameter="{Binding  ElementName=consoleBox, Path=., Mode=OneWay}" />
+                                            </ContextMenu>
+                                        </RichTextBox.ContextMenu>
+
+                                    </RichTextBox>
+                                </Grid>
+                            </TabItem>
+                            <TabItem  Header="Variables" 
+                                          common:Localization.Uid="{common:Localize DevTools.Variables.Title, Property={x:Static TabItem.HeaderProperty}}"
+                                          Width="95" 
+                                          FontFamily="Helvetica Neue eText Pro Light" FontSize="13" >
+                                <ListView x:Name="lvVariables" Grid.Row="1" SelectionMode="Single" 
+                                              FlowDirection="LeftToRight" BorderThickness="0" ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                              FontFamily="Consolas" FontSize="11" 
+                                              ItemsSource="{Binding WatchVariables, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}" >
+                                    <ListView.Resources>
+                                        <ContextMenu x:Key="ItemContextMenu">
+                                            <MenuItem 
+                                                    Header="Remove Watch Variable" 
+                                                    common:Localization.Uid="{common:Localize VariableDetails.RemoveWatch.Title, Property={x:Static MenuItem.HeaderProperty}}"
+                                                    Background="WhiteSmoke" /> <!--Click="WatchVariableItem_Click"-->
+                                        </ContextMenu>
+                                    </ListView.Resources>
+                                    <ListView.ItemContainerStyle>
+                                        <Style TargetType="{x:Type ListViewItem}" >
+                                            <Setter Property="ContextMenu" Value="{StaticResource ItemContextMenu}" />
+                                        </Style>
+                                    </ListView.ItemContainerStyle>
+                                    <ListView.ItemTemplate>
+                                        <DataTemplate>
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="auto"/>
+                                                    <ColumnDefinition Width="*" />
+                                                </Grid.ColumnDefinitions>
+                                                <Grid.RowDefinitions>
+                                                    <RowDefinition Height="auto" />
+                                                </Grid.RowDefinitions>
+                                                <TextBlock Text="{Binding Name}"  Grid.Column="0" Margin="5,0,0,0" MinWidth="220" 
+                                                               VerticalAlignment="Center" HorizontalAlignment="Left" />
+
+                                                <TextBlock Text="{Binding Display}" Grid.Column="1" Margin="5,0,0,0" MinWidth="220" 
+                                                               VerticalAlignment="Center" HorizontalAlignment="Right" >
+                                                </TextBlock>
+
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ListView.ItemTemplate>
+                                    <ListView.View>
+                                        <GridView AllowsColumnReorder="true" ColumnHeaderToolTip="Variables">
+                                            <GridViewColumn DisplayMemberBinding="{Binding Path=Name}" 
+                                                            Header="Variable"
+                                                                Width="200"/>
+                                                                <!--Header="{common:LocalizationExtensions DevTools.Variables.Name.Title}"--> 
+                                            <!--common:Localization.Uid="{common:Localize DevTools.Variables.Name.Title, Property={x:Static GridViewColumn.HeaderProperty}}"-->
+
+                                            <GridViewColumn DisplayMemberBinding="{Binding Path=Display}" Width="400">
+                                                <GridViewColumnHeader 
+                                                            Content="Display"
+                                                            common:Localization.Uid="{common:Localize DevTools.Variables.Display.Title, Property={x:Static GridViewColumnHeader.ContentProperty}}"
+                                                            >
+                                                    <GridViewColumnHeader.ContextMenu>
+                                                        <!--MenuItem.Click="LastNameCM_Click"-->
+                                                        <ContextMenu  Name="LastNameCM">
+                                                            <MenuItem 
+                                                                    Header="Ascending" 
+                                                                    common:Localization.Uid="{common:Localize Common.Ascending.Title, Property={x:Static MenuItem.HeaderProperty}}"
+                                                                    />
+                                                            <MenuItem 
+                                                                    Header="Descending" 
+                                                                    common:Localization.Uid="{common:Localize Common.Descending.Title, Property={x:Static MenuItem.HeaderProperty}}" />
+                                                        </ContextMenu>
+                                                    </GridViewColumnHeader.ContextMenu>
+                                                </GridViewColumnHeader>
+                                            </GridViewColumn>
+                                        </GridView>
+                                    </ListView.View>
+                                </ListView>
+                            </TabItem>
+                        </TabControl>
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="auto" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+                            <StackPanel Margin="0" Height="{Binding ElementName=tabItemTrace, Path=Height, Mode=OneWay}"
+                                            Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" >
+                                <!--<Button Grid.Column="10" Grid.Row="3" Style="{StaticResource SimpleButtonTemplate}" Focusable="False" 
+                                                Margin="2,0" Command="{x:Static common:Commands.ToggleDeveloperTools}"
+                                                VerticalAlignment="Center" 
+                                                Foreground="{StaticResource Grey38}" Background="{StaticResource backgroundColorBrush}" >
+                                    <StackPanel Orientation="Horizontal" >
+                                        <Rectangle Margin="2" 
+                                                       VerticalAlignment="Center" HorizontalAlignment="Center" Height="8" Width="8" >
+                                            <Rectangle.Fill>
+                                                <VisualBrush Visual="{StaticResource closeCanvas}" Stretch="Uniform" />
+                                            </Rectangle.Fill>
+                                        </Rectangle>
+                                    </StackPanel>
+                                </Button>-->
+
+                            </StackPanel>
+                        </Grid>
+                    </Grid>
+                </Border>
+            </Grid>
+
+            <StatusBar Grid.Column="2" Grid.Row="2"  Background="{StaticResource backgroundColorBrush}" Grid.ColumnSpan="2" >
+                <!--Margin="35,0,1,0"-->
+                <StatusBar.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="auto" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="180" />
+                            </Grid.ColumnDefinitions>
+                        </Grid>
+                    </ItemsPanelTemplate>
+                </StatusBar.ItemsPanel>
+
+                <StatusBarItem MinWidth="150">
+                    <Grid Margin="0,0,0,0" HorizontalAlignment="Stretch" >
+                        <Grid.ColumnDefinitions>
+                            <!--<ColumnDefinition Width="40" />-->
+                            <ColumnDefinition Width="auto" />
+                        </Grid.ColumnDefinitions>
+                        <!--<Ellipse Height="20" Width="20" Fill="#CC598F24" VerticalAlignment="Center" StrokeThickness="1" Stroke="#CC598F24"
+                                     Visibility="{Binding RelativeSource={RelativeSource Self}, Path=(common:AttachedProperties.IsVisible0), Mode=OneWay, Converter={StaticResource booleanToVisibility}, FallbackValue=Visible}"
+                                     common:AttachedProperties.IsVisible0="{Binding ElementName=txtStatus, Path=(common:AttachedProperties.Boolean0), FallbackValue=true}" >
+                        </Ellipse>
+                        <Ellipse Height="20" Width="20" Fill="LightYellow" VerticalAlignment="Center" StrokeThickness="1" Stroke="Black"
+                                     Visibility="{Binding RelativeSource={RelativeSource Self}, Path=(common:AttachedProperties.IsVisible0), Mode=OneWay, Converter={StaticResource booleanToVisibility}}"
+                                     common:AttachedProperties.IsVisible0="{Binding ElementName=txtStatus, Path=(common:AttachedProperties.Boolean0), Converter={StaticResource not}, FallbackValue=false}"  >
+                        </Ellipse>-->
+                        <TextBlock Name="txtStatus" Grid.Column="1"  Margin="2,0,5,0" 
+                                       VerticalAlignment="Center" 
+                                       Text="Ready" >
+                        </TextBlock>
+                    </Grid>
+                </StatusBarItem>
+                <Separator Grid.Column="1" />
+                <!--<Separator Grid.Column="3" />-->
+                <StatusBarItem Grid.Column="4" HorizontalContentAlignment="Center" MinWidth="100" >
+                    <TextBlock Text="{Binding Path=Output, Mode=OneWay, Converter={StaticResource getTextStatusInfo}}" ></TextBlock>
+                </StatusBarItem>
+                <StatusBarItem Grid.Column="5" HorizontalContentAlignment="Center" >
+                    <Button x:Name="btnLanguages" Cursor="Hand" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                            BorderThickness="0" Height="15" Width="40" 
+                            Background="{StaticResource backgroundColorBrush}"
+                            Focusable="False" Margin="5,0,0,0"
+                            Command="{x:Static common:Commands.Languages}">
+                        <TextBlock Text="{Binding Source={x:Static common:TranslationSource.Instance}, Path=CurrentCulture.ThreeLetterISOLanguageName, Mode=OneWay, Converter={StaticResource toUpper}, FallbackValue=none}" />
+                    </Button>
+                </StatusBarItem>
+                <Separator  Grid.Column="6" />
+                <StatusBarItem Grid.Column="7" >
+                    <Slider Grid.Row="0" Grid.Column="3" HorizontalAlignment="Stretch" Width="180"
+                                Minimum="{Binding Source={x:Static Application.Current}, Path=ZoomMin, Converter={StaticResource multDouble}, ConverterParameter={common:Double 100}, Mode=OneWay}" 
+                                Maximum="{Binding Source={x:Static Application.Current}, Path=ZoomMax, Converter={StaticResource multDouble}, ConverterParameter={common:Double 100}, Mode=OneWay}"
+                                Value="{Binding Source={x:Static Application.Current}, Path=Zoom, Converter={StaticResource multDouble}, ConverterParameter={common:Double 100}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                                AutoToolTipPlacement="None" AutoToolTipPrecision="1" Focusable="False" >
+                        <!--TickPlacement="None"-->
+                    </Slider>
+                </StatusBarItem>
+            </StatusBar>
+            
+            <!--<Grid Grid.Row="5" >
+
+                <TextBox x:Name="text" VerticalAlignment="Stretch" Margin="0" BorderThickness="1"
+                     Text="{Binding Path=Output, Mode=TwoWay}" Background="Transparent">
+                </TextBox>
+            </Grid>-->
+
+            <Grid x:Name="settingsLayer" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                      Grid.Column="2" Grid.Row="0" Grid.RowSpan="7" 
+                      Visibility="{Binding ShowSettingsPanel, Converter={StaticResource booleanToVisibility}, FallbackValue=Collapsed, Mode=OneWay}"  >
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition />
+                    <ColumnDefinition Width="auto" />
+                </Grid.ColumnDefinitions>
+
+                <common:SettingsControl x:Name="settingsControl" Grid.Column="1"
+                                    common:AttachedProperties.Boolean0="{Binding IsMouseOver, Converter={StaticResource onChangeIsMouseOver}, ElementName=settingsControl, Mode=OneWay}" />
+            </Grid>
+
+        </Grid>
+    </Grid>
+</UserControl>

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--This file is NOT compatible with Silverlight-->
+<Viewbox xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" Stretch="Uniform">
+  <Canvas Name="svg105" Width="108.278" Height="135.641">
+    <Canvas.RenderTransform>
+      <TranslateTransform X="0" Y="0"/>
+    </Canvas.RenderTransform>
+    <Canvas.Resources/>
+    <!--Unknown tag: metadata-->
+    <!--Unknown tag: sodipodi:namedview-->
+    <!--Unknown tag: v:documentProperties-->
+    <Canvas Name="g103">
+      <!--Unknown tag: v:pageProperties-->
+      <Canvas Name="group11">
+        <Canvas.RenderTransform>
+          <TranslateTransform X="24.375" Y="-40.4"/>
+        </Canvas.RenderTransform>
+        <Canvas Name="shape22">
+          <Rectangle xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" Canvas.Left="0" Canvas.Top="64.775" Width="22.9469" Height="70.8661" Name="rect94" Fill="#000000"/>
+        </Canvas>
+        <Canvas Name="shape34">
+          <Canvas.RenderTransform>
+            <TranslateTransform X="36.5806" Y="0"/>
+          </Canvas.RenderTransform>
+          <Rectangle xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" Canvas.Left="0" Canvas.Top="64.775" Width="22.9469" Height="70.8661" Name="rect99" Fill="#000000"/>
+        </Canvas>
+      </Canvas>
+    </Canvas>
+  </Canvas>
+</Viewbox>

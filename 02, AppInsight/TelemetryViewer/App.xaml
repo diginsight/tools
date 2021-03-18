@@ -1,0 +1,10 @@
+﻿<common:ApplicationBase x:Class="TelemetryViewer.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:TelemetryViewer"
+             xmlns:common="clr-namespace:Common;assembly=Common.PresentationBase"
+             Startup="Application_Startup"
+             >
+    <common:ApplicationBase.Resources>
+    </common:ApplicationBase.Resources>
+</common:ApplicationBase>
