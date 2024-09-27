@@ -1,0 +1,39 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>483a367d-88d3-43bf-ae46-42676d9a3d19</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0" />
+  </ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Azure.Extensions.AspNetCore.Configuration.Secrets" Version="1.*" />
+		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.8" />
+		<PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.*" />
+		<PackageReference Include="Microsoft.VisualStudio.Services.Client" Version="19.225.1" />
+
+		<PackageReference Include="Azure.Identity" Version="1.*" />
+		<PackageReference Include="Swashbuckle.AspNetCore" Version="6.*" />
+
+		<PackageReference Include="Diginsight.Core" Version="3.0.0-alpha.205" />
+		<PackageReference Include="Diginsight.AspnetCore" Version="3.0.0-alpha.205" />
+		<PackageReference Include="Diginsight.Diagnostics" Version="3.0.0-alpha.205" />
+		<PackageReference Include="Diginsight.Diagnostics.Log4Net" Version="3.0.0-alpha.205" />
+
+		<PackageReference Include="MailKit" Version="4.7.1.1" />
+
+		<PackageReference Include="Azure.AI.OpenAI" Version="2.0.0-beta.3" />
+		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.*" />
+		<PackageReference Include="Microsoft.Extensions.Options" Version="8.*" />
+		<PackageReference Include="Microsoft.TeamFoundationServer.Client" Version="19.*" />
+		<PackageReference Include="Microsoft.TeamFoundation.DistributedTask.Common.Contracts" Version="19.225.1" />
+		<PackageReference Include="Microsoft.TeamFoundation.DistributedTask.WebApi" Version="19.225.1" />
+
+	</ItemGroup>
+
+</Project>
