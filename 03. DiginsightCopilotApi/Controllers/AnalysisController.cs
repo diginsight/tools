@@ -38,18 +38,19 @@ namespace DiginsightCopilotApi.Controllers
 
         [HttpPost("GenerateAnalysis")]
         [ActionName("GenerateAnalysis")]
-        public IEnumerable<Analysis> GenerateAnalysis([FromBody] string executionFlow)
+        public async Task<string> GenerateAnalysisAsync()
         {
-            using var activity = Observability.ActivitySource.StartMethodActivity(logger, new { executionFlow });
+            using var activity = Observability.ActivitySource.StartMethodActivity(logger, new {  });
 
-            return Enumerable.Range(1, 5).Select(index => new Analysis
-            {
-                Date = DateTime.Now,
-                Title = "Sample analysis for application flow",
-                Description = "Sample analysis description for application flow",
-                Details = "Sample analysis details for application flow."
-            })
-            .ToArray();
+            using var reader = new StreamReader(Request.Body);
+            var logContent = await reader.ReadToEndAsync();
+
+            // Process the log content as needed
+            logger.LogDebug("logContent:\r\n{logContent}");
+
+
+            return logContent; // Ok()
+
         }
 
 
