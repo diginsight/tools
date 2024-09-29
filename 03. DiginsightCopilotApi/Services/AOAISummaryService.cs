@@ -27,29 +27,29 @@ public class AOAISummaryService : ISummaryService
         IOptions<AzureDevopsConfig> devopsOptions)
     {
         this.logger = logger;
+        using var activity = Observability.ActivitySource.StartMethodActivity(logger, new { openAiOptions, devopsOptions });
+
         openAiConfig = openAiOptions.Value;
-        azureOpenAiClient = new AzureOpenAIClient(
-            new Uri(openAiConfig.Endpoint),
-            new ApiKeyCredential(openAiOptions.Value.ApiKey));
+        azureOpenAiClient = new AzureOpenAIClient(new Uri(openAiConfig.Endpoint), new ApiKeyCredential(openAiOptions.Value.ApiKey));
+
         devopsConfig = devopsOptions.Value;
     }
 
-    public async Task<string> GenerateSummary(int buildId, IEnumerable<WorkItemParam> workItems, IEnumerable<ChangeParam> changes)
+    public async Task<string> GenerateSummary(string logContent, int buildId, IEnumerable<WorkItemParam> workItems, IEnumerable<ChangeParam> changes)
     {
-        using var activity = Observability.ActivitySource.StartMethodActivity(logger, new { workItems, changes });
+        using var activity = Observability.ActivitySource.StartMethodActivity(logger, new { logContent, buildId, workItems, changes });
 
-        var client = azureOpenAiClient.GetChatClient(openAiConfig.ChatModel);
-        logger.LogDebug($"var client = azureOpenAiClient.GetChatClient({openAiConfig.ChatModel});");
+        var client = azureOpenAiClient.GetChatClient(openAiConfig.ChatModel); logger.LogDebug($"var client = azureOpenAiClient.GetChatClient({openAiConfig.ChatModel});");
 
         List<PromptChatMessage>? messages = null;
-        var promptTemplate = File.ReadAllText("DevopsSummarize.prompt.json");
+        var promptTemplate = File.ReadAllText("01.LogSummarize.prompt.json");
         messages = JsonConvert.DeserializeObject<List<PromptChatMessage>>(promptTemplate);
         if (messages == null) { throw new InvalidOperationException("Prompt template is not valid"); }
 
         List<ChatMessage> chatMessages = new();
         foreach (var message in messages)
         {
-            message.Value = PromptReplacePlaceholders(message.Value, new { devopsConfig, workItems, changes, buildId });
+            message.Value = PromptReplacePlaceholders(message.Value, new { devopsConfig, logContent }); // , workItems, changes, buildId
             if (message.Type == "SystemChatMessage") { chatMessages.Add(new SystemChatMessage(message.Value)); }
             else if (message.Type == "UserChatMessage") { chatMessages.Add(new UserChatMessage(message.Value)); }
         }

@@ -1,6 +1,9 @@
 using Diginsight.Diagnostics;
+using DiginsightCopilotApi.Abstractions;
+using DiginsightCopilotApi.Configuration;
 using DiginsightCopilotApi.Models;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 
 namespace DiginsightCopilotApi.Controllers
 {
@@ -8,32 +11,27 @@ namespace DiginsightCopilotApi.Controllers
     [Route("[controller]")]
     public class AnalysisController : ControllerBase
     {
-        private static readonly string[] Summaries = new[]
-        {
-            "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-        };
-
         private readonly ILogger<AnalysisController> logger;
+        private readonly IOptions<AzureDevopsConfig> options;
+        private readonly IAzureDevopsService azureDevopsService;
+        private readonly ISummaryService openAiService;
+        private readonly IEmailService emailClient;
 
-        public AnalysisController(ILogger<AnalysisController> logger)
+        public AnalysisController(
+            ILogger<AnalysisController> logger,
+            IOptions<AzureDevopsConfig> options,
+            IAzureDevopsService azureDevopsService,
+            ISummaryService openAiService,
+            IEmailService emailClient
+            )
         {
             this.logger = logger;
             using var activity = Observability.ActivitySource.StartMethodActivity(logger, new { logger });
-        }
 
-        [HttpGet(Name = "GetApplicationFlowAnalysis")]
-        public IEnumerable<Analysis> Get()
-        {
-            using var activity = Observability.ActivitySource.StartMethodActivity(logger);
-
-            return Enumerable.Range(1, 5).Select(index => new Analysis
-            {
-                Date = DateTime.Now,
-                Title = "Sample analysis for application flow",
-                Description = "Sample analysis description for application flow",
-                Details = "Sample analysis details for application flow."
-            })
-            .ToArray();
+            this.options = options;
+            this.azureDevopsService = azureDevopsService;
+            this.openAiService = openAiService;
+            this.emailClient = emailClient;
         }
 
         [HttpPost("GenerateAnalysis")]
@@ -45,11 +43,14 @@ namespace DiginsightCopilotApi.Controllers
             using var reader = new StreamReader(Request.Body);
             var logContent = await reader.ReadToEndAsync();
 
+            var result = await this.openAiService.GenerateSummary(logContent, 0, null!, null!);
+
+
             // Process the log content as needed
             logger.LogDebug("logContent:\r\n{logContent}");
 
 
-            return logContent; // Ok()
+            return result; // Ok()
 
         }
 

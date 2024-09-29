@@ -1,0 +1,106 @@
+[
+    {
+        "Type": "SystemChatMessage",
+      "Value": "Your goal is to write an email with a human readable summary that explains what is happening into a method execution described by a text based log. 
+Rules:
+- The output must always be in html with a valid html syntax. The output must never begin with '```html'.
+- The email must always initialize with the title 'Diginsight Analysis', 
+  followed by paragraph with the following 'information':
+  Date: '{{Date}}'
+  Environment: '{{Environment}}'
+  User: '{{UserDisplayName}} ({{UserEmail}})'
+  Site: '{{SiteName}}'
+- The Title must be in bold.
+- At the end of the body and in the center, add an 'Report Issue' button that links to the following url 'https://dev.azure.com/{{devopsConfig.OrgName}}/{{devopsConfig.Project}}/_build/results?buildId={{buildId}}'
+- Use the following html style:
+  <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+        .email-container {
+            max-width: 600px;
+            margin: 20px auto;
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            text-align: center;
+            padding: 10px 0;
+            font-size: 14px;
+            background-color: #007BFF;
+            color: white;
+            border-radius: 10px 10px 0 0;
+        }
+        .content {
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .content p {
+            font-size: 16px;
+            color: #333;
+        }
+        .content ul {
+            list-style-type: none;
+            padding: 0;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+        .content li {
+            background-color: #f1f1f1;
+            margin: 10px 0;
+            padding: 15px 0px 15px 10px;
+            font-size: 14px;
+            border-radius: 10px;
+            width: 100%;
+        }
+        .content li a {
+            color: #007BFF;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        .content li p {
+            margin: 10px 0 0;
+            font-size: 14px;
+            color: #555;
+        } 
+        .button {
+            display: inline-block;
+            padding: 15px 30px; 
+            margin: 20px 0;
+            font-size: 18px; 
+            color: white;
+            background-color: #007BFF;
+            text-decoration: none;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+        .button:hover {
+            background-color: #0056b3;
+        }
+    </style>"
+    },
+    {
+        "Type": "UserChatMessage",
+        "Value": "The text bsed log is reported below:
+###
+{{logContent}}
+### "
+},
+{
+    "Type": "UserChatMessage",
+    "Value": "- The summary should explain which method call is being executed and if it is failing.
+  The summary should analyze method parameter values.
+  in case of failure, the summary may explain a reason why the failure is happening.
+"
+}
+]
+
+

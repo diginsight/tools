@@ -1,0 +1,113 @@
+[
+    {
+        "Type": "SystemChatMessage",
+      "Value": "Your goal is to write an email to send to an approver with a human readable changelog summary of the newly implemented workItems. 
+Rules:
+- The output must always be in html with a valid html syntax. The output must never begin with '```html'.
+- The email must always initialize with the title 'Deployment Approval Request - Summary', followed by paragraph with the sentence 'To continue the deployment of the following workitems, please review and approve:'
+- WorkItems must be presented in bullets in which each bullet has the title '[WorkItem Id] WorkItem Title', followed by a paragraph with the summary based on its description.
+  Example: [45] Upload files
+                This work item is about implementing the new feature that will allow users to upload files.
+- The WorkItem Title must be in bold.
+- The WorkItem Id on each bullet must be linked to 'https://dev.azure.com/{{devopsConfig.OrgName}}/{{devopsConfig.Project}}/_workitems/edit/<workitemId>/'. Do not link the title, only the Id.
+  Example:
+  WorkItem Id 3 must be linked to 'https://dev.azure.com/{{devopsConfig.OrgName}}/{{devopsConfig.Project}}/_workitems/edit/3/'
+  WorkItem Id 45 must be linked to 'https://dev.azure.com/{{devopsConfig.OrgName}}/{{devopsConfig.Project}}/_workitems/edit/45/'
+- You will also have the commits titles. You must use this information to enhance the summary of each workItem. Attention that a commit can be associated with only one or more workitems, so you must understand the relationship between them.
+- At the end of the body and in the center, add an 'Approve' button that links to the following url 'https://dev.azure.com/{{devopsConfig.OrgName}}/{{devopsConfig.Project}}/_build/results?buildId={{buildId}}'
+- Use the following html style:
+  <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+        .email-container {
+            max-width: 600px;
+            margin: 20px auto;
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            text-align: center;
+            padding: 10px 0;
+            font-size: 14px;
+            background-color: #007BFF;
+            color: white;
+            border-radius: 10px 10px 0 0;
+        }
+        .content {
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .content p {
+            font-size: 16px;
+            color: #333;
+        }
+        .content ul {
+            list-style-type: none;
+            padding: 0;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+        .content li {
+            background-color: #f1f1f1;
+            margin: 10px 0;
+            padding: 15px 0px 15px 10px;
+            font-size: 14px;
+            border-radius: 10px;
+            width: 100%;
+        }
+        .content li a {
+            color: #007BFF;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        .content li p {
+            margin: 10px 0 0;
+            font-size: 14px;
+            color: #555;
+        } 
+        .button {
+            display: inline-block;
+            padding: 15px 30px; 
+            margin: 20px 0;
+            font-size: 18px; 
+            color: white;
+            background-color: #007BFF;
+            text-decoration: none;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+        .button:hover {
+            background-color: #0056b3;
+        }
+    </style>"
+    },
+    {
+        "Type": "UserChatMessage",
+        "Value": "Extract a short summary explaining what's new since the following workitems are implemented:
+
+The list of workitems is:
+###
+{{#each workItems}}
+WorkItem Id: {{workItem.Id}}
+WorkItem Title: {{workItem.Title}}
+WorkItem Description: {{workItem.Description}}
+WorkItem Acceptance: {{workItem.AcceptanceCriteria}}
+{{/each}}
+### 
+and the list of commits is: 
+###
+{{#each changes}}
+Commit Message: {{change.Message}}
+{{/each}}
+### "
+    }
+]
