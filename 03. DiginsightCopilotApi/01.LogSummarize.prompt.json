@@ -4,13 +4,29 @@
       "Value": "Your goal is to write an email with a human readable summary that explains what is happening into a method execution described by a text based log. 
 Rules:
 - The output must always be in html with a valid html syntax. The output must never begin with '```html'.
-- The email must always initialize with the title 'Diginsight Analysis', 
-  followed by paragraph with the following 'information':
+- The email must always initialize with a title with one line short description of the problem (eg. ISSUE: CreateApplication method fails as application already exists), 
+  the title prefix should be ISSUE, WARNING or SUCCESS according to the type of flow.
+- After the title the analysis should start with a subtitle 'Diginsight Analysis:'.
+- Title and subtitle text should be left aligned
+- A first paragraph with title 'Application flow information' should report the following details:
   Date: '{{Date}}'
   Environment: '{{Environment}}'
   User: '{{UserDisplayName}} ({{UserEmail}})'
   Site: '{{SiteName}}'
+  Build number: '{{BuildNumber}}'
+  Repository: '{{DevopsRepository}}'
+  Code Branch: '{{DevopsRepository}}'
+  fields should be left aligned and field values should be Bold.
+- a following paragrapg with title 'application flow resources' should report all databases or external services accessed by the application.
+  the table rows may include Database information, Http external service information or Service Bus information as shown below:
+  Database: '{{DatabaseUrl}}', Collection: '{{Table}}'
+  Http external service: '{{HttpBaseUrl}}'
+  Service Bus: '{{ServiceBusBaseUrl}}'
+  fields should be left aligned and field values should be Bold.
 - The Title must be in bold.
+- in case of exceptions or errors, use dark red (#C00000) as the title background.
+- in case of performance issues (eg. big latencies or payload sizes), use dark yellow (#E6AF00) as the title background.
+- in case of no issues detected, use dark green (#3B7D23) as the title background.
 - At the end of the body and in the center, add an 'Report Issue' button that links to the following url 'https://dev.azure.com/{{devopsConfig.OrgName}}/{{devopsConfig.Project}}/_build/results?buildId={{buildId}}'
 - Use the following html style:
   <style>
@@ -29,15 +45,15 @@ Rules:
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         }
         .header {
-            text-align: center;
-            padding: 10px 0;
+            text-align: left;
+            padding: 10px;
             font-size: 14px;
             background-color: #007BFF;
             color: white;
             border-radius: 10px 10px 0 0;
         }
         .content {
-            padding: 20px;
+            padding: 10px;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -93,14 +109,26 @@ Rules:
 ###
 {{logContent}}
 ### "
-},
-{
-    "Type": "UserChatMessage",
-    "Value": "- The summary should explain which method call is being executed and if it is failing.
-  The summary should analyze method parameter values.
-  in case of failure, the summary may explain a reason why the failure is happening.
-"
-}
+    },
+    {
+        "Type": "UserChatMessage",
+        "Value": "- The summary should explain which method call is being executed and if it is failing.
+    The summary should analyze most important method parameters received by the method.
+    The parameters list should be presented in a left aligned table with parameter names with normal font and parameter values in bold.
+    In case of failure, the summary should explain a reason why the failure is happening.
+    In case an error message is reported the error message should be shown in dark red.
+    "
+    },
+    {
+        "Type": "UserChatMessage",
+        "Value": "After the summay an 'Additional details' section should describe the application flow main steps.
+    for every step, details about the method executed, with input and returned data should be provided.
+    if the method executes queries to a database, the query should be reported and explained with the following details:
+    - a short description of what the query does 
+    - the query text
+    - the query result
+    "
+    }
 ]
 
 
