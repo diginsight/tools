@@ -48,17 +48,18 @@ public class AOAISummaryService : ISummaryService
         //messages = JsonConvert.DeserializeObject<List<PromptChatMessage>>(promptTemplate);
         //if (messages == null) { throw new InvalidOperationException("Prompt template is not valid"); }
 
+        //var serializer = new SerializerBuilder()
+        //    .JsonCompatible()
+        //    .Build();
+        //var json = serializer.Serialize(yamlObject);
+        //messages = JsonConvert.DeserializeObject<List<PromptChatMessage>>(json);
+
         List<PromptChatMessage>? messages = null;
         var promptYamlTemplate = File.ReadAllText("01.LogSummarize.prompt.yaml");
         var deserializer = new DeserializerBuilder()
                   .WithNamingConvention(new PascalCaseNamingConvention())
                   .Build();
         var yamlObject = deserializer.Deserialize(new StringReader(promptYamlTemplate)) as IList<object>;
-        //var serializer = new SerializerBuilder()
-        //    .JsonCompatible()
-        //    .Build();
-        //var json = serializer.Serialize(yamlObject);
-        //messages = JsonConvert.DeserializeObject<List<PromptChatMessage>>(json);
 
         List<ChatMessage> chatMessages = new();
         foreach (var messageObject in yamlObject)
