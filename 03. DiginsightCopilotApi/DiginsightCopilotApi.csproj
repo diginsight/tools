@@ -33,6 +33,7 @@
 		<PackageReference Include="Microsoft.TeamFoundationServer.Client" Version="19.*" />
 		<PackageReference Include="Microsoft.TeamFoundation.DistributedTask.Common.Contracts" Version="19.225.1" />
 		<PackageReference Include="Microsoft.TeamFoundation.DistributedTask.WebApi" Version="19.225.1" />
+		<PackageReference Include="YamlDotNet.NetCore" Version="1.*" />
 
 	</ItemGroup>
 

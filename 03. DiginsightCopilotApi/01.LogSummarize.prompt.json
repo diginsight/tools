@@ -6,6 +6,7 @@ Rules:
 - The output must always be in html with a valid html syntax. The output must never begin with '```html'.
 - The email must always initialize with a title with one line short description of the problem (eg. ISSUE: CreateApplication method fails as application already exists), 
   the title prefix should be ISSUE, WARNING or SUCCESS according to the type of flow.
+  the title content should contain a one row description of the problem
 - After the title the analysis should start with a subtitle 'Diginsight Analysis:'.
 - Title and subtitle text should be left aligned
 - A first paragraph with title 'Application flow information' should report the following details:

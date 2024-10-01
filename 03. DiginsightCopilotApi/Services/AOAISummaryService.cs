@@ -10,6 +10,8 @@ using OpenAI;
 using System.ClientModel;
 using System.Text.RegularExpressions;
 using System.Collections;
+using YamlDotNet.Serialization.NamingConventions;
+using YamlDotNet.Serialization;
 
 namespace DiginsightCopilotApi.Services;
 
@@ -41,17 +43,34 @@ public class AOAISummaryService : ISummaryService
 
         var client = azureOpenAiClient.GetChatClient(openAiConfig.ChatModel); logger.LogDebug($"var client = azureOpenAiClient.GetChatClient({openAiConfig.ChatModel});");
 
+        //List<PromptChatMessage>? messages = null;
+        //var promptTemplate = File.ReadAllText("01.LogSummarize.prompt.json");
+        //messages = JsonConvert.DeserializeObject<List<PromptChatMessage>>(promptTemplate);
+        //if (messages == null) { throw new InvalidOperationException("Prompt template is not valid"); }
+
         List<PromptChatMessage>? messages = null;
-        var promptTemplate = File.ReadAllText("01.LogSummarize.prompt.json");
-        messages = JsonConvert.DeserializeObject<List<PromptChatMessage>>(promptTemplate);
-        if (messages == null) { throw new InvalidOperationException("Prompt template is not valid"); }
+        var promptYamlTemplate = File.ReadAllText("01.LogSummarize.prompt.yaml");
+        var deserializer = new DeserializerBuilder()
+                  .WithNamingConvention(new PascalCaseNamingConvention())
+                  .Build();
+        var yamlObject = deserializer.Deserialize(new StringReader(promptYamlTemplate)) as IList<object>;
+        //var serializer = new SerializerBuilder()
+        //    .JsonCompatible()
+        //    .Build();
+        //var json = serializer.Serialize(yamlObject);
+        //messages = JsonConvert.DeserializeObject<List<PromptChatMessage>>(json);
 
         List<ChatMessage> chatMessages = new();
-        foreach (var message in messages)
+        foreach (var messageObject in yamlObject)
         {
-            message.Value = PromptReplacePlaceholders(message.Value, new { devopsConfig, logContent }); // , workItems, changes, buildId
-            if (message.Type == "SystemChatMessage") { chatMessages.Add(new SystemChatMessage(message.Value)); }
-            else if (message.Type == "UserChatMessage") { chatMessages.Add(new UserChatMessage(message.Value)); }
+            var message = messageObject as IDictionary<object, object>;
+            message["Value"] = PromptReplacePlaceholders(message["Value"] as string, new { devopsConfig, logContent }); // , workItems, changes, buildId
+            if (message["Type"].Equals("SystemChatMessage")) { chatMessages.Add(new SystemChatMessage(message["Value"] as string)); }
+            else if (message["Type"].Equals("UserChatMessage")) { chatMessages.Add(new UserChatMessage(message["Value"] as string)); }
+
+            //message.Value = PromptReplacePlaceholders(message.Value, new { devopsConfig, logContent }); // , workItems, changes, buildId
+            //if (message.Type == "SystemChatMessage") { chatMessages.Add(new SystemChatMessage(message.Value)); }
+            //else if (message.Type == "UserChatMessage") { chatMessages.Add(new UserChatMessage(message.Value)); }
         }
 
         logger.LogDebug($"before client.CompleteChatAsync({chatMessages});");
