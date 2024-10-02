@@ -6,19 +6,37 @@
     - The email must always initialize with a title with one line short description of the problem (eg. ISSUE: CreateApplication method fails as application already exists) where:
       the title prefix should be ISSUE, WARNING or SUCCESS according to the type of flow.
       the title content should contain a one row description of the problem
+      in case of exceptions, the title should include '<Class>.<Method> fails with' and it should include the exception short type name
 
     - After the title the analysis should start with a subtitle 'Diginsight Analysis:'.
     - Title and subtitle text should be left aligned
 
-    - A first paragraph with title 'Application flow information' should report the following details:
-      Date: '{{Date}}'
-      Environment: '{{Environment}}'
-      User: '{{UserDisplayName}} ({{UserEmail}})'
-      Site: '{{SiteName}}'
-      Build number: '{{BuildNumber}}'
-      Repository: '{{DevopsRepository}}'
-      Code Branch: '{{DevopsRepository}}'
+    - A first paragraph with title 'Application flow information' should report the following table:
+      <table>
+          <tr>
+              <td class="param-name">Date:</td><td class="param-value" colspan="3">'{{nowOffsetUtc}}'</td>
+          </tr>
+          <tr>
+              <td class="param-name">Build:</td><td class="param-value">'{{devopsConfig.BuildNumber}}'</td>
+              <td class="param-name">ID:</td><td class="param-value">'{{devopsConfig.BuildID}}'</td>
+          </tr>
+          <tr>
+              <td class="param-name">Environment:</td><td class="param-value">'{{devopsConfig.Environment}}'</td>
+              <td class="param-name">Site:</td><td class="param-value">'{{devopsConfig.SiteName}}'</td>
+          </tr>
+          <tr>
+              <td class="param-name">User:</td><td class="param-value" colspan="3">'{{UserDisplayName}} ({{UserEmail}})'</td>
+          </tr>
+          <tr>
+              <td class="param-name">Project:</td><td class="param-value" colspan="3">'https://dev.azure.com/{{devopsConfig.OrgName}}/{{devopsConfig.Project}}'</td>
+          </tr>
+          <tr>
+              <td class="param-name">Repository:</td><td class="param-value">'{{devopsConfig.Repository}}'</td>
+              <td class="param-name">Branch:</td><td class="param-value">'{{devopsConfig.Branch}}'</td>
+          </tr>
+      </table>
       fields should be left aligned and field values should be Bold.
+      Placeholders for UserDisplayName and UserEmail should be inferred from the log content
     
     - A following paragrapg with title 'application flow resources' should report all databases or external services accessed by the application.
       the table rows may include Database information, Http external service information or Service Bus information as shown below:

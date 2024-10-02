@@ -38,12 +38,47 @@ namespace DiginsightCopilotApi.Controllers
         [ActionName("GenerateAnalysis")]
         public async Task<string> GenerateAnalysisAsync()
         {
-            using var activity = Observability.ActivitySource.StartMethodActivity(logger, new {  });
+            using var activity = Observability.ActivitySource.StartMethodActivity(logger, new { });
 
             using var reader = new StreamReader(Request.Body);
             var logContent = await reader.ReadToEndAsync();
 
-            var result = await this.openAiService.GenerateSummary(logContent, 0, null!, null!);
+            var buildId = 237401;
+            logger.LogInformation("ComposeSummaryAsync called with buildId: {buildId}", buildId);
+            List<WorkItemParam> workItemParams = new List<WorkItemParam>();
+            var workItems = await azureDevopsService.GetWorkItemsByBuildIdAsync(buildId);
+
+            foreach (var workItem in workItems)
+            {
+                if (workItem == null || workItem.Id == null) { continue; }
+                
+                var id = workItem.Id.Value;
+                var title = workItem.Fields["System.Title"].ToString();
+                var description = workItem.Fields.TryGetValue("System.Description", out var descObj) ? descObj?.ToString() : null;
+                var acceptanceCriteria = workItem.Fields.TryGetValue("Microsoft.VSTS.Common.AcceptanceCriteria", out var accObj) ? accObj?.ToString() : null;
+                workItemParams.Add(new WorkItemParam
+                {
+                    Id = id,
+                    Title = title ?? string.Empty,
+                    Description = description ?? string.Empty,
+                    AcceptanceCriteria = acceptanceCriteria ?? string.Empty,
+                });
+            }
+
+            List<ChangeParam> changeParams = new List<ChangeParam>();
+            var changes = await azureDevopsService.GetChangesByBuildIdAsync(buildId);
+            foreach (var change in changes)
+            {
+                changeParams.Add(new ChangeParam
+                {
+                    Id = change.Id,
+                    Message = change.Message,
+                    Timestamp = change.Timestamp,
+                    DisplayUriAbsoluteUri = change.DisplayUri.AbsoluteUri,
+                });
+            }
+
+            var result = await this.openAiService.GenerateSummary(logContent, buildId, workItemParams, changeParams);
 
 
             // Process the log content as needed

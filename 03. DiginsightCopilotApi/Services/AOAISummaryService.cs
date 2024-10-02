@@ -12,6 +12,7 @@ using System.Text.RegularExpressions;
 using System.Collections;
 using YamlDotNet.Serialization.NamingConventions;
 using YamlDotNet.Serialization;
+using Azure.Storage.Blobs;
 
 namespace DiginsightCopilotApi.Services;
 
@@ -20,17 +21,21 @@ public class AOAISummaryService : ISummaryService
     private readonly ILogger<AOAISummaryService> logger;
     private readonly AzureDevopsConfig devopsConfig;
     private AzureOpenAiConfig openAiConfig;
+    private BlobStorageConfig blobStorageConfig;
     private OpenAIClient openAiClient;
     private AzureOpenAIClient azureOpenAiClient;
 
     public AOAISummaryService(
         ILogger<AOAISummaryService> logger,
         IOptions<AzureOpenAiConfig> openAiOptions,
-        IOptions<AzureDevopsConfig> devopsOptions)
+        IOptions<AzureDevopsConfig> devopsOptions,
+        IOptions<BlobStorageConfig> blobStorageOptions
+        )
     {
         this.logger = logger;
         using var activity = Observability.ActivitySource.StartMethodActivity(logger, new { openAiOptions, devopsOptions });
 
+        blobStorageConfig = blobStorageOptions.Value;
         openAiConfig = openAiOptions.Value;
         azureOpenAiClient = new AzureOpenAIClient(new Uri(openAiConfig.Endpoint), new ApiKeyCredential(openAiOptions.Value.ApiKey));
 
@@ -43,16 +48,8 @@ public class AOAISummaryService : ISummaryService
 
         var client = azureOpenAiClient.GetChatClient(openAiConfig.ChatModel); logger.LogDebug($"var client = azureOpenAiClient.GetChatClient({openAiConfig.ChatModel});");
 
-        //List<PromptChatMessage>? messages = null;
-        //var promptTemplate = File.ReadAllText("01.LogSummarize.prompt.json");
-        //messages = JsonConvert.DeserializeObject<List<PromptChatMessage>>(promptTemplate);
-        //if (messages == null) { throw new InvalidOperationException("Prompt template is not valid"); }
-
-        //var serializer = new SerializerBuilder()
-        //    .JsonCompatible()
-        //    .Build();
-        //var json = serializer.Serialize(yamlObject);
-        //messages = JsonConvert.DeserializeObject<List<PromptChatMessage>>(json);
+        var nowOffset = DateTimeOffset.Now;
+        var nowOffsetUtc = DateTimeOffset.UtcNow;
 
         List<PromptChatMessage>? messages = null;
         var promptYamlTemplate = File.ReadAllText("01.LogSummarize.prompt.yaml");
@@ -65,33 +62,41 @@ public class AOAISummaryService : ISummaryService
         foreach (var messageObject in yamlObject)
         {
             var message = messageObject as IDictionary<object, object>;
-            message["Value"] = PromptReplacePlaceholders(message["Value"] as string, new { devopsConfig, logContent }); // , workItems, changes, buildId
+            message["Value"] = PromptReplacePlaceholders(message["Value"] as string, new { nowOffsetUtc, devopsConfig, logContent, workItems, changes, buildId }); 
             if (message["Type"].Equals("SystemChatMessage")) { chatMessages.Add(new SystemChatMessage(message["Value"] as string)); }
             else if (message["Type"].Equals("UserChatMessage")) { chatMessages.Add(new UserChatMessage(message["Value"] as string)); }
-
-            //message.Value = PromptReplacePlaceholders(message.Value, new { devopsConfig, logContent }); // , workItems, changes, buildId
-            //if (message.Type == "SystemChatMessage") { chatMessages.Add(new SystemChatMessage(message.Value)); }
-            //else if (message.Type == "UserChatMessage") { chatMessages.Add(new UserChatMessage(message.Value)); }
         }
-
-        logger.LogDebug($"before client.CompleteChatAsync({chatMessages});");
 
         var isDevelopment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development"; logger.LogDebug("isDevelopment: {isDevelopment}", isDevelopment);
         if (isDevelopment)
         {
-            var actualPrompt = JsonConvert.SerializeObject(chatMessages);
+            var serializer = new SerializerBuilder()
+                                .WithNamingConvention(new CamelCaseNamingConvention())
+                                .Build();
+            var actualPrompt = serializer.Serialize(yamlObject);
             var userProfilePath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
             var applicationName = AppDomain.CurrentDomain.FriendlyName;
             var actualPromptFolder = $"{userProfilePath}\\{applicationName}";
             Directory.CreateDirectory(actualPromptFolder);
-            var actualPromptPath = $"{actualPromptFolder}\\DevopsSummarize.prompt.actual.json";
+            var actualPromptPath = $"{actualPromptFolder}\\DevopsSummarize.prompt.actual.yaml";
             logger.LogDebug("actualPromptPath: {actualPromptPath}", actualPromptPath);
             await File.WriteAllTextAsync(actualPromptPath, actualPrompt); logger.LogDebug($"await File.WriteAllTextAsync({actualPromptPath}, actualPrompt);");
         }
 
+        logger.LogDebug($"before client.CompleteChatAsync({chatMessages});");
+
         var response = await client.CompleteChatAsync(chatMessages);
         logger.LogDebug($"{response} = await client.CompleteChatAsync({chatMessages});");
         var ret = response.Value.Content?.FirstOrDefault()?.Text ?? "";
+
+        // write the response to a file 
+        // to the blob storage container connection string and container name specified in blobStorageConfig
+        //var blobServiceClient = new BlobServiceClient(blobStorageConfig.BlobStorageConnectionString);
+        //var containerClient = blobServiceClient.GetBlobContainerClient("analysis");
+        //var blobClient = containerClient.GetBlobClient("sampleanalysis.htm");
+
+        //string filePath = Path.Combine($"{DateTime.UtcNow:YYYYMMDD HHmm} - ", "sampleanalysis.htm");
+        //await blobClient.UploadAsync(filePath, overwrite: true);
 
         activity?.SetOutput(ret);
         return ret;
@@ -122,7 +127,7 @@ public class AOAISummaryService : ISummaryService
             var value = variables[propName];
             if (value == null) { continue; }
             var type = value.GetType();
-            if (type.IsPrimitive || type == typeof(decimal) || type == typeof(string))
+            if (type.IsPrimitive || type == typeof(decimal) || type == typeof(string) || type == typeof(DateTime) || type == typeof(DateTimeOffset))
             {
                 message = message.Replace($"{{{{{propName}}}}}", value.ToString());
             }

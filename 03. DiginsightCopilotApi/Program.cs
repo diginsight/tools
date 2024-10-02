@@ -41,6 +41,7 @@ public class Program
         builder.Services.AddSwaggerGen(); logger.LogDebug($"builder.Services.AddSwaggerGen();");
 
         builder.Services.Configure<AzureDevopsConfig>(builder.Configuration.GetSection("Devops"));
+        builder.Services.Configure<BlobStorageConfig>(builder.Configuration.GetSection("BlobStorage"));
         builder.Services.Configure<AzureOpenAiConfig>(builder.Configuration.GetSection("AzureOpenAi"));
         builder.Services.Configure<EmailConfig>(builder.Configuration.GetSection("Email"));
 
