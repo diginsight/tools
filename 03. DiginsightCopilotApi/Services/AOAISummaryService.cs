@@ -93,13 +93,14 @@ public class AOAISummaryService : ISummaryService
 
         var doc = new HtmlDocument();
         doc.LoadHtml(ret);
-        var headerNode = doc.DocumentNode.SelectSingleNode("//div[@class='header']");
-        var title = headerNode.InnerText.Trim();
+        //var headerNode = doc.DocumentNode.SelectSingleNode("//div[@class='header']");
+        var titleNode = doc.DocumentNode.SelectSingleNode("//title");
+        var title = titleNode.InnerText.Trim();
 
         var blobServiceClient = new BlobServiceClient(blobStorageConfig.BlobStorageConnectionString);
         var containerClient = blobServiceClient.GetBlobContainerClient("analysis");
 
-        string folderName = $"{DateTime.Now:yyyyMMdd HHmm} - {title}";
+        string folderName = $"{DateTime.UtcNow:yyyyMMdd HHmm} - {title}";
 
         var blobClient = containerClient.GetBlobClient($"{folderName}/{folderName}.htm");
 

@@ -7,6 +7,7 @@
       the title prefix should be ISSUE, WARNING or SUCCESS according to the type of flow.
       the title content should contain a one row description of the problem
       in case of exceptions, the title should include '<Class>.<Method> fails with' and it should include the exception short type name
+      the title should be included into an <title> tag to make it visible in the email client title bar
 
     - After the title the analysis should start with a subtitle 'Diginsight Analysis:'.
     - Title and subtitle text should be left aligned
