@@ -13,6 +13,8 @@ using System.Collections;
 using YamlDotNet.Serialization.NamingConventions;
 using YamlDotNet.Serialization;
 using Azure.Storage.Blobs;
+using System.Text;
+using HtmlAgilityPack;
 
 namespace DiginsightCopilotApi.Services;
 
@@ -89,14 +91,20 @@ public class AOAISummaryService : ISummaryService
         logger.LogDebug($"{response} = await client.CompleteChatAsync({chatMessages});");
         var ret = response.Value.Content?.FirstOrDefault()?.Text ?? "";
 
-        // write the response to a file 
-        // to the blob storage container connection string and container name specified in blobStorageConfig
-        //var blobServiceClient = new BlobServiceClient(blobStorageConfig.BlobStorageConnectionString);
-        //var containerClient = blobServiceClient.GetBlobContainerClient("analysis");
-        //var blobClient = containerClient.GetBlobClient("sampleanalysis.htm");
+        var doc = new HtmlDocument();
+        doc.LoadHtml(ret);
+        var headerNode = doc.DocumentNode.SelectSingleNode("//div[@class='header']");
+        var title = headerNode.InnerText.Trim();
 
-        //string filePath = Path.Combine($"{DateTime.UtcNow:YYYYMMDD HHmm} - ", "sampleanalysis.htm");
-        //await blobClient.UploadAsync(filePath, overwrite: true);
+        var blobServiceClient = new BlobServiceClient(blobStorageConfig.BlobStorageConnectionString);
+        var containerClient = blobServiceClient.GetBlobContainerClient("analysis");
+
+        string folderName = $"{DateTime.Now:yyyyMMdd HHmm} - {title}";
+
+        var blobClient = containerClient.GetBlobClient($"{folderName}/{folderName}.htm");
+
+        using var stream = new MemoryStream(Encoding.UTF8.GetBytes(ret));
+        await blobClient.UploadAsync(stream, overwrite: true);
 
         activity?.SetOutput(ret);
         return ret;
