@@ -51,7 +51,7 @@ namespace DiginsightCopilotApi.Controllers
             foreach (var workItem in workItems)
             {
                 if (workItem == null || workItem.Id == null) { continue; }
-                
+
                 var id = workItem.Id.Value;
                 var title = workItem.Fields["System.Title"].ToString();
                 var description = workItem.Fields.TryGetValue("System.Description", out var descObj) ? descObj?.ToString() : null;
@@ -78,17 +78,15 @@ namespace DiginsightCopilotApi.Controllers
                 });
             }
 
-            var result = await this.openAiService.GenerateSummary(logContent, buildId, workItemParams, changeParams);
+            var analysis = await this.openAiService.GenerateSummary(logContent, buildId, workItemParams, changeParams);
 
+            // Add response header
+            Response.Headers.Add("analysis-url", analysis.Url);
 
             // Process the log content as needed
             logger.LogDebug("logContent:\r\n{logContent}");
 
-
-            return result; // Ok()
-
+            return analysis.Details; // Ok()
         }
-
-
     }
 }

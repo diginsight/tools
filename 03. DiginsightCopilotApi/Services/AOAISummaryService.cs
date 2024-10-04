@@ -15,6 +15,7 @@ using YamlDotNet.Serialization;
 using Azure.Storage.Blobs;
 using System.Text;
 using HtmlAgilityPack;
+using Azure.Storage.Sas;
 
 namespace DiginsightCopilotApi.Services;
 
@@ -24,6 +25,7 @@ public class AOAISummaryService : ISummaryService
     private readonly AzureDevopsConfig devopsConfig;
     private AzureOpenAiConfig openAiConfig;
     private BlobStorageConfig blobStorageConfig;
+    private PromptConfig promptConfig;
     private OpenAIClient openAiClient;
     private AzureOpenAIClient azureOpenAiClient;
 
@@ -31,20 +33,23 @@ public class AOAISummaryService : ISummaryService
         ILogger<AOAISummaryService> logger,
         IOptions<AzureOpenAiConfig> openAiOptions,
         IOptions<AzureDevopsConfig> devopsOptions,
-        IOptions<BlobStorageConfig> blobStorageOptions
+        IOptions<BlobStorageConfig> blobStorageOptions,
+        IOptions<PromptConfig> promptConfig
         )
     {
         this.logger = logger;
         using var activity = Observability.ActivitySource.StartMethodActivity(logger, new { openAiOptions, devopsOptions });
 
-        blobStorageConfig = blobStorageOptions.Value;
-        openAiConfig = openAiOptions.Value;
-        azureOpenAiClient = new AzureOpenAIClient(new Uri(openAiConfig.Endpoint), new ApiKeyCredential(openAiOptions.Value.ApiKey));
+        this.blobStorageConfig = blobStorageOptions.Value;
+        this.promptConfig = promptConfig.Value;
 
-        devopsConfig = devopsOptions.Value;
+        this.openAiConfig = openAiOptions.Value;
+        this.azureOpenAiClient = new AzureOpenAIClient(new Uri(openAiConfig.Endpoint), new ApiKeyCredential(openAiOptions.Value.ApiKey));
+
+        this.devopsConfig = devopsOptions.Value;
     }
 
-    public async Task<string> GenerateSummary(string logContent, int buildId, IEnumerable<WorkItemParam> workItems, IEnumerable<ChangeParam> changes)
+    public async Task<Analysis> GenerateSummary(string logContent, int buildId, IEnumerable<WorkItemParam> workItems, IEnumerable<ChangeParam> changes)
     {
         using var activity = Observability.ActivitySource.StartMethodActivity(logger, new { logContent, buildId, workItems, changes });
 
@@ -54,10 +59,13 @@ public class AOAISummaryService : ISummaryService
         var nowOffsetUtc = DateTimeOffset.UtcNow;
 
         List<PromptChatMessage>? messages = null;
-        var promptYamlTemplate = File.ReadAllText("01.LogSummarize.prompt.yaml");
+        var promptFolder = promptConfig.PromptFolder;
+        var promptFileName = string.IsNullOrEmpty(promptFolder)? "01.LogSummarize.prompt.yaml" : $"{promptFolder}\\01.LogSummarize.prompt.yaml";
+
+        var promptYamlTemplate = File.ReadAllText(promptFileName);
         var deserializer = new DeserializerBuilder()
-                  .WithNamingConvention(new PascalCaseNamingConvention())
-                  .Build();
+                           .WithNamingConvention(new PascalCaseNamingConvention())
+                           .Build();
         var yamlObject = deserializer.Deserialize(new StringReader(promptYamlTemplate)) as IList<object>;
 
         List<ChatMessage> chatMessages = new();
@@ -99,16 +107,24 @@ public class AOAISummaryService : ISummaryService
 
         var blobServiceClient = new BlobServiceClient(blobStorageConfig.BlobStorageConnectionString);
         var containerClient = blobServiceClient.GetBlobContainerClient("analysis");
-
         string folderName = $"{DateTime.UtcNow:yyyyMMdd HHmm} - {title}";
-
         var blobClient = containerClient.GetBlobClient($"{folderName}/{folderName}.htm");
-
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(ret));
         await blobClient.UploadAsync(stream, overwrite: true);
 
-        activity?.SetOutput(ret);
-        return ret;
+        var sasToken = containerClient.GenerateSasUri(BlobContainerSasPermissions.Read, DateTimeOffset.UtcNow.AddHours(1)).Query;
+        var fileUrl = $"{containerClient.Uri.AbsoluteUri}/{folderName}/{folderName}.htm?{sasToken}";
+
+        var analysis = new Analysis()
+        {
+            Title = title,
+            Description = "",
+            Details = ret,
+            Url = fileUrl
+        };
+
+        activity?.SetOutput(analysis);
+        return analysis;
     }
 
     private string PromptReplacePlaceholders(string message, object variables)

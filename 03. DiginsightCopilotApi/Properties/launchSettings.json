@@ -26,7 +26,8 @@
       "launchUrl": "swagger",
       "applicationUrl": "https://localhost:7100;http://localhost:5173",
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "Prompt__PromptFolder": "E:\\dev.darioa.live\\Diginsight\\tools\\03. DiginsightCopilotApi"
       }
     },
     "IIS Express": {

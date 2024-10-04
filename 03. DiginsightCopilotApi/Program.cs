@@ -42,6 +42,7 @@ public class Program
 
         builder.Services.Configure<AzureDevopsConfig>(builder.Configuration.GetSection("Devops"));
         builder.Services.Configure<BlobStorageConfig>(builder.Configuration.GetSection("BlobStorage"));
+        builder.Services.Configure<PromptConfig>(builder.Configuration.GetSection("Prompt"));
         builder.Services.Configure<AzureOpenAiConfig>(builder.Configuration.GetSection("AzureOpenAi"));
         builder.Services.Configure<EmailConfig>(builder.Configuration.GetSection("Email"));
 
