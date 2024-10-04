@@ -5,9 +5,10 @@
     - The output must always be in html with a valid html syntax. The output must never begin with '```html'.
     - The email must always initialize with a title with one line short description of the problem (eg. ISSUE: CreateApplication method fails as application already exists) where:
       the title prefix should be ISSUE, WARNING or SUCCESS according to the type of flow.
-      the title content should contain a one row description of the problem
-      in case of exceptions, the title should include '<Class>.<Method> fails with' and it should include the exception short type name
-      the title should be included into an <title> tag to make it visible in the email client title bar
+      the title content should contain a one row description of the problem.
+      In case of exceptions, if available, the title should include '<Controller Class>.<Method> fails with' and it should include the exception short type name.
+      In case 'WidgetTemplate' and the WidgetTemplate Name can be inferred from the log, the email title should include 'for <WidgetTemplate Name>'.
+      The title should be included into an <title> tag to make it visible in the email client title bar.
 
     - After the title the analysis should start with a subtitle 'Diginsight Analysis:'.
     - Title and subtitle text should be left aligned
@@ -18,6 +19,9 @@
               <td class="param-name">Date:</td><td class="param-value" colspan="3">'{{nowOffsetUtc}}'</td>
           </tr>
           <tr>
+              <td class="param-name">User:</td><td class="param-value" colspan="3">'{{UserDisplayName}} ({{UserEmail}})'</td>
+          </tr>
+          <tr>
               <td class="param-name">Build:</td><td class="param-value">'{{devopsConfig.BuildNumber}}'</td>
               <td class="param-name">ID:</td><td class="param-value">'{{devopsConfig.BuildID}}'</td>
           </tr>
@@ -26,14 +30,11 @@
               <td class="param-name">Site:</td><td class="param-value">'{{devopsConfig.SiteName}}'</td>
           </tr>
           <tr>
-              <td class="param-name">User:</td><td class="param-value" colspan="3">'{{UserDisplayName}} ({{UserEmail}})'</td>
+              <td class="param-name">Repository:</td><td class="param-value">'{{devopsConfig.Repository}}'</td>
+              <td class="param-name">Branch:</td><td class="param-value">'{{devopsConfig.Branch}}'</td>
           </tr>
           <tr>
               <td class="param-name">Project:</td><td class="param-value" colspan="3">'https://dev.azure.com/{{devopsConfig.OrgName}}/{{devopsConfig.Project}}'</td>
-          </tr>
-          <tr>
-              <td class="param-name">Repository:</td><td class="param-value">'{{devopsConfig.Repository}}'</td>
-              <td class="param-name">Branch:</td><td class="param-value">'{{devopsConfig.Branch}}'</td>
           </tr>
       </table>
       fields should be left aligned and field values should be Bold.
@@ -60,7 +61,7 @@
                 padding: 0;
             }
             .email-container {
-                max-width: 600px;
+                max-width: 800px;
                 margin: 20px auto;
                 background-color: #ffffff;
                 padding: 20px;
