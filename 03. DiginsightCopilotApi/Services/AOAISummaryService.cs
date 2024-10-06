@@ -101,26 +101,35 @@ public class AOAISummaryService : ISummaryService
 
         var doc = new HtmlDocument();
         doc.LoadHtml(ret);
-        //var headerNode = doc.DocumentNode.SelectSingleNode("//div[@class='header']");
         var titleNode = doc.DocumentNode.SelectSingleNode("//title");
         var title = titleNode.InnerText.Trim();
 
         var blobServiceClient = new BlobServiceClient(blobStorageConfig.BlobStorageConnectionString);
         var containerClient = blobServiceClient.GetBlobContainerClient("analysis");
+        
         string folderName = $"{DateTime.UtcNow:yyyyMMdd HHmm} - {title}";
-        var blobClient = containerClient.GetBlobClient($"{folderName}/{folderName}.htm");
-        using var stream = new MemoryStream(Encoding.UTF8.GetBytes(ret));
-        await blobClient.UploadAsync(stream, overwrite: true);
 
-        var sasToken = containerClient.GenerateSasUri(BlobContainerSasPermissions.Read, DateTimeOffset.UtcNow.AddHours(1)).Query;
-        var fileUrl = $"{containerClient.Uri.AbsoluteUri}/{folderName}/{folderName}.htm?{sasToken}";
+        string analysisFileName = $"{folderName}";
+        var analysisBlobClient = containerClient.GetBlobClient($"{folderName}/{analysisFileName}.htm");
+        using var analysisStream = new MemoryStream(Encoding.UTF8.GetBytes(ret));
+        await analysisBlobClient.UploadAsync(analysisStream, overwrite: true);
+
+        string logFileName = $"{DateTime.UtcNow:yyyyMMdd HHmm} - LogStream";
+        var logBlobClientLog = containerClient.GetBlobClient($"{folderName}/{logFileName}.log");
+        using var logStream = new MemoryStream(Encoding.UTF8.GetBytes(logContent));
+        await logBlobClientLog.UploadAsync(logStream, overwrite: true);
+
+        var analysisSasToken = containerClient.GenerateSasUri(BlobContainerSasPermissions.Read, DateTimeOffset.UtcNow.AddHours(1)).Query;
+        var analysisFileUrl = $"{containerClient.Uri.AbsoluteUri}/{folderName}/{analysisFileName}.htm?{analysisSasToken}";
+        var logFileUrl = $"{containerClient.Uri.AbsoluteUri}/{folderName}/{logFileName}.log?{analysisSasToken}";
 
         var analysis = new Analysis()
         {
             Title = title,
             Description = "",
             Details = ret,
-            Url = fileUrl
+            Url = analysisFileUrl,
+            LogUrl = logFileUrl,
         };
 
         activity?.SetOutput(analysis);

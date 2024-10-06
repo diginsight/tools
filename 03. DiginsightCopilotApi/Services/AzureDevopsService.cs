@@ -10,6 +10,7 @@ using Microsoft.TeamFoundation.DistributedTask.WebApi;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
 using Microsoft.VisualStudio.Services.Common;
+using Microsoft.VisualStudio.Services.Common.CommandLine;
 using Microsoft.VisualStudio.Services.WebApi;
 using Newtonsoft.Json;
 using System.Net.Http.Headers;
@@ -76,7 +77,7 @@ public class AzureDevopsService : IAzureDevopsService
     }
 
 
-    public async Task<IEnumerable<WorkItem>> GetWorkItemsByBuildIdAsync(int buildId)
+    public async Task<IEnumerable<WorkItem>> GetWorkItemsByBuildIdAsync(int buildId, string project)
     {
         using var activity = Observability.ActivitySource.StartMethodActivity(logger, new { buildId });
 
@@ -84,6 +85,8 @@ public class AzureDevopsService : IAzureDevopsService
 
         try
         {
+            var devopsUri = new Uri("https://dev.azure.com/" + this.config.OrgName);
+            var credentials = new VssBasicCredential(string.Empty, this.config.PAT);
             var connection = new VssConnection(this.devopsUri, credentials);
 
             var buildClient = connection.GetClient<BuildHttpClient>();
@@ -91,8 +94,9 @@ public class AzureDevopsService : IAzureDevopsService
 
             var p = connection.GetClient<PipelinesHttpClient>();
 
-            var buildByID = await buildClient.GetBuildAsync(project: this.config.Project, buildId: buildId);
-            var workItems = await buildClient.GetBuildWorkItemsRefsAsync(project: this.config.Project, buildId: buildId);
+            var projectName = project ?? this.config.Project;
+            var buildByID = await buildClient.GetBuildAsync(project: projectName, buildId: buildId);
+            var workItems = await buildClient.GetBuildWorkItemsRefsAsync(project: projectName, buildId: buildId);
             var workItemIds = workItems.Select(wi => int.Parse(wi.Id));
             if (workItemIds.Count() > 0)
             {

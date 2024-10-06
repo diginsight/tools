@@ -5,6 +5,18 @@ Content-Type: application/json
 
 2024-10-01T09:57:44  Welcome, you are now connected to log-streaming service. The default timeout is 2 hours. Change the timeout with the App Setting SCM_LOGSTREAM_TIMEOUT (in seconds). 
 2024-10-01T09:58:45  No new trace in the past 1 min(s).
+2024-10-01T09:59:03.234 …2CTokenValidation.LandingCallMiddleware DBUG 1bc36f8d7c340149989c00247b6cc53b              1  LandingCallMiddleware.InvokeAsync(context:DefaultHttpContext{FormOptions:FormOptions{BufferBody:False, MemoryBufferThreshold:65536, BufferBodyLengthLimit:134217728, ValueCountLimit:1024, KeyLengthLimit:2048, ValueLengthLimit:4194304, MultipartBoundaryLengthLimit:128, MultipartHeadersCountLimit:16, MultipartHeadersLengthLimit:16384, Multipar, config:DependencyInjectionExtensions+ProxyClassAwareOptionsMonitor`1{CurrentValue:AzureOptions{ClientId:□, ClientSecret:□, Instance:□, Domain:□, TenantId:□, SDK_ApiScope:□, GrantTypeJWT:□, RequestedTokenUse:□, CylonTreeUrl:□, CylonQueryUrl:□, SubscriptionKey:□, CylonTenentId:□, CylonClientId:□, CylonClient) START
+2024-10-01T09:59:03.234 …2CTokenValidation.LandingCallMiddleware DBUG 1bc36f8d7c340149989c00247b6cc53b              1   Request: PUT https://electrificationapi-aps-test-01.azurewebsites.net/api/plant/77903d8a-ba6e-4510-b1bb-d96f415f2120/panel/65c04d76-5ba5-4b68-af35-9644f684f8e4/widget/3ca121b1-f2f8-4710-b662-700089e599b8?plantType=EL
+2024-10-01T09:59:03.234 …2CTokenValidation.LandingCallMiddleware DBUG 1bc36f8d7c340149989c00247b6cc53b    6m        1   Assembly Metadata: AzurePipelines/Build.BuildNumber=IntegrationFeatures_24280.2
+2024-10-01T09:59:03.234 …2CTokenValidation.LandingCallMiddleware DBUG 1bc36f8d7c340149989c00247b6cc53b   10m        1   Assembly Metadata: AzurePipelines/Build.BuildUri=vstfs:///Build/Build/237641
+2024-10-01T09:59:03.234 …2CTokenValidation.LandingCallMiddleware DBUG 1bc36f8d7c340149989c00247b6cc53b    5m        1   Assembly Metadata: AzurePipelines/Build.DefinitionName=NH-CommonBackendApi
+2024-10-01T09:59:03.234 …2CTokenValidation.LandingCallMiddleware DBUG 1bc36f8d7c340149989c00247b6cc53b    6m        1   Assembly Metadata: AzurePipelines/Build.Repository.Name=ABB-EL-Common-Backend
+2024-10-01T09:59:03.234 …2CTokenValidation.LandingCallMiddleware DBUG 1bc36f8d7c340149989c00247b6cc53b   13m        1   Assembly Metadata: AzurePipelines/Build.Repository.Uri=https://abbsace.visualstudio.com/ABB_Portfolio/_git/ABB-EL-Common-Backend
+2024-10-01T09:59:03.234 …2CTokenValidation.LandingCallMiddleware DBUG 1bc36f8d7c340149989c00247b6cc53b    3m        1   Assembly Metadata: AzurePipelines/Build.SourceBranch=refs/heads/IntegrationFeatures
+2024-10-01T09:59:03.234 …2CTokenValidation.LandingCallMiddleware DBUG 1bc36f8d7c340149989c00247b6cc53b    5m        1   Assembly Metadata: AzurePipelines/Build.SourceVersion=427da30f3b566afca357dfa2fd65325fd4e065d8
+2024-10-01T09:59:03.234 …2CTokenValidation.LandingCallMiddleware DBUG 1bc36f8d7c340149989c00247b6cc53b    5m        1   Assembly Metadata: AzurePipelines/System.CollectionUri=https://abbsace.visualstudio.com/
+2024-10-01T09:59:03.234 …2CTokenValidation.LandingCallMiddleware DBUG 1bc36f8d7c340149989c00247b6cc53b    7m        1   Assembly Metadata: AzurePipelines/System.DefinitionId=2426
+2024-10-01T09:59:03.234 …2CTokenValidation.LandingCallMiddleware DBUG 1bc36f8d7c340149989c00247b6cc53b    3m        1   Assembly Metadata: AzurePipelines/System.TeamProject=ABB_Portfolio
 2024-10-01T09:59:03.234 …vices.PlantWidget.PlantWidgetController DBUG 6d3d8d1e5120fff3f2b12bb7eb5497db              2    PlantWidgetController.Get(plantId:"3ada3be0-5014-4e10-bdf6-e6889f043dc7", widgetId:$6c50ffd9-fc4d-4bfa-990e-86bea2300e3d$, isOptions:True, plantType:"EDCS", isPageEnabled:True, page:1, pageSize:13) START
 2024-10-01T09:59:03.271 …n.Api.Adapters.PermissionServiceAdapter DBUG 6d3d8d1e5120fff3f2b12bb7eb5497db   37m        3      PermissionServiceAdapter.GetServiceSubscriptionLicenseResponse(plantId:"3ada3be0-5014-4e10-bdf6-e6889f043dc7", plantType:"EDCS") START
 2024-10-01T09:59:03.314 …n.Api.Adapters.PermissionServiceAdapter DBUG 6d3d8d1e5120fff3f2b12bb7eb5497db         43m  3      PermissionServiceAdapter.GetServiceSubscriptionLicenseResponse => ServiceSubscriptionLicenseResponse{Description:"Start Matching Energy Manager", Start:$2022-04-05T00:00:00.0000000+00:00$, End:$2099-12-31T00:00:00.0000000+00:00$, Length:$28394:0:00:00$, Status:Active, MarketplaceUrl:"", ProductServiceId:"P301-SME.SS.P", IsActive:True, IsWarning:False, IsInactive:F END
@@ -58,7 +70,7 @@ System.NullReferenceException: Object reference not set to an instance of an obj
    at ABB.EL.Common.Api.Adapters.PlantWidgetServiceAdapter.Get(String plantId, Guid widgetId, String plantType, String emailId, Boolean isOptions, ContextBase context) in D:\a\1\s\ABB.EL.Common.Api\Adapters\PlantWidgetServiceAdapter.cs:line 75
 2024-10-01T09:59:04.431 ….Api.Adapters.PlantWidgetServiceAdapter DBUG 6d3d8d1e5120fff3f2b12bb7eb5497db   12m 1095m  3      PlantWidgetServiceAdapter.Get ‼ END
 2024-10-01T09:59:04.442 …vices.PlantWidget.PlantWidgetController DBUG 6d3d8d1e5120fff3f2b12bb7eb5497db       1225m  2    PlantWidgetController
-
+2024-10-01T09:59:04.443 …2CTokenValidation.LandingCallMiddleware DBUG 1bc36f8d7c340149989c00247b6cc53b   10m  601m  1  LandingCallMiddleware.InvokeAsync
 
 
 
