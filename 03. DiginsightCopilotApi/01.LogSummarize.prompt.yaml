@@ -6,8 +6,8 @@
     - The email must always initialize with a title with one line short description of the problem (eg. ISSUE: CreateApplication method fails as application already exists) where:
       The title prefix should be ISSUE, WARNING or SUCCESS according to the type of flow.
       The title content should contain a one row description of the problem.
-      In case of exceptions, if available, the title should include '<Controller Class>.<Method> fails with' and it should include the exception short type name.
-      In case 'WidgetTemplate' and the WidgetTemplate Name can be inferred from the log, the email title should include 'for <WidgetTemplate Name> widget'.
+      In case of exceptions, if available, the title should include '<Controller Class short name>.<Method> fails with' and it should include the exception short type name.
+      In case the log includes <WidgetTemplate> and the <WidgetTemplate Name> => the email title should include 'for widget <WidgetTemplate Name>'.
       The title should be included into an <title> tag to make it visible in the email client title bar.
 
     - After the title the analysis should start with a subtitle 'Diginsight Analysis:'.
@@ -22,23 +22,13 @@
               <td class="param-name">User:</td><td class="param-value" colspan="3">'{{UserDisplayName}} ({{UserEmail}})'</td>
           </tr>
           <tr>
-              <td class="param-name">Build:</td><td class="param-value">'{{devopsConfig.BuildNumber}}'</td>
-              <td class="param-name">ID:</td><td class="param-value">'{{devopsConfig.BuildID}}'</td>
-          </tr>
-          <tr>
               <td class="param-name">Environment:</td><td class="param-value">'{{devopsConfig.Environment}}'</td>
-              <td class="param-name">Site:</td><td class="param-value">'{{devopsConfig.SiteName}}'</td>
-          </tr>
-          <tr>
-              <td class="param-name">Repository:</td><td class="param-value">'{{devopsConfig.Repository}}'</td>
-              <td class="param-name">Branch:</td><td class="param-value">'{{devopsConfig.Branch}}'</td>
-          </tr>
-          <tr>
-              <td class="param-name">Project:</td><td class="param-value" colspan="3">'https://dev.azure.com/{{devopsConfig.OrgName}}/{{devopsConfig.Project}}'</td>
+              <td class="param-name">Site:</td><td class="param-value">'{{httpConfig.RefererHost}}'</td>
           </tr>
       </table>
       fields should be left aligned and field values should be Bold.
-      Placeholders for UserDisplayName and UserEmail should be inferred from the log content
+      Placeholders for UserDisplayName and UserEmail should be inferred from the log content.
+      In case User is not available into the log, UserDisplayName should be 'Not available' and UserEmail should be empty.
     
     - A following paragrapg with title 'application flow resources' should report all databases or external services accessed by the application.
       the table rows may include Database information, Http external service information or Service Bus information as shown below:
@@ -46,6 +36,7 @@
       Http external service: '{{HttpBaseUrl}}'
       Service Bus: '{{ServiceBusBaseUrl}}'
       fields should be left aligned and field values should be Bold.
+      Please, consider that the 'Incoming Request:' is not an external resource and should not be included into this table.
 
     - The Title must be in bold.
     - in case of exceptions or errors, use dark red (#C00000) as the title background.
@@ -143,10 +134,33 @@
       
 - Type: UserChatMessage
   Value: |
-    After the summay an 'Additional details' section should describe the application flow main steps.
+    After the summay an 'Additional details' section should describe the application flow main steps, starting from the Controller method.
     for every step, details about the method executed, with input and returned data should be provided.
     if the method executes queries to a database, the query should be reported and explained with the following details:
     - a short description of what the query does 
     - the query text
     - the query result
+
+- Type: UserChatMessage
+  Value: |
+    After the 'Additional details' a 'Reference' section should include the following data.
+    <table>
+        <tr>
+            <td class="param-name">Date:</td><td class="param-value" colspan="3">'{{nowOffsetUtc}}'</td>
+        </tr>
+        <tr>
+            <td class="param-name">User:</td><td class="param-value" colspan="3">'{{UserDisplayName}} ({{UserEmail}})'</td>
+        </tr>
+        <tr>
+            <td class="param-name">Build:</td><td class="param-value">'{{devopsConfig.BuildNumber}}'</td>
+            <td class="param-name">ID:</td><td class="param-value">'{{devopsConfig.BuildID}}'</td>
+        </tr>
+        <tr>
+            <td class="param-name">Repository:</td><td class="param-value">'{{devopsConfig.Repository}}'</td>
+            <td class="param-name">Branch:</td><td class="param-value">'{{devopsConfig.Branch}}'</td>
+        </tr>
+        <tr>
+            <td class="param-name">Project:</td><td class="param-value" colspan="3">'https://dev.azure.com/{{devopsConfig.OrgName}}/{{devopsConfig.Project}}'</td>
+        </tr>
+    </table>
       

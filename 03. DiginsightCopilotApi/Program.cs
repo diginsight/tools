@@ -40,6 +40,8 @@ public class Program
         builder.Services.AddEndpointsApiExplorer(); logger.LogDebug($"builder.Services.AddEndpointsApiExplorer();");
         builder.Services.AddSwaggerGen(); logger.LogDebug($"builder.Services.AddSwaggerGen();");
 
+        
+        builder.Services.Configure<HttpContextConfig>(builder.Configuration.GetSection("HttpContext"));
         builder.Services.Configure<AzureDevopsConfig>(builder.Configuration.GetSection("Devops"));
         builder.Services.Configure<BlobStorageConfig>(builder.Configuration.GetSection("BlobStorage"));
         builder.Services.Configure<PromptConfig>(builder.Configuration.GetSection("Prompt"));

@@ -2,9 +2,11 @@ using Diginsight.Diagnostics;
 using DiginsightCopilotApi.Abstractions;
 using DiginsightCopilotApi.Configuration;
 using DiginsightCopilotApi.Models;
+using Microsoft.AspNetCore.Components.RenderTree;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using Microsoft.TeamFoundation.Build.WebApi;
+using MimeKit;
 using System.Text.RegularExpressions;
 
 namespace DiginsightCopilotApi.Controllers
@@ -14,14 +16,17 @@ namespace DiginsightCopilotApi.Controllers
     public class AnalysisController : ControllerBase
     {
         private readonly ILogger<AnalysisController> logger;
-        private readonly IOptions<AzureDevopsConfig> options;
+        private readonly IOptions<AzureDevopsConfig> devopsOptions;
+        private readonly IOptions<HttpContextConfig> httpOptions;
+
         private readonly IAzureDevopsService azureDevopsService;
         private readonly ISummaryService openAiService;
         private readonly IEmailService emailClient;
 
         public AnalysisController(
             ILogger<AnalysisController> logger,
-            IOptions<AzureDevopsConfig> options,
+            IOptions<AzureDevopsConfig> devopsOptions,
+            IOptions<HttpContextConfig> httpOptions,
             IAzureDevopsService azureDevopsService,
             ISummaryService openAiService,
             IEmailService emailClient
@@ -30,13 +35,12 @@ namespace DiginsightCopilotApi.Controllers
             this.logger = logger;
             using var activity = Observability.ActivitySource.StartMethodActivity(logger, new { logger });
 
-            this.options = options;
+            this.devopsOptions = devopsOptions;
+            this.httpOptions = httpOptions;
             this.azureDevopsService = azureDevopsService;
             this.openAiService = openAiService;
             this.emailClient = emailClient;
         }
-
-        // ...
 
         [HttpPost("GenerateAnalysis")]
         [ActionName("GenerateAnalysis")]
@@ -47,7 +51,59 @@ namespace DiginsightCopilotApi.Controllers
             using var reader = new StreamReader(Request.Body);
             var logContent = await reader.ReadToEndAsync();
 
-            // look for a row into logContent containing Build.BuildUri=vstfs:///Build/Build/<number>
+            var incomingRequestPattern = @"Incoming Request: .* http.*";
+            var incomingRequestMatch = Regex.Match(logContent, incomingRequestPattern);
+            if (incomingRequestMatch.Success)
+            {
+                var incomingRequest = incomingRequestMatch.Value;
+                incomingRequest = incomingRequest.Substring("Incoming Request: ".Length);
+                logger.LogInformation("ComposeSummaryAsync called with incomingRequest: {incomingRequest}", incomingRequest);
+                var incomingRequestSplit = incomingRequest.Split(' ');
+                var httpMethod = incomingRequestSplit[0];
+                var httpUrl = incomingRequestSplit[1];
+                var incomingUri = new Uri(httpUrl);
+                var incomingPath = incomingUri.AbsolutePath;
+                var incomingQuery = incomingUri.Query;
+                var incomingHost = incomingUri.Host;
+                var incomingPort = incomingUri.Port;
+                var incomingScheme = incomingUri.Scheme;
+                var incomingAuthority = incomingUri.Authority;
+
+                this.httpOptions.Value.Method = httpMethod;
+                this.httpOptions.Value.Url = httpUrl;
+                this.httpOptions.Value.Uri = incomingUri.AbsoluteUri;
+                this.httpOptions.Value.Path = incomingPath;
+                this.httpOptions.Value.Query = incomingQuery;
+                this.httpOptions.Value.Host = incomingHost;
+                this.httpOptions.Value.Port = incomingPort.ToString();
+                this.httpOptions.Value.Scheme = incomingScheme;
+                this.httpOptions.Value.Authority = incomingAuthority;
+            }
+
+            // 2024-10-01T12:11:26.872 …ingCallMiddleware.LandingCallMiddleware DBUG 21c964baaae1c39b551134a1ee6aead7 .077m        2   Incoming Request Header: Referer - https://test.developers.connect.abb.com/
+            var incomingRequestHeaderPattern = @"Incoming Request Header: .*";
+            var incomingRequestHeaderMatch = Regex.Match(logContent, incomingRequestHeaderPattern);
+            // loop on all occurrences of 'Incoming Request Header: ' and log the 'Incoming Request Header' value
+            if (incomingRequestHeaderMatch != null)
+            {
+                foreach (Match mtch in Regex.Matches(logContent, incomingRequestHeaderPattern))
+                {
+                    var incomingRequestHeader = mtch.Value;
+                    incomingRequestHeader = incomingRequestHeader.Substring("Incoming Request Header: ".Length);
+                    logger.LogDebug("incomingRequestHeader: {incomingRequestHeader}", incomingRequestHeader);
+
+                    var incomingRequestHeaderSplit = incomingRequestHeader.Split('-');
+                    var headerName = incomingRequestHeaderSplit[0]?.Trim() ?? "";
+                    if (! headerName.Equals("Referer", StringComparison.OrdinalIgnoreCase)) continue;
+
+                    var headerValue = incomingRequestHeaderSplit[1]?.Trim();
+                    var referer = headerValue;
+                    var refererUri = new Uri(referer);
+                    this.httpOptions.Value.Referer = referer;
+                    this.httpOptions.Value.RefererHost = refererUri.Host;
+                }
+            }
+
             var buildId = 0; var devopsProject = string.Empty; var devopsRepository = string.Empty;
             var buildUriPattern = @"Metadata: .*Build\.BuildUri=vstfs:///Build/Build/(\d+)";
             var match = Regex.Match(logContent, buildUriPattern);
@@ -57,8 +113,6 @@ namespace DiginsightCopilotApi.Controllers
                 logger.LogInformation("ComposeSummaryAsync called with buildId: {buildId}", buildId);
             }
 
-            // look for a row into logContent containing Metadata: <anychar>/System.TeamProject=<project>
-            // get the teamproject name
             var projectPattern = @"Metadata: .*System\.TeamProject=(\w+)";
             match = Regex.Match(logContent, projectPattern);
             if (match.Success)
@@ -66,6 +120,7 @@ namespace DiginsightCopilotApi.Controllers
                 devopsProject = match.Groups[1].Value;
                 logger.LogInformation("ComposeSummaryAsync called with project: {devopsProject}", devopsProject);
             }
+
             var projectRepositoryPattern = @"Metadata: .*Build\.Repository\.Name=(\w+)";
             match = Regex.Match(logContent, projectRepositoryPattern);
             if (match.Success)
@@ -110,9 +165,9 @@ namespace DiginsightCopilotApi.Controllers
 
             }
 
-            options.Value.BuildID = buildId.ToString();
-            options.Value.Project = devopsProject;
-            options.Value.Repository = devopsRepository;
+            devopsOptions.Value.BuildID = buildId.ToString();
+            devopsOptions.Value.Project = devopsProject;
+            devopsOptions.Value.Repository = devopsRepository;
 
             var analysis = await this.openAiService.GenerateSummary(logContent, buildId, workItemParams, changeParams);
 

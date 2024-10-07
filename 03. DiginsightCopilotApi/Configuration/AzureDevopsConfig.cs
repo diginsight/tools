@@ -11,7 +11,5 @@ public class AzureDevopsConfig
     public string BuildNumber { get; set; }
     public string BuildID { get; set; }
     public string SiteName { get; set; }
-
-
 }
 

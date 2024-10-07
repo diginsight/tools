@@ -23,6 +23,7 @@ public class AOAISummaryService : ISummaryService
 {
     private readonly ILogger<AOAISummaryService> logger;
     private readonly AzureDevopsConfig devopsConfig;
+    private readonly HttpContextConfig httpConfig;
     private AzureOpenAiConfig openAiConfig;
     private BlobStorageConfig blobStorageConfig;
     private PromptConfig promptConfig;
@@ -33,6 +34,7 @@ public class AOAISummaryService : ISummaryService
         ILogger<AOAISummaryService> logger,
         IOptions<AzureOpenAiConfig> openAiOptions,
         IOptions<AzureDevopsConfig> devopsOptions,
+        IOptions<HttpContextConfig> httpOptions,
         IOptions<BlobStorageConfig> blobStorageOptions,
         IOptions<PromptConfig> promptConfig
         )
@@ -47,6 +49,7 @@ public class AOAISummaryService : ISummaryService
         this.azureOpenAiClient = new AzureOpenAIClient(new Uri(openAiConfig.Endpoint), new ApiKeyCredential(openAiOptions.Value.ApiKey));
 
         this.devopsConfig = devopsOptions.Value;
+        this.httpConfig = httpOptions.Value;
     }
 
     public async Task<Analysis> GenerateSummary(string logContent, int buildId, IEnumerable<WorkItemParam> workItems, IEnumerable<ChangeParam> changes)
@@ -72,7 +75,7 @@ public class AOAISummaryService : ISummaryService
         foreach (var messageObject in yamlObject)
         {
             var message = messageObject as IDictionary<object, object>;
-            message["Value"] = PromptReplacePlaceholders(message["Value"] as string, new { nowOffsetUtc, devopsConfig, logContent, workItems, changes, buildId }); 
+            message["Value"] = PromptReplacePlaceholders(message["Value"] as string, new { nowOffsetUtc, devopsConfig, httpConfig, logContent, workItems, changes, buildId }); 
             if (message["Type"].Equals("SystemChatMessage")) { chatMessages.Add(new SystemChatMessage(message["Value"] as string)); }
             else if (message["Type"].Equals("UserChatMessage")) { chatMessages.Add(new UserChatMessage(message["Value"] as string)); }
         }
