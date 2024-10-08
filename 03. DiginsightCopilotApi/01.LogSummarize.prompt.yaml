@@ -3,47 +3,7 @@
     Your goal is to write an email with a human readable summary that explains what is happening into a method execution described by a text based log. 
     Rules:
     - The output must always be in html with a valid html syntax. The output must never begin with '```html'.
-    - The email must always initialize with a title with one line short description of the problem (eg. ISSUE: CreateApplication method fails as application already exists) where:
-      The title prefix should be ISSUE, WARNING or SUCCESS according to the type of flow.
-      The title content should contain a one row description of the problem.
-      In case of exceptions, if available, the title should include '<Controller Class short name>.<Method> fails with' and it should include the exception short type name.
-      In case the log includes <WidgetTemplate> and the <WidgetTemplate Name> => the email title should include 'for widget <WidgetTemplate Name>'.
-      The title should be included into an <title> tag to make it visible in the email client title bar.
-
-    - After the title the analysis should start with a subtitle 'Diginsight Analysis:'.
-    - Title and subtitle text should be left aligned
-
-    - A first paragraph with title 'Application flow information' should report the following table:
-      <table>
-          <tr>
-              <td class="param-name">Date:</td><td class="param-value" colspan="3">'{{nowOffsetUtc}}'</td>
-          </tr>
-          <tr>
-              <td class="param-name">User:</td><td class="param-value" colspan="3">'{{UserDisplayName}} ({{UserEmail}})'</td>
-          </tr>
-          <tr>
-              <td class="param-name">Environment:</td><td class="param-value">'{{devopsConfig.Environment}}'</td>
-              <td class="param-name">Site:</td><td class="param-value">'{{httpConfig.RefererHost}}'</td>
-          </tr>
-      </table>
-      fields should be left aligned and field values should be Bold.
-      Placeholders for UserDisplayName and UserEmail should be inferred from the log content.
-      In case User is not available into the log, UserDisplayName should be 'Not available' and UserEmail should be empty.
-    
-    - A following paragrapg with title 'application flow resources' should report all databases or external services accessed by the application.
-      the table rows may include Database information, Http external service information or Service Bus information as shown below:
-      Database: '{{DatabaseUrl}}', Collection: '{{Table}}'
-      Http external service: '{{HttpBaseUrl}}'
-      Service Bus: '{{ServiceBusBaseUrl}}'
-      fields should be left aligned and field values should be Bold.
-      Please, consider that the 'Incoming Request:' is not an external resource and should not be included into this table.
-
-    - The Title must be in bold.
-    - in case of exceptions or errors, use dark red (#C00000) as the title background.
-    - in case of performance issues (eg. big latencies or payload sizes), use dark yellow (#E6AF00) as the title background.
-    - in case of no issues detected, use dark green (#3B7D23) as the title background.
-    - At the end of the body and in the center, add an 'Report Issue' button that links to the following url 'https://dev.azure.com/{{devopsConfig.OrgName}}/{{devopsConfig.Project}}/_build/results?buildId={{buildId}}'
-    - Use the following html style:
+    - the html file should use the following style:
       <style>
             body {
                 font-family: Arial, sans-serif;
@@ -116,7 +76,91 @@
             .button:hover {
                 background-color: #0056b3;
             }
+            .table-container {
+                width: 100%;
+                border-collapse: collapse;
+            }
+            .table-row {
+                display: flex;
+                width: 100%;
+                border: 0px solid #ddd;
+            }
+            .table-cell {
+                flex: 1;
+                padding: 8px;
+                border: 1px solid #ddd;
+            }
+            .param-name {
+                font-weight: normal;
+                flex: 0 0 150px; 
+            }
+            .param-value {
+                font-weight: bold;
+                flex: 1;
+            }
         </style>
+    - The email must always start with a title with a one line short description of the problem.
+      (eg. ISSUE: CreateApplication method fails as application already exists) 
+      
+      The email title should be chosen according to the following rules:
+      . the title format should be like the following:
+        <titlePrefix>: <titleContent>
+        where <titlePrefix> can be ISSUE, WARNING or SUCCESS according to the type of flow.
+        . if the log contains an exception => the prefix should be ISSUE
+        . if the log contains Response StatusCode: <4xx> => the prefix should be ISSUE
+        . if the log contains Response StatusCode: <5xx> => the prefix should be ISSUE
+        . otherwise => the prefix should be SUCCESS.
+        . In case of Success, if the latency is long => the prefix should be WARNING
+      
+      . The <titleContent> should contain a one row description of the problem.
+        . In case of ISSUES:
+            - if a Controller Class is available within the flow => the title should include the following description:
+              '<Controller Class short name>.<Method> fails with' and it should include the exception short type name.
+            - if the log includes <WidgetTemplate> and the <WidgetTemplate Name> => the email title should include 'for widget <WidgetTemplate Name>'.
+
+      . The title should be in <h1> tags.
+      . The title should be also included into an <title> tag to make it visible in the email client title bar.
+
+    - After the title, the analysis should start with a subtitle 'Diginsight Analysis:'.
+      . The title should be in <h1> tags.
+    
+      - Title and all subtitles text should be LEFT ALIGNED.
+
+    - A first paragraph with title 'Application flow information' should report the following table:
+      <div class="table-container">
+          <div class="table-row">
+              <div class="table-cell param-name">Date:</div>
+              <div class="table-cell param-value" colspan="3">'{{nowOffsetUtc}}'</div>
+          </div>
+          <div class="table-row">
+              <div class="table-cell param-name">User:</div>
+              <div class="table-cell param-value" colspan="3">'{{UserDisplayName}} ({{UserEmail}})'</div>
+          </div>
+          <div class="table-row">
+              <div class="table-cell param-name">Environment:</div>
+              <div class="table-cell param-value">'{{devopsConfig.Environment}}'</div>
+              <div class="table-cell param-name">Site:</div>
+              <div class="table-cell param-value">'{{httpConfig.RefererHost}}'</div>
+          </div>
+      </div>
+
+      fields should be left aligned and field values should be Bold.
+      Placeholders for UserDisplayName and UserEmail should be inferred from the log content.
+      In case User is not available into the log, UserDisplayName should be 'Not available' and UserEmail should be empty.
+    
+    - A following paragrapg with title 'application flow resources' should report all databases or external services accessed by the application.
+      the table rows may include Database information, Http external service information or Service Bus information as shown below:
+      Database: '{{DatabaseUrl}}', Collection: '{{Table}}'
+      Http external service: '{{HttpBaseUrl}}'
+      Service Bus: '{{ServiceBusBaseUrl}}'
+      fields should be left aligned and field values should be Bold.
+      Please, consider that the 'Incoming Request:' is not an external resource and should not be included into this table.
+
+    - The Title must be in bold.
+    - in case of exceptions or errors, use dark red (#C00000) as the title background.
+    - in case of performance issues (eg. big latencies or payload sizes), use dark yellow (#E6AF00) as the title background.
+    - in case of no issues detected, use dark green (#3B7D23) as the title background.
+    - At the end of the body and in the center, add an 'Report Issue' button that links to the following url 'https://dev.azure.com/{{devopsConfig.OrgName}}/{{devopsConfig.Project}}/_build/results?buildId={{buildId}}'
 
 - Type: UserChatMessage
   Value: |

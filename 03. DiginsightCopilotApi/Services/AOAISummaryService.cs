@@ -71,11 +71,16 @@ public class AOAISummaryService : ISummaryService
                            .Build();
         var yamlObject = deserializer.Deserialize(new StringReader(promptYamlTemplate)) as IList<object>;
 
+        var blobServiceClient = new BlobServiceClient(blobStorageConfig.BlobStorageConnectionString);
+        var containerClient = blobServiceClient.GetBlobContainerClient("analysis");
+        var analysisSasToken = containerClient.GenerateSasUri(BlobContainerSasPermissions.Read, DateTimeOffset.UtcNow.AddHours(1)).Query;
+        logger.LogDebug("analysisSasToken: {analysisSasToken}", analysisSasToken);
+
         List<ChatMessage> chatMessages = new();
         foreach (var messageObject in yamlObject)
         {
             var message = messageObject as IDictionary<object, object>;
-            message["Value"] = PromptReplacePlaceholders(message["Value"] as string, new { nowOffsetUtc, devopsConfig, httpConfig, logContent, workItems, changes, buildId }); 
+            message["Value"] = PromptReplacePlaceholders(message["Value"] as string, new { nowOffsetUtc, devopsConfig, httpConfig, logContent, workItems, changes, buildId, analysisSasToken }); 
             if (message["Type"].Equals("SystemChatMessage")) { chatMessages.Add(new SystemChatMessage(message["Value"] as string)); }
             else if (message["Type"].Equals("UserChatMessage")) { chatMessages.Add(new UserChatMessage(message["Value"] as string)); }
         }
@@ -97,7 +102,6 @@ public class AOAISummaryService : ISummaryService
         }
 
         logger.LogDebug($"before client.CompleteChatAsync({chatMessages});");
-
         var response = await client.CompleteChatAsync(chatMessages);
         logger.LogDebug($"{response} = await client.CompleteChatAsync({chatMessages});");
         var ret = response.Value.Content?.FirstOrDefault()?.Text ?? "";
@@ -107,9 +111,6 @@ public class AOAISummaryService : ISummaryService
         var titleNode = doc.DocumentNode.SelectSingleNode("//title");
         var title = titleNode.InnerText.Trim();
 
-        var blobServiceClient = new BlobServiceClient(blobStorageConfig.BlobStorageConnectionString);
-        var containerClient = blobServiceClient.GetBlobContainerClient("analysis");
-        
         string folderName = $"{DateTime.UtcNow:yyyyMMdd HHmm} - {title}";
 
         string analysisFileName = $"{folderName}";
@@ -122,9 +123,9 @@ public class AOAISummaryService : ISummaryService
         using var logStream = new MemoryStream(Encoding.UTF8.GetBytes(logContent));
         await logBlobClientLog.UploadAsync(logStream, overwrite: true);
 
-        var analysisSasToken = containerClient.GenerateSasUri(BlobContainerSasPermissions.Read, DateTimeOffset.UtcNow.AddHours(1)).Query;
-        var analysisFileUrl = $"{containerClient.Uri.AbsoluteUri}/{folderName}/{analysisFileName}.htm?{analysisSasToken}";
-        var logFileUrl = $"{containerClient.Uri.AbsoluteUri}/{folderName}/{logFileName}.log?{analysisSasToken}";
+
+        var analysisFileUrl = $"{containerClient.Uri.AbsoluteUri}/{folderName}/{analysisFileName}.htm{analysisSasToken}";
+        var logFileUrl = $"{containerClient.Uri.AbsoluteUri}/{folderName}/{logFileName}.log{analysisSasToken}";
 
         var analysis = new Analysis()
         {
