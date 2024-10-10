@@ -3,6 +3,17 @@
     Your goal is to write an email with a human readable summary that explains what is happening into a method execution described by a text based log. 
     Rules:
     - The output must always be in html with a valid html syntax. The output must never begin with '```html'.
+    - the html file should use the following script:
+      <script>
+          function copyToClipboard() {
+              const curlCommand = document.getElementById('curlCommand').innerText;
+              navigator.clipboard.writeText(curlCommand).then(() => {
+                  alert('CURL command copied to clipboard!');
+              }, (err) => {
+                  console.error('Could not copy text: ', err);
+              });
+          }
+      </script>
     - the html file should use the following style:
       <style>
             body {
@@ -90,15 +101,43 @@
                 padding: 8px;
                 border: 1px solid #ddd;
             }
+            .table-cell-noborder {
+                flex: 1;
+                padding: 8px;
+                border: 0px solid #ddd;
+            }
             .param-name {
                 font-weight: normal;
                 flex: 0 0 150px; 
+            }
+            .param-name-flex {
+                font-weight: normal;
+                flex: 1; 
             }
             .param-value {
                 font-weight: bold;
                 flex: 1;
             }
+            .code-container {
+                width: 100%; /* Adjust width as needed */
+                max-height: 300px; /* Set a max height for vertical scrolling */
+                overflow: auto; /* Enable scrolling */
+                font-family: monospace; /* Fixed-size font */
+                white-space: pre-wrap; /* Preserve whitespace and allow wrapping */
+                border: 1px solid #ccc; /* Optional border */
+                padding: 10px; /* Optional padding */
+                background-color: #f9f9f9; /* Optional background color */
+                position: relative; /* Position relative for absolute positioning of button */
+            }
+            .copy-button {
+                position: absolute; /* Position absolute to place it in the container */
+                bottom: 10px; /* Distance from the bottom */
+                right: 10px; /* Distance from the right */
+                padding: 5px 10px; /* Button padding */
+                cursor: pointer; /* Pointer cursor on hover */
+            }
         </style>
+
     - The email must always start with a title with a one line short description of the problem.
       (eg. ISSUE: CreateApplication method fails as application already exists) 
       
@@ -124,39 +163,88 @@
     - After the title, the analysis should start with a subtitle 'Diginsight Analysis:'.
       . The title should be in <h1> tags.
     
-      - Title and all subtitles text should be LEFT ALIGNED.
+    - Title and all subtitles text should be LEFT ALIGNED.
 
-    - A first paragraph with title 'Application flow information' should report the following table:
-      <div class="table-container">
-          <div class="table-row">
-              <div class="table-cell param-name">Date:</div>
-              <div class="table-cell param-value" colspan="3">'{{nowOffsetUtc}}'</div>
-          </div>
-          <div class="table-row">
-              <div class="table-cell param-name">User:</div>
-              <div class="table-cell param-value" colspan="3">'{{UserDisplayName}} ({{UserEmail}})'</div>
-          </div>
-          <div class="table-row">
-              <div class="table-cell param-name">Environment:</div>
-              <div class="table-cell param-value">'{{devopsConfig.Environment}}'</div>
-              <div class="table-cell param-name">Site:</div>
-              <div class="table-cell param-value">'{{httpConfig.RefererHost}}'</div>
-          </div>
-      </div>
+    - A first section with title 'Application flow information' should report the following table:
+      . the section title should be with <h3> tags.
+      . the section content should include the following table:
+        <div class="table-container">
+            <div class="table-row">
+                <div class="table-cell param-name">Date:</div>
+                <div class="table-cell param-value" colspan="3">'{{nowOffsetUtc}}'</div>
+            </div>
+            <div class="table-row">
+                <div class="table-cell param-name">User:</div>
+                <div class="table-cell param-value" colspan="3">'{{UserDisplayName}} ({{UserEmail}})'</div>
+            </div>
+            <div class="table-row">
+                <div class="table-cell param-name">Environment:</div>
+                <div class="table-cell param-value">'{{devopsConfig.Environment}}'</div>
+                <div class="table-cell param-name">Site:</div>
+                <div class="table-cell param-value">'{{httpConfig.RefererHost}}'</div>
+            </div>
+            <div class="table-row">
+                <div class="table-cell param-name">Appinsight:</div>
+                <div class="table-cell param-value" colspan="3"><a href="https://portal.azure.com/#@ABB.onmicrosoft.com/resource/subscriptions/f4245a45-778d-4b27-93ff-93f81db7f243/resourceGroups/ELCP-Backend-test-rg/providers/microsoft.insights/components/electrificationapi-aps-test-01/searchV1" >71c9636c6e2d8a4ebe2ffbf69b3c642a</a></div>
+            </div>
+            <div class="table-row">
+                <div class="table-cell param-name">Log stream:</div>
+                <div class="table-cell param-value" colspan="3"><a href="https://portal.azure.com/#@ABB.onmicrosoft.com/resource/subscriptions/f4245a45-778d-4b27-93ff-93f81db7f243/resourceGroups/ELCP-Backend-test-rg/providers/microsoft.insights/components/electrificationapi-aps-test-01/searchV1" >20241010 1957 - LogStream.log</a></div>
+            </div>
+        </div>
+      
+        Placeholders for UserDisplayName and UserEmail should be inferred from the log content.
+        In case User is not available into the log, UserDisplayName should be 'Not available' and UserEmail should be empty.
 
-      fields should be left aligned and field values should be Bold.
-      Placeholders for UserDisplayName and UserEmail should be inferred from the log content.
-      In case User is not available into the log, UserDisplayName should be 'Not available' and UserEmail should be empty.
+        After the table a further <div> structure should report the CURL to reproduce the call as shown below:
+        <div class="table-container">
+            <div class="table-row">
+                <div class="table-cell-noborder param-name-flex">CURL to reproduce the call:</div>
+            </div>
+            <div class="table-row">
+                <div class="code-container" id="curlCommand" >
+                    {{CURL}}
+                </div>
+            </div>
+            <button class="copy-button" onclick="copyToClipboard()">Copy</button>
+        </div>
+
+        # After the CURL table a further <div> structure link to Appinsight flow:
+        # <div class="table-container">
+        #     <div class="table-row">
+        #         <div class="code-container" id="curlCommand" >
+        #             
+        #         </div>
+        #     </div>
+        #     <button class="copy-button" onclick="copyToClipboard()">Copy</button>
+        # </div>
+
+     - In case an <exception> with its <stacktrace> are available into the log,
+        a CODE section should be included to document including both <exception> and the <stacktrace> as shown below.
+        <div class="table-container">
+            <div class="table-row">
+                <div class="table-cell-noborder param-name-flex">CURL to reproduce the call:</div>
+            </div>
+            <div class="table-row">
+                <div class="code-container" id="curlCommand" >
+                    {{Exception}}
+                </div>
+            </div>
+            <button class="copy-button" onclick="copyToClipboard()">Copy</button>
+        </div>
+        . the exception message and stacktrace rows should be trimmed to avoid leading blanks within the CODE section
+        . the exception message should be reported in dark red 
+
     
-    - A following paragrapg with title 'application flow resources' should report all databases or external services accessed by the application.
+    - A following section with title 'application flow resources' should report all databases or external services accessed by the application.
       the table rows may include Database information, Http external service information or Service Bus information as shown below:
       Database: '{{DatabaseUrl}}', Collection: '{{Table}}'
       Http external service: '{{HttpBaseUrl}}'
       Service Bus: '{{ServiceBusBaseUrl}}'
       fields should be left aligned and field values should be Bold.
-      Please, consider that the 'Incoming Request:' is not an external resource and should not be included into this table.
+      Please, consider that the '{{httpConfig.Scheme}}://{{httpConfig.Host}}' is not an external resource and should not be included into this table.
+      . the section title should be with <h3> tags.
 
-    - The Title must be in bold.
     - in case of exceptions or errors, use dark red (#C00000) as the title background.
     - in case of performance issues (eg. big latencies or payload sizes), use dark yellow (#E6AF00) as the title background.
     - in case of no issues detected, use dark green (#3B7D23) as the title background.
@@ -170,41 +258,47 @@
     ###   
 - Type: UserChatMessage
   Value: |
-    - The summary should explain which method call is being executed and if it is failing.
-    - The summary should analyze most important method parameters received by the method.
-    - The parameters list should be presented in a left aligned table with parameter names with normal font and parameter values in bold.
+    - A section with title 'Summary' will explain which method call is being executed and if it is failing.
+      . the section title should be with <h3> tags.
+    - a first paragraph should explain what method is being executed and if it is failing.
+    - a list should follow with the most important parameters received by the method.
+      . for every parameter, its name, value and a short description should be provided.
+
     - In case of failure, the summary should explain a reason why the failure is happening.
-    - In case an error message is reported the error message should be shown in dark red.
+    - In case an error message is reported, the error message should be shown in dark red.
+    - In case an <exception> with its <stacktrace> are available into the log,
+      a CODE section should be included to document including both <exception> and the <stacktrace>.
+      The CODE section should be within a <div> tag with:
+      . width limited to 800px
+      . height limited to 500px
+      . very light gray background
+      . left aligned text
+      . no-wrap text 
+      . the exception message and stacktrace rows should be trimmed to avoid leading blanks within the CODE section
+      . the exception message should be reported in dark red 
+    - before the CODE section a left aligned link shoud be added to the failing code
+      the link should be in the form
+      https://dev.azure.com/{{devopsConfig.OrgName}}/{{devopsConfig.Project}}/_git/{{devopsConfig.Repository}}
       
 - Type: UserChatMessage
   Value: |
-    After the summay an 'Additional details' section should describe the application flow main steps, starting from the Controller method.
-    for every step, details about the method executed, with input and returned data should be provided.
-    if the method executes queries to a database, the query should be reported and explained with the following details:
-    - a short description of what the query does 
-    - the query text
-    - the query result
-
-- Type: UserChatMessage
-  Value: |
     After the 'Additional details' a 'Reference' section should include the following data.
-    <table>
-        <tr>
-            <td class="param-name">Date:</td><td class="param-value" colspan="3">'{{nowOffsetUtc}}'</td>
-        </tr>
-        <tr>
-            <td class="param-name">User:</td><td class="param-value" colspan="3">'{{UserDisplayName}} ({{UserEmail}})'</td>
-        </tr>
-        <tr>
-            <td class="param-name">Build:</td><td class="param-value">'{{devopsConfig.BuildNumber}}'</td>
-            <td class="param-name">ID:</td><td class="param-value">'{{devopsConfig.BuildID}}'</td>
-        </tr>
-        <tr>
-            <td class="param-name">Repository:</td><td class="param-value">'{{devopsConfig.Repository}}'</td>
-            <td class="param-name">Branch:</td><td class="param-value">'{{devopsConfig.Branch}}'</td>
-        </tr>
-        <tr>
-            <td class="param-name">Project:</td><td class="param-value" colspan="3">'https://dev.azure.com/{{devopsConfig.OrgName}}/{{devopsConfig.Project}}'</td>
-        </tr>
-    </table>
+      <div class="table-container">
+          <div class="table-row">
+              <div class="table-cell param-name">Build:</div>
+              <div class="table-cell param-value">'{{devopsConfig.BuildNumber}}'</div>
+              <div class="table-cell param-name">Build Id:</div>
+              <div class="table-cell param-value">'{{devopsConfig.BuildID}}'</div>
+          </div>
+          <div class="table-row">
+              <div class="table-cell param-name">Repository:</div>
+              <div class="table-cell param-value">'{{devopsConfig.Repository}}'</div>
+              <div class="table-cell param-name">Branch:</div>
+              <div class="table-cell param-value">'{{devopsConfig.Branch}}'</div>
+          </div>
+          <div class="table-row">
+              <div class="table-cell param-name">Project:</div>
+              <div class="table-cell param-value" colspan="3">https://dev.azure.com/{{devopsConfig.OrgName}}/{{devopsConfig.Project}}</div>
+          </div>
+      </div>
       

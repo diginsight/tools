@@ -100,7 +100,12 @@ namespace DiginsightCopilotApi.Controllers
                     var referer = headerValue;
                     var refererUri = new Uri(referer);
                     this.httpOptions.Value.Referer = referer;
-                    this.httpOptions.Value.RefererHost = refererUri.Host;
+                    var refererHost = refererUri.Host;
+                    this.httpOptions.Value.RefererHost = refererHost;
+                    if (refererHost?.StartsWith("test") ?? false) { devopsOptions.Value.Environment = "Test"; }
+                    else if (refererHost?.StartsWith("stage") ?? false) { devopsOptions.Value.Environment = "Stage"; }
+                    else { devopsOptions.Value.Environment = "Production"; }
+                    //if (referer?.StartsWith("stage") ?? false) { devopsOptions.Value.Environment = "Stage"; }
                 }
             }
 
@@ -110,7 +115,8 @@ namespace DiginsightCopilotApi.Controllers
             if (match.Success)
             {
                 buildId = int.Parse(match.Groups[1].Value);
-                logger.LogInformation("ComposeSummaryAsync called with buildId: {buildId}", buildId);
+                logger.LogInformation("buildId: {buildId}", buildId);
+                devopsOptions.Value.BuildID = buildId.ToString();
             }
 
             var projectPattern = @"Metadata: .*System\.TeamProject=(\w+)";
@@ -118,15 +124,35 @@ namespace DiginsightCopilotApi.Controllers
             if (match.Success)
             {
                 devopsProject = match.Groups[1].Value;
-                logger.LogInformation("ComposeSummaryAsync called with project: {devopsProject}", devopsProject);
+                logger.LogInformation("Project: {devopsProject}", devopsProject);
+                devopsOptions.Value.Project = devopsProject;
             }
 
-            var projectRepositoryPattern = @"Metadata: .*Build\.Repository\.Name=(\w+)";
+            var buildNumberPattern = @"Metadata: (.*?)Build\.BuildNumber=(.*)";
+            match = Regex.Match(logContent, buildNumberPattern);
+            if (match.Success)
+            {
+                var buildNumber = match.Groups[2].Value;
+                logger.LogInformation("Project: {buildNumber}", buildNumber);
+                devopsOptions.Value.BuildNumber = buildNumber;
+            }
+            //Build.SourceBranch
+            var sourceBranchPattern = @"Metadata: (.*?)Build\.SourceBranch=(.*)";
+            match = Regex.Match(logContent, sourceBranchPattern);
+            if (match.Success)
+            {
+                var sourceBranch = match.Groups[2].Value;
+                logger.LogInformation("Project: {sourceBranch}", sourceBranch);
+                devopsOptions.Value.Branch = sourceBranch;
+            }
+
+            var projectRepositoryPattern = @"Metadata: (.*?)Build\.Repository\.Name=(.*)";
             match = Regex.Match(logContent, projectRepositoryPattern);
             if (match.Success)
             {
-                devopsRepository = match.Groups[1].Value;
-                logger.LogInformation("ComposeSummaryAsync called with repository: {devopsProject}", devopsRepository);
+                devopsRepository = match.Groups[2].Value;
+                logger.LogInformation("Repository: {devopsRepository}", devopsRepository);
+                devopsOptions.Value.Repository = devopsRepository;
             }
 
             var workItemParams = new List<WorkItemParam>();
@@ -164,10 +190,6 @@ namespace DiginsightCopilotApi.Controllers
                 }
 
             }
-
-            devopsOptions.Value.BuildID = buildId.ToString();
-            devopsOptions.Value.Project = devopsProject;
-            devopsOptions.Value.Repository = devopsRepository;
 
             var analysis = await this.openAiService.GenerateSummary(logContent, buildId, workItemParams, changeParams);
 
