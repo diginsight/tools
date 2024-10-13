@@ -8,6 +8,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.TeamFoundation.Build.WebApi;
 using MimeKit;
 using System.Text.RegularExpressions;
+using static System.Net.WebRequestMethods;
 
 namespace DiginsightCopilotApi.Controllers
 {
@@ -79,6 +80,20 @@ namespace DiginsightCopilotApi.Controllers
                 this.httpOptions.Value.Authority = incomingAuthority;
             }
 
+            // AzureMonitorConnectionString: InstrumentationKey=efc770fb-0443-4268-ba9f-a7bf293a68c8;IngestionEndpoint=https://northeurope-0.in.applicationinsights.azure.com/;LiveEndpoint=https://northeurope.livediagnostics.monitor.azure.com/;ApplicationId=abf064f1-a9aa-45c6-adc7-42b2684bcb5c
+            var azureMonitorConnectionStringPattern = @"AzureMonitorConnectionString: InstrumentationKey=(.*);IngestionEndpoint=(.*)/;LiveEndpoint=(.*);ApplicationId=(.*)";
+            var azureMonitorConnectionStringMatch = Regex.Match(logContent, azureMonitorConnectionStringPattern);
+            if (azureMonitorConnectionStringMatch.Success)
+            {
+                var azureMonitorConnectionString = azureMonitorConnectionStringMatch.Value;
+                var instrumentationKey = azureMonitorConnectionStringMatch.Groups[1].Value; 
+                var ingestionEndpoint = azureMonitorConnectionStringMatch.Groups[2].Value; 
+                var liveEndpoint =  azureMonitorConnectionStringMatch.Groups[3].Value;
+                var applicationId = azureMonitorConnectionStringMatch.Groups[4].Value;
+                logger.LogDebug("instrumentationKey: {instrumentationKey}, ingestionEndpoint: {ingestionEndpoint}, liveEndpoint: {liveEndpoint}, applicationId: {applicationId}", instrumentationKey, ingestionEndpoint, liveEndpoint, applicationId);
+
+            }
+
             var httpRequestHeaders = new List<HttpRequestHeader>();
             var incomingRequestHeaderPattern = @"Incoming Request Header: (.*) - (.*)";
             var incomingRequestHeaderMatch = Regex.Match(logContent, incomingRequestHeaderPattern);
@@ -121,11 +136,12 @@ namespace DiginsightCopilotApi.Controllers
                     var metadataValue = match.Groups[2].Value?.ToString()?.Trim();
                     assemblyMetadata.Add(new AssemblyMetadata() { Name = metadataName!, Value = metadataValue! });
 
-                    if (metadataName == "Build.BuildUri") {
+                    if (metadataName == "Build.BuildUri")
+                    {
                         var buildString = metadataValue;
                         var buildStringParts = buildString?.Split('/');
                         var buildIdString = buildStringParts?.Last();
-                        buildId = !string.IsNullOrEmpty(buildIdString) ? int.Parse(buildIdString): 0;
+                        buildId = !string.IsNullOrEmpty(buildIdString) ? int.Parse(buildIdString) : 0;
                         logger.LogDebug("buildId: {buildId}", buildId);
                         devopsOptions.Value.BuildID = buildId.ToString();
                     }
