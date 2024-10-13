@@ -1,6 +1,6 @@
 ﻿namespace DiginsightCopilotApi.Configuration;
 
-public class AzureDevopsConfig
+public class AzureDevopsOptions
 {
     public string OrgName { get; set; }
     public string PAT { get; set; }

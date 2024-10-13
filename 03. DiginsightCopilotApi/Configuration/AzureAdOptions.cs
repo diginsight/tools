@@ -1,6 +1,6 @@
 ﻿namespace DiginsightCopilotApi.Configuration;
 
-public class AzureAdConfig
+public class AzureAdOptions
 {
     public string Instance { get; set; }
     public string Domain { get; set; }

@@ -13,11 +13,11 @@ namespace DiginsightCopilotApi.Services
 {
     public class SmtpMailService: IEmailService
     {
-        private readonly EmailConfig _mailConfig;
+        private readonly EmailOptions _mailConfig;
         private readonly ILogger<SmtpMailService> _log;
         private const string EMAILPATTERN = @"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$";
 
-        public SmtpMailService(IOptions<EmailConfig> options, ILogger<SmtpMailService> log)
+        public SmtpMailService(IOptions<EmailOptions> options, ILogger<SmtpMailService> log)
         {
             _mailConfig = options.Value;
             _log = log;

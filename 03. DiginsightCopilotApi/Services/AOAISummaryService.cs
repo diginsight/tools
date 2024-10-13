@@ -22,46 +22,56 @@ namespace DiginsightCopilotApi.Services;
 public class AOAISummaryService : ISummaryService
 {
     private readonly ILogger<AOAISummaryService> logger;
-    private readonly AzureDevopsConfig devopsConfig;
-    private readonly HttpContextConfig httpConfig;
-    private AzureOpenAiConfig openAiConfig;
-    private BlobStorageConfig blobStorageConfig;
-    private PromptConfig promptConfig;
+
+    private IOptions<AzureResourcesOptions> azureResourcesOptions;
+    private IOptions<AzureDevopsOptions> devopsOptions;
+    private IOptions<HttpContextOptions> httpOptions;
+    private IOptions<AzureOpenAiOptions> openAiOptions;
+    private IOptions<BlobStorageOptions> blobStorageOptions;
+    private IOptions<PromptOptions> promptOptions;
+
     private OpenAIClient openAiClient;
     private AzureOpenAIClient azureOpenAiClient;
 
+
     public AOAISummaryService(
         ILogger<AOAISummaryService> logger,
-        IOptions<AzureOpenAiConfig> openAiOptions,
-        IOptions<AzureDevopsConfig> devopsOptions,
-        IOptions<HttpContextConfig> httpOptions,
-        IOptions<BlobStorageConfig> blobStorageOptions,
-        IOptions<PromptConfig> promptConfig
+        IOptions<AzureOpenAiOptions> openAiOptions,
+        IOptions<AzureDevopsOptions> devopsOptions,
+        IOptions<HttpContextOptions> httpOptions,
+        IOptions<BlobStorageOptions> blobStorageOptions,
+        IOptions<PromptOptions> promptOptions,
+        IOptions<AzureResourcesOptions> azureResourcesOptions,
+        IOptions<PromptOptions> promptConfig
         )
     {
         this.logger = logger;
         using var activity = Observability.ActivitySource.StartMethodActivity(logger, new { openAiOptions, devopsOptions });
 
-        this.blobStorageConfig = blobStorageOptions.Value;
-        this.promptConfig = promptConfig.Value;
+        this.azureResourcesOptions = azureResourcesOptions;
+        this.devopsOptions = devopsOptions;
+        this.httpOptions = httpOptions;
+        this.openAiOptions = openAiOptions;
+        this.blobStorageOptions = blobStorageOptions;
+        this.promptOptions = promptOptions;
 
-        this.openAiConfig = openAiOptions.Value;
+        var openAiConfig = openAiOptions.Value;
         this.azureOpenAiClient = new AzureOpenAIClient(new Uri(openAiConfig.Endpoint), new ApiKeyCredential(openAiOptions.Value.ApiKey));
 
-        this.devopsConfig = devopsOptions.Value;
-        this.httpConfig = httpOptions.Value;
     }
 
     public async Task<Analysis> GenerateSummary(string logContent, int buildId, IEnumerable<WorkItemParam> workItems, IEnumerable<ChangeParam> changes, IEnumerable<AssemblyMetadata> assemblyMetadata)
     {
         using var activity = Observability.ActivitySource.StartMethodActivity(logger, new { logContent, buildId, workItems, changes });
 
+        var openAiConfig = openAiOptions.Value;
         var client = azureOpenAiClient.GetChatClient(openAiConfig.ChatModel); logger.LogDebug($"var client = azureOpenAiClient.GetChatClient({openAiConfig.ChatModel});");
 
         var nowOffset = DateTimeOffset.Now;
         var nowOffsetUtc = DateTimeOffset.UtcNow;
 
         List<PromptChatMessage>? messages = null;
+        var promptConfig = promptOptions.Value;
         var promptFolder = promptConfig.PromptFolder;
         var promptFileName = string.IsNullOrEmpty(promptFolder)? "01.LogSummarize.prompt.yaml" : $"{promptFolder}\\01.LogSummarize.prompt.yaml";
 
@@ -71,17 +81,28 @@ public class AOAISummaryService : ISummaryService
                            .Build();
         var yamlObject = deserializer.Deserialize(new StringReader(promptYamlTemplate)) as IList<object>;
 
+        var blobStorageConfig = this.blobStorageOptions.Value;
         var blobServiceClient = new BlobServiceClient(blobStorageConfig.BlobStorageConnectionString);
         var containerClient = blobServiceClient.GetBlobContainerClient("analysis");
         var analysisSasToken = containerClient.GenerateSasUri(BlobContainerSasPermissions.Read, DateTimeOffset.UtcNow.AddHours(1)).Query;
         logger.LogDebug("analysisSasToken: {analysisSasToken}", analysisSasToken);
 
+
+        string folderNamePrefix = $"{DateTime.UtcNow:yyyyMMdd HHmm} - ";
+        string logFileName = $"{folderNamePrefix}LogStream";
+        var azureResourcesConfig = this.azureResourcesOptions.Value;
+        var devopsConfig = this.azureResourcesOptions.Value;
+        var httpConfig = this.httpOptions.Value;
+        var traceId = "666d0447c75de5e945abd60b949a8e2f";
+
+
+        // Title FileName SASToken FileName
         List<ChatMessage> chatMessages = new();
         foreach (var messageObject in yamlObject)
         {
             var message = messageObject as IDictionary<object, object>;
             var requestHeaders = httpConfig.Headers;
-            message["Value"] = PromptReplacePlaceholders(message["Value"] as string, new { nowOffsetUtc, devopsConfig, httpConfig, changes, buildId, analysisSasToken, assemblyMetadata, requestHeaders, logContent, workItems }); 
+            message["Value"] = PromptReplacePlaceholders(message["Value"] as string, new { nowOffsetUtc, logContent, devopsConfig, httpConfig, azureResourcesConfig, changes, buildId, analysisSasToken, assemblyMetadata, requestHeaders, workItems, folderNamePrefix, logFileName, traceId }); 
             if (message["Type"].Equals("SystemChatMessage")) { chatMessages.Add(new SystemChatMessage(message["Value"] as string)); }
             else if (message["Type"].Equals("UserChatMessage")) { chatMessages.Add(new UserChatMessage(message["Value"] as string)); }
         }
@@ -112,14 +133,13 @@ public class AOAISummaryService : ISummaryService
         var titleNode = doc.DocumentNode.SelectSingleNode("//title");
         var title = titleNode.InnerText.Trim();
 
-        string folderName = $"{DateTime.UtcNow:yyyyMMdd HHmm} - {title}";
+        string folderName = $"{folderNamePrefix}{title}";
 
         string analysisFileName = $"{folderName}";
         var analysisBlobClient = containerClient.GetBlobClient($"{folderName}/{analysisFileName}.htm");
         using var analysisStream = new MemoryStream(Encoding.UTF8.GetBytes(ret));
         await analysisBlobClient.UploadAsync(analysisStream, overwrite: true);
 
-        string logFileName = $"{DateTime.UtcNow:yyyyMMdd HHmm} - LogStream";
         var logBlobClientLog = containerClient.GetBlobClient($"{folderName}/{logFileName}.log");
         using var logStream = new MemoryStream(Encoding.UTF8.GetBytes(logContent));
         await logBlobClientLog.UploadAsync(logStream, overwrite: true);

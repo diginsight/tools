@@ -42,12 +42,13 @@ public class Program
         builder.Services.AddSwaggerGen(); logger.LogDebug($"builder.Services.AddSwaggerGen();");
 
         
-        builder.Services.Configure<HttpContextConfig>(builder.Configuration.GetSection("HttpContext"));
-        builder.Services.Configure<AzureDevopsConfig>(builder.Configuration.GetSection("Devops"));
-        builder.Services.Configure<BlobStorageConfig>(builder.Configuration.GetSection("BlobStorage"));
-        builder.Services.Configure<PromptConfig>(builder.Configuration.GetSection("Prompt"));
-        builder.Services.Configure<AzureOpenAiConfig>(builder.Configuration.GetSection("AzureOpenAi"));
-        builder.Services.Configure<EmailConfig>(builder.Configuration.GetSection("Email"));
+        builder.Services.Configure<HttpContextOptions>(builder.Configuration.GetSection("HttpContext"));
+        builder.Services.Configure<AzureDevopsOptions>(builder.Configuration.GetSection("Devops"));
+        builder.Services.Configure<BlobStorageOptions>(builder.Configuration.GetSection("BlobStorage"));
+        builder.Services.Configure<PromptOptions>(builder.Configuration.GetSection("Prompt"));
+        builder.Services.Configure<AzureOpenAiOptions>(builder.Configuration.GetSection("AzureOpenAi"));
+        builder.Services.Configure<EmailOptions>(builder.Configuration.GetSection("Email"));
+        builder.Services.Configure<AzureResourcesOptions>(builder.Configuration.GetSection("AzureResources"));
 
         builder.Services.AddSingleton<IAzureDevopsService, AzureDevopsService>();
         builder.Services.AddSingleton<ISummaryService, AOAISummaryService>();

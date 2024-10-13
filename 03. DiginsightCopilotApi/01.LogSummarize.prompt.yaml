@@ -185,15 +185,16 @@
             </div>
             <div class="table-row">
                 <div class="table-cell param-name">Appinsight:</div>
-                <div class="table-cell param-value" colspan="3"><a href="https://portal.azure.com/#@ABB.onmicrosoft.com/resource/subscriptions/f4245a45-778d-4b27-93ff-93f81db7f243/resourceGroups/ELCP-Backend-test-rg/providers/microsoft.insights/components/electrificationapi-aps-test-01/searchV1" >71c9636c6e2d8a4ebe2ffbf69b3c642a</a></div>
+                <div class="table-cell param-value" colspan="3"><a href="https://portal.azure.com/#@ABB.onmicrosoft.com/resource/subscriptions/{{azureResourcesConfig.SubscriptionId}}/resourceGroups/{{azureResourcesConfig.ApplicationInsightResourceGroup}}/providers/microsoft.insights/components/{{azureResourcesConfig.ApplicationInsightName}}/searchV1">{{traceId}}</a></div>
             </div>
             <div class="table-row">
                 <div class="table-cell param-name">Log stream:</div>
-                <div class="table-cell param-value" colspan="3"><a href="https://portal.azure.com/#@ABB.onmicrosoft.com/resource/subscriptions/f4245a45-778d-4b27-93ff-93f81db7f243/resourceGroups/ELCP-Backend-test-rg/providers/microsoft.insights/components/electrificationapi-aps-test-01/searchV1" >20241010 1957 - LogStream.log</a></div>
+                <div class="table-cell param-value" colspan="3"><a href="https://nhbackofficetest.blob.core.windows.net/analysis/{{folderNamePrefix}}{{Title}}/{{logFileName}}.log{{analysisSasToken}}" >{{logFileName}}.log</a></div>
             </div>
         </div>
       
         Placeholders for UserDisplayName and UserEmail should be inferred from the log content.
+        Placeholders for Title should be set to the email title.
         In case User is not available into the log, UserDisplayName should be 'Not available' and UserEmail should be empty.
 
         After the table a further <div> structure should report the CURL to reproduce the call as shown below:

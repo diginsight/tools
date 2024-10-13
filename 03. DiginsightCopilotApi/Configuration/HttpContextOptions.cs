@@ -2,7 +2,7 @@
 
 namespace DiginsightCopilotApi.Models;
 
-public class HttpContextConfig
+public class HttpContextOptions
 {
     public string Method { get; set; }
     public string Url { get; set; }

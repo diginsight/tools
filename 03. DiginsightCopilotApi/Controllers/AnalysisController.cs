@@ -17,8 +17,9 @@ namespace DiginsightCopilotApi.Controllers
     public class AnalysisController : ControllerBase
     {
         private readonly ILogger<AnalysisController> logger;
-        private readonly IOptions<AzureDevopsConfig> devopsOptions;
-        private readonly IOptions<HttpContextConfig> httpOptions;
+        private readonly IOptions<AzureDevopsOptions> devopsOptions;
+        private readonly IOptions<HttpContextOptions> httpOptions;
+        private readonly IOptions<AzureResourcesOptions> azureResourcesOptions;
 
         private readonly IAzureDevopsService azureDevopsService;
         private readonly ISummaryService openAiService;
@@ -26,8 +27,9 @@ namespace DiginsightCopilotApi.Controllers
 
         public AnalysisController(
             ILogger<AnalysisController> logger,
-            IOptions<AzureDevopsConfig> devopsOptions,
-            IOptions<HttpContextConfig> httpOptions,
+            IOptions<AzureDevopsOptions> devopsOptions,
+            IOptions<HttpContextOptions> httpOptions,
+            IOptions<AzureResourcesOptions> azureResourcesOptions,
             IAzureDevopsService azureDevopsService,
             ISummaryService openAiService,
             IEmailService emailClient
@@ -38,6 +40,7 @@ namespace DiginsightCopilotApi.Controllers
 
             this.devopsOptions = devopsOptions;
             this.httpOptions = httpOptions;
+            this.azureResourcesOptions = azureResourcesOptions;
             this.azureDevopsService = azureDevopsService;
             this.openAiService = openAiService;
             this.emailClient = emailClient;
@@ -92,6 +95,11 @@ namespace DiginsightCopilotApi.Controllers
                 var applicationId = azureMonitorConnectionStringMatch.Groups[4].Value;
                 logger.LogDebug("instrumentationKey: {instrumentationKey}, ingestionEndpoint: {ingestionEndpoint}, liveEndpoint: {liveEndpoint}, applicationId: {applicationId}", instrumentationKey, ingestionEndpoint, liveEndpoint, applicationId);
 
+                this.azureResourcesOptions.Value.AzureMonitorConnectionString = azureMonitorConnectionString;
+                this.azureResourcesOptions.Value.InstrumentationKey = instrumentationKey;
+                this.azureResourcesOptions.Value.IngestionEndpoint = ingestionEndpoint;
+                this.azureResourcesOptions.Value.LiveEndpoint = liveEndpoint;
+                this.azureResourcesOptions.Value.ApplicationId = applicationId;
             }
 
             var httpRequestHeaders = new List<HttpRequestHeader>();

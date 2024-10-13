@@ -1,6 +1,6 @@
 ﻿namespace DiginsightCopilotApi.Configuration;
 
-public class AzureOpenAiConfig
+public class AzureOpenAiOptions
 {
     public string ApiKey { get; set; }
     public string Endpoint { get; set; }

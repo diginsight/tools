@@ -2,7 +2,7 @@
 
 namespace DiginsightCopilotApi.Configuration;
 
-public class EmailConfig
+public class EmailOptions
 {
     [Required]
     public string Server { get; set; }

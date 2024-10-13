@@ -22,9 +22,9 @@ public class AzureDevopsService : IAzureDevopsService
     private readonly Uri devopsUri;
     private readonly VssBasicCredential credentials;
     private readonly ILogger<AzureDevopsService> logger;
-    private readonly AzureDevopsConfig config;
+    private readonly AzureDevopsOptions config;
 
-    public AzureDevopsService(IOptions<AzureDevopsConfig> options, ILogger<AzureDevopsService> logger)
+    public AzureDevopsService(IOptions<AzureDevopsOptions> options, ILogger<AzureDevopsService> logger)
     {
         this.devopsUri = new Uri("https://dev.azure.com/" + options.Value.OrgName);
         credentials = new VssBasicCredential(string.Empty, options.Value.PAT);
