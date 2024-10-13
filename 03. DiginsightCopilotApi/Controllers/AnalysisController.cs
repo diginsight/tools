@@ -51,16 +51,15 @@ namespace DiginsightCopilotApi.Controllers
             using var reader = new StreamReader(Request.Body);
             var logContent = await reader.ReadToEndAsync();
 
-            var incomingRequestPattern = @"Incoming Request: .* http.*";
+            var incomingRequestPattern = @"Incoming Request: (.*) (http.*)";
             var incomingRequestMatch = Regex.Match(logContent, incomingRequestPattern);
             if (incomingRequestMatch.Success)
             {
                 var incomingRequest = incomingRequestMatch.Value;
                 incomingRequest = incomingRequest.Substring("Incoming Request: ".Length);
-                logger.LogInformation("ComposeSummaryAsync called with incomingRequest: {incomingRequest}", incomingRequest);
-                var incomingRequestSplit = incomingRequest.Split(' ');
-                var httpMethod = incomingRequestSplit[0];
-                var httpUrl = incomingRequestSplit[1];
+                logger.LogInformation("incomingRequest: {incomingRequest}", incomingRequest);
+                var httpMethod = incomingRequestMatch.Groups[1].Value;
+                var httpUrl = incomingRequestMatch.Groups[2].Value;
                 var incomingUri = new Uri(httpUrl);
                 var incomingPath = incomingUri.AbsolutePath;
                 var incomingQuery = incomingUri.Query;
@@ -80,79 +79,81 @@ namespace DiginsightCopilotApi.Controllers
                 this.httpOptions.Value.Authority = incomingAuthority;
             }
 
-            // 2024-10-01T12:11:26.872 …ingCallMiddleware.LandingCallMiddleware DBUG 21c964baaae1c39b551134a1ee6aead7 .077m        2   Incoming Request Header: Referer - https://test.developers.connect.abb.com/
-            var incomingRequestHeaderPattern = @"Incoming Request Header: .*";
+            var httpRequestHeaders = new List<HttpRequestHeader>();
+            var incomingRequestHeaderPattern = @"Incoming Request Header: (.*) - (.*)";
             var incomingRequestHeaderMatch = Regex.Match(logContent, incomingRequestHeaderPattern);
-            // loop on all occurrences of 'Incoming Request Header: ' and log the 'Incoming Request Header' value
             if (incomingRequestHeaderMatch != null)
             {
-                foreach (Match mtch in Regex.Matches(logContent, incomingRequestHeaderPattern))
+                foreach (Match match in Regex.Matches(logContent, incomingRequestHeaderPattern))
                 {
-                    var incomingRequestHeader = mtch.Value;
-                    incomingRequestHeader = incomingRequestHeader.Substring("Incoming Request Header: ".Length);
-                    logger.LogDebug("incomingRequestHeader: {incomingRequestHeader}", incomingRequestHeader);
+                    var incomingRequestHeader = match.Value;
+                    var headerName = match.Groups[1].Value?.Trim();
+                    var headerValue = match.Groups[2].Value?.Trim();
+                    logger.LogInformation("Request header '{headerName}': '{headerValue}'", headerName, headerValue);
+                    httpRequestHeaders.Add(new HttpRequestHeader() { Name = headerName!, Value = headerValue! });
 
-                    var incomingRequestHeaderSplit = incomingRequestHeader.Split('-');
-                    var headerName = incomingRequestHeaderSplit[0]?.Trim() ?? "";
-                    if (! headerName.Equals("Referer", StringComparison.OrdinalIgnoreCase)) continue;
-
-                    var headerValue = incomingRequestHeaderSplit[1]?.Trim();
-                    var referer = headerValue;
-                    var refererUri = new Uri(referer);
-                    this.httpOptions.Value.Referer = referer;
-                    var refererHost = refererUri.Host;
-                    this.httpOptions.Value.RefererHost = refererHost;
-                    if (refererHost?.StartsWith("test") ?? false) { devopsOptions.Value.Environment = "Test"; }
-                    else if (refererHost?.StartsWith("stage") ?? false) { devopsOptions.Value.Environment = "Stage"; }
-                    else { devopsOptions.Value.Environment = "Production"; }
-                    //if (referer?.StartsWith("stage") ?? false) { devopsOptions.Value.Environment = "Stage"; }
+                    if (headerName == "Referer")
+                    {
+                        var referer = headerValue;
+                        var refererUri = new Uri(referer);
+                        this.httpOptions.Value.Referer = referer;
+                        var refererHost = refererUri.Host;
+                        this.httpOptions.Value.RefererHost = refererHost;
+                        if (refererHost?.StartsWith("test") ?? false) { devopsOptions.Value.Environment = "Test"; }
+                        else if (refererHost?.StartsWith("stage") ?? false) { devopsOptions.Value.Environment = "Stage"; }
+                        else { devopsOptions.Value.Environment = "Production"; }
+                    }
                 }
-            }
 
-            var buildId = 0; var devopsProject = string.Empty; var devopsRepository = string.Empty;
-            var buildUriPattern = @"Metadata: .*Build\.BuildUri=vstfs:///Build/Build/(\d+)";
-            var match = Regex.Match(logContent, buildUriPattern);
-            if (match.Success)
-            {
-                buildId = int.Parse(match.Groups[1].Value);
-                logger.LogInformation("buildId: {buildId}", buildId);
-                devopsOptions.Value.BuildID = buildId.ToString();
             }
+            this.httpOptions.Value.Headers = httpRequestHeaders;
 
-            var projectPattern = @"Metadata: .*System\.TeamProject=(\w+)";
-            match = Regex.Match(logContent, projectPattern);
-            if (match.Success)
+            var buildId = 0; var devopsProject = "";
+            var assemblyMetadata = new List<AssemblyMetadata>();
+            var assemblyMetadataPattern = @"Assembly Metadata: AzurePipelines/(.*)=(.*)";
+            var assemblyMetadataMatch = Regex.Match(logContent, incomingRequestHeaderPattern);
+            if (assemblyMetadataMatch != null)
             {
-                devopsProject = match.Groups[1].Value;
-                logger.LogInformation("Project: {devopsProject}", devopsProject);
-                devopsOptions.Value.Project = devopsProject;
-            }
+                foreach (Match match in Regex.Matches(logContent, assemblyMetadataPattern))
+                {
+                    var assemblyMetadataItem = match.Value;
+                    var metadataName = match.Groups[1].Value?.ToString()?.Trim();
+                    var metadataValue = match.Groups[2].Value?.ToString()?.Trim();
+                    assemblyMetadata.Add(new AssemblyMetadata() { Name = metadataName!, Value = metadataValue! });
 
-            var buildNumberPattern = @"Metadata: (.*?)Build\.BuildNumber=(.*)";
-            match = Regex.Match(logContent, buildNumberPattern);
-            if (match.Success)
-            {
-                var buildNumber = match.Groups[2].Value;
-                logger.LogInformation("Project: {buildNumber}", buildNumber);
-                devopsOptions.Value.BuildNumber = buildNumber;
-            }
-            //Build.SourceBranch
-            var sourceBranchPattern = @"Metadata: (.*?)Build\.SourceBranch=(.*)";
-            match = Regex.Match(logContent, sourceBranchPattern);
-            if (match.Success)
-            {
-                var sourceBranch = match.Groups[2].Value;
-                logger.LogInformation("Project: {sourceBranch}", sourceBranch);
-                devopsOptions.Value.Branch = sourceBranch;
-            }
-
-            var projectRepositoryPattern = @"Metadata: (.*?)Build\.Repository\.Name=(.*)";
-            match = Regex.Match(logContent, projectRepositoryPattern);
-            if (match.Success)
-            {
-                devopsRepository = match.Groups[2].Value;
-                logger.LogInformation("Repository: {devopsRepository}", devopsRepository);
-                devopsOptions.Value.Repository = devopsRepository;
+                    if (metadataName == "Build.BuildUri") {
+                        var buildString = metadataValue;
+                        var buildStringParts = buildString?.Split('/');
+                        var buildIdString = buildStringParts?.Last();
+                        buildId = !string.IsNullOrEmpty(buildIdString) ? int.Parse(buildIdString): 0;
+                        logger.LogDebug("buildId: {buildId}", buildId);
+                        devopsOptions.Value.BuildID = buildId.ToString();
+                    }
+                    else if (metadataName == "System.TeamProject")
+                    {
+                        devopsProject = metadataValue;
+                        logger.LogDebug("teamProject: {teamProject}", devopsProject);
+                        devopsOptions.Value.Project = devopsProject!;
+                    }
+                    else if (metadataName == "Build.BuildNumber")
+                    {
+                        var buildNumber = metadataValue;
+                        logger.LogDebug("buildNumber: {buildNumber}", buildNumber);
+                        devopsOptions.Value.Project = buildNumber!;
+                    }
+                    else if (metadataName == "Build.SourceBranch")
+                    {
+                        var sourceBranch = metadataValue;
+                        logger.LogDebug("sourceBranch: {sourceBranch}", sourceBranch);
+                        devopsOptions.Value.Project = sourceBranch!;
+                    }
+                    else if (metadataName == "Build.Repository")
+                    {
+                        var devopsRepository = metadataValue;
+                        logger.LogDebug("devopsRepository: {devopsRepository}", devopsRepository);
+                        devopsOptions.Value.Repository = devopsRepository!;
+                    }
+                }
             }
 
             var workItemParams = new List<WorkItemParam>();
@@ -191,7 +192,7 @@ namespace DiginsightCopilotApi.Controllers
 
             }
 
-            var analysis = await this.openAiService.GenerateSummary(logContent, buildId, workItemParams, changeParams);
+            var analysis = await this.openAiService.GenerateSummary(logContent, buildId, workItemParams, changeParams, assemblyMetadata);
 
             // Add response header
             Response.Headers.Add("analysis-url", analysis.Url);

@@ -108,3 +108,15 @@ public class WorkItemParam
     public string Description { get; set; }
     public string AcceptanceCriteria { get; set; }
 }
+public class HttpRequestHeader
+{
+    public string Name { get; set; }
+    public string Value { get; set; }
+}
+
+public class AssemblyMetadata
+{
+    public string Name { get; set; }
+    public string Value { get; set; }
+}
+

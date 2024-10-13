@@ -1,4 +1,6 @@
-﻿namespace DiginsightCopilotApi.Configuration;
+﻿using System.Net;
+
+namespace DiginsightCopilotApi.Models;
 
 public class HttpContextConfig
 {
@@ -13,5 +15,6 @@ public class HttpContextConfig
     public string Referer { get; set; }
     public string RefererHost { get; set; }
     public string Authority { get; set; }
+    public List<HttpRequestHeader> Headers { get; set; }
 }
 

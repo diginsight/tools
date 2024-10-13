@@ -52,7 +52,7 @@ public class AOAISummaryService : ISummaryService
         this.httpConfig = httpOptions.Value;
     }
 
-    public async Task<Analysis> GenerateSummary(string logContent, int buildId, IEnumerable<WorkItemParam> workItems, IEnumerable<ChangeParam> changes)
+    public async Task<Analysis> GenerateSummary(string logContent, int buildId, IEnumerable<WorkItemParam> workItems, IEnumerable<ChangeParam> changes, IEnumerable<AssemblyMetadata> assemblyMetadata)
     {
         using var activity = Observability.ActivitySource.StartMethodActivity(logger, new { logContent, buildId, workItems, changes });
 
@@ -80,7 +80,8 @@ public class AOAISummaryService : ISummaryService
         foreach (var messageObject in yamlObject)
         {
             var message = messageObject as IDictionary<object, object>;
-            message["Value"] = PromptReplacePlaceholders(message["Value"] as string, new { nowOffsetUtc, devopsConfig, httpConfig, logContent, workItems, changes, buildId, analysisSasToken }); 
+            var requestHeaders = httpConfig.Headers;
+            message["Value"] = PromptReplacePlaceholders(message["Value"] as string, new { nowOffsetUtc, devopsConfig, httpConfig, changes, buildId, analysisSasToken, assemblyMetadata, requestHeaders, logContent, workItems }); 
             if (message["Type"].Equals("SystemChatMessage")) { chatMessages.Add(new SystemChatMessage(message["Value"] as string)); }
             else if (message["Type"].Equals("UserChatMessage")) { chatMessages.Add(new UserChatMessage(message["Value"] as string)); }
         }

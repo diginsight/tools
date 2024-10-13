@@ -3,6 +3,7 @@ using Diginsight.Diagnostics;
 using DiginsightCopilotApi;
 using DiginsightCopilotApi.Abstractions;
 using DiginsightCopilotApi.Configuration;
+using DiginsightCopilotApi.Models;
 using DiginsightCopilotApi.Services;
 using Microsoft.Extensions.Hosting;
 
