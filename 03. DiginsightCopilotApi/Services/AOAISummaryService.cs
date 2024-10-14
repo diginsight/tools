@@ -1,26 +1,36 @@
 ﻿using Azure.AI.OpenAI;
+using Azure.Core;
+using Azure.Identity;
+using Azure.ResourceManager;
+using Azure.ResourceManager.ResourceGraph;
+using Azure.ResourceManager.ResourceGraph.Models;
+using Azure.Storage.Blobs;
+using Azure.Storage.Sas;
+using Diginsight;
 using Diginsight.Diagnostics;
 using DiginsightCopilotApi.Abstractions;
 using DiginsightCopilotApi.Configuration;
 using DiginsightCopilotApi.Models;
+using HtmlAgilityPack;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
-using OpenAI.Chat;
 using OpenAI;
+using OpenAI.Chat;
 using System.ClientModel;
-using System.Text.RegularExpressions;
 using System.Collections;
-using YamlDotNet.Serialization.NamingConventions;
-using YamlDotNet.Serialization;
-using Azure.Storage.Blobs;
+using System.Net.Http.Headers;
 using System.Text;
-using HtmlAgilityPack;
-using Azure.Storage.Sas;
+using System.Text.Json;
+using System.Text.RegularExpressions;
+using YamlDotNet.Serialization;
+using YamlDotNet.Serialization.NamingConventions;
+using TokenCredential = Azure.Core.TokenCredential;
 
 namespace DiginsightCopilotApi.Services;
 
 public class AOAISummaryService : ISummaryService
 {
+    private static readonly string resourceGraphEndpoint = "https://management.azure.com/providers/Microsoft.ResourceGraph/resources?api-version=2022-10-01";
     private readonly ILogger<AOAISummaryService> logger;
 
     private IOptions<AzureResourcesOptions> azureResourcesOptions;
@@ -29,6 +39,8 @@ public class AOAISummaryService : ISummaryService
     private IOptions<AzureOpenAiOptions> openAiOptions;
     private IOptions<BlobStorageOptions> blobStorageOptions;
     private IOptions<PromptOptions> promptOptions;
+    private IOptions<AzureAdOptions> azureAdOptions;
+
 
     private OpenAIClient openAiClient;
     private AzureOpenAIClient azureOpenAiClient;
@@ -41,6 +53,7 @@ public class AOAISummaryService : ISummaryService
         IOptions<HttpContextOptions> httpOptions,
         IOptions<BlobStorageOptions> blobStorageOptions,
         IOptions<PromptOptions> promptOptions,
+        IOptions<AzureAdOptions> azureAdOptions,
         IOptions<AzureResourcesOptions> azureResourcesOptions,
         IOptions<PromptOptions> promptConfig
         )
@@ -48,16 +61,106 @@ public class AOAISummaryService : ISummaryService
         this.logger = logger;
         using var activity = Observability.ActivitySource.StartMethodActivity(logger, new { openAiOptions, devopsOptions });
 
-        this.azureResourcesOptions = azureResourcesOptions;
-        this.devopsOptions = devopsOptions;
+        this.azureAdOptions = azureAdOptions;
         this.httpOptions = httpOptions;
         this.openAiOptions = openAiOptions;
         this.blobStorageOptions = blobStorageOptions;
         this.promptOptions = promptOptions;
+        this.devopsOptions = devopsOptions;
+        this.azureResourcesOptions = azureResourcesOptions;
 
         var openAiConfig = openAiOptions.Value;
         this.azureOpenAiClient = new AzureOpenAIClient(new Uri(openAiConfig.Endpoint), new ApiKeyCredential(openAiOptions.Value.ApiKey));
 
+    }
+    private static async Task<string> GetAccessTokenAsync(TokenCredential credential)
+    {
+        var tokenRequestContext = new TokenRequestContext(new[] { "https://management.azure.com/.default" });
+        AccessToken token = await credential.GetTokenAsync(tokenRequestContext, cancellationToken: default);
+        return token.Token;
+    }
+    private async Task<string> GetAccessTokenAsync()
+    {
+        var tenantId = azureAdOptions.Value.TenantId;
+        var clientId = azureAdOptions.Value.ClientId;
+        var clientSecret = azureAdOptions.Value.ClientSecret;
+
+        using (var httpClient = new HttpClient())
+        {
+            var url = $"https://login.microsoftonline.com/{tenantId}/oauth2/v2.0/token";
+            var content = new FormUrlEncodedContent(new[]
+            {
+                new KeyValuePair<string, string>("client_id", clientId),
+                new KeyValuePair<string, string>("client_secret", clientSecret),
+                new KeyValuePair<string, string>("scope", "https://management.azure.com/.default"),
+                new KeyValuePair<string, string>("grant_type", "client_credentials")
+            });
+
+            var response = await httpClient.PostAsync(url, content);
+            response.EnsureSuccessStatusCode();
+
+            var responseBody = await response.Content.ReadAsStringAsync();
+            dynamic json = JsonConvert.DeserializeObject(responseBody);
+            return json.access_token;
+        }
+    }
+    private async Task GetApplicationInsightResourceAsync(string instrumentationKey, string accessToken)
+    {
+        using var activity = Observability.ActivitySource.StartMethodActivity(logger, new { instrumentationKey });
+
+        var subscriptionId = azureResourcesOptions.Value.SubscriptionId;
+
+        using (var httpClient = new HttpClient())
+        {
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+
+            var query = new
+            {
+                subscriptions = new[] { subscriptionId },
+                query = $""" 
+                         Resources
+                         | where type == 'microsoft.insights/components'
+                         | where properties.InstrumentationKey == '{instrumentationKey}'
+                         | project id
+                         | take 1
+                         """
+            };
+            logger.LogDebug("query: {query}", query);
+
+            var content = new StringContent(JsonConvert.SerializeObject(query), Encoding.UTF8, "application/json");
+            var response = await httpClient.PostAsync(resourceGraphEndpoint, content);
+            response.EnsureSuccessStatusCode();
+
+            var responseBody = await response.Content.ReadAsStringAsync();
+            Console.WriteLine(responseBody);
+        }
+
+    }
+
+    private async Task<ResourceQueryResult> GetApplicationInsightResourceAsync(string instrumentationKey, TokenCredential tokenCredential)
+    {
+        using var activity = Observability.ActivitySource.StartMethodActivity(logger, new { instrumentationKey });
+
+        var armClient = new ArmClient(tokenCredential);
+        var tenantCollection = armClient.GetTenants();
+        var tenants = tenantCollection.GetAllAsync(cancellationToken: default);
+        var tenant = await tenants.FirstAsync(cancellationToken: default);
+        var subscriptions = tenant.GetSubscriptions();
+
+        var query = $""" 
+                     Resources
+                     | where type == 'microsoft.insights/components'
+                     | where properties.InstrumentationKey == '{instrumentationKey}'
+                     | project id
+                     | take 1
+                     """;
+
+        var subscriptionId = azureResourcesOptions.Value.SubscriptionId;
+        var queryContent = new ResourceQueryContent(query);
+        queryContent.Subscriptions.Add(subscriptionId);
+
+        var response = await tenant.GetResourcesAsync(queryContent);
+        return response.Value; // ResourceGroup, Name, SubscriptionId
     }
 
     public async Task<Analysis> GenerateSummary(string logContent, int buildId, IEnumerable<WorkItemParam> workItems, IEnumerable<ChangeParam> changes, IEnumerable<AssemblyMetadata> assemblyMetadata)
@@ -73,7 +176,7 @@ public class AOAISummaryService : ISummaryService
         List<PromptChatMessage>? messages = null;
         var promptConfig = promptOptions.Value;
         var promptFolder = promptConfig.PromptFolder;
-        var promptFileName = string.IsNullOrEmpty(promptFolder)? "01.LogSummarize.prompt.yaml" : $"{promptFolder}\\01.LogSummarize.prompt.yaml";
+        var promptFileName = string.IsNullOrEmpty(promptFolder) ? "01.LogSummarize.prompt.yaml" : $"{promptFolder}\\01.LogSummarize.prompt.yaml";
 
         var promptYamlTemplate = File.ReadAllText(promptFileName);
         var deserializer = new DeserializerBuilder()
@@ -87,6 +190,36 @@ public class AOAISummaryService : ISummaryService
         var analysisSasToken = containerClient.GenerateSasUri(BlobContainerSasPermissions.Read, DateTimeOffset.UtcNow.AddHours(1)).Query;
         logger.LogDebug("analysisSasToken: {analysisSasToken}", analysisSasToken);
 
+        var instrumentationKey = azureResourcesOptions.Value.InstrumentationKey;
+        if (!string.IsNullOrEmpty(instrumentationKey))
+        {
+            var tenantId = azureAdOptions.Value.TenantId;
+            var clientId = azureAdOptions.Value.ClientId;
+            var clientSecret = azureAdOptions.Value.ClientSecret;
+            var tokenCredential = new ClientSecretCredential(tenantId, clientId, clientSecret);
+            var resourceQueryResult = await GetApplicationInsightResourceAsync(instrumentationKey, tokenCredential);
+            var jsonDocument = JsonDocument.Parse(resourceQueryResult.Data.ToString());
+            var root = jsonDocument?.RootElement != null && jsonDocument.RootElement.GetArrayLength() > 0 ? jsonDocument.RootElement[0] : default(JsonElement);
+            var applicationInsightId = root.GetProperty("id").ToString();
+
+            azureResourcesOptions.Value.ApplicationInsightId = applicationInsightId;
+            if (!string.IsNullOrEmpty(applicationInsightId))
+            {
+                var applicationInsightIdStringPattern = "/subscriptions/(.*)/resourceGroups/(.*)/providers/microsoft.insights/components/(.*)";
+                var applicationInsightIdStringMatch = Regex.Match(applicationInsightId, applicationInsightIdStringPattern);
+                if (applicationInsightIdStringMatch.Success)
+                {
+                    var subscriptionId = applicationInsightIdStringMatch.Groups[1].Value;
+                    var resourceGroup = applicationInsightIdStringMatch.Groups[2].Value;
+                    var applicationInsightName = applicationInsightIdStringMatch.Groups[3].Value;
+                    logger.LogDebug("subscriptionId: {subscriptionId}, resourceGroup: {resourceGroup}, applicationInsightName: {applicationInsightName}, applicationId: {applicationId}", subscriptionId, resourceGroup, applicationInsightName);
+
+                    azureResourcesOptions.Value.SubscriptionId = subscriptionId;
+                    azureResourcesOptions.Value.ApplicationInsightName = applicationInsightName;
+                    azureResourcesOptions.Value.ApplicationInsightResourceGroup = resourceGroup;
+                }
+            }
+        }
 
         string folderNamePrefix = $"{DateTime.UtcNow:yyyyMMdd HHmm} - ";
         string logFileName = $"{folderNamePrefix}LogStream";
@@ -95,6 +228,9 @@ public class AOAISummaryService : ISummaryService
         var httpConfig = this.httpOptions.Value;
         var traceId = "666d0447c75de5e945abd60b949a8e2f";
 
+        // DBUG 666d0447c75de5e945abd60b949a8e2f              1  LandingCallMiddleware.InvokeAsync
+        //"DBUG (\w+)(.*)LandingCallMiddleware.InvokeAsync"
+
 
         // Title FileName SASToken FileName
         List<ChatMessage> chatMessages = new();
@@ -102,7 +238,7 @@ public class AOAISummaryService : ISummaryService
         {
             var message = messageObject as IDictionary<object, object>;
             var requestHeaders = httpConfig.Headers;
-            message["Value"] = PromptReplacePlaceholders(message["Value"] as string, new { nowOffsetUtc, logContent, devopsConfig, httpConfig, azureResourcesConfig, changes, buildId, analysisSasToken, assemblyMetadata, requestHeaders, workItems, folderNamePrefix, logFileName, traceId }); 
+            message["Value"] = PromptReplacePlaceholders(message["Value"] as string, new { nowOffsetUtc, logContent, devopsConfig, httpConfig, azureResourcesConfig, changes, buildId, analysisSasToken, assemblyMetadata, requestHeaders, workItems, folderNamePrefix, logFileName, traceId });
             if (message["Type"].Equals("SystemChatMessage")) { chatMessages.Add(new SystemChatMessage(message["Value"] as string)); }
             else if (message["Type"].Equals("UserChatMessage")) { chatMessages.Add(new UserChatMessage(message["Value"] as string)); }
         }
@@ -245,5 +381,26 @@ public class AOAISummaryService : ISummaryService
             return !type.IsPrimitive && type != typeof(decimal);
         }
         return false;
+    }
+
+
+    public class AccessTokenCredential : TokenCredential
+    {
+        private readonly string _token;
+
+        public AccessTokenCredential(string token)
+        {
+            _token = token;
+        }
+
+        public override AccessToken GetToken(TokenRequestContext requestContext, System.Threading.CancellationToken cancellationToken)
+        {
+            return new AccessToken(_token, DateTimeOffset.MaxValue);
+        }
+
+        public override ValueTask<AccessToken> GetTokenAsync(TokenRequestContext requestContext, System.Threading.CancellationToken cancellationToken)
+        {
+            return new ValueTask<AccessToken>(new AccessToken(_token, DateTimeOffset.MaxValue));
+        }
     }
 }

@@ -83,7 +83,6 @@ namespace DiginsightCopilotApi.Controllers
                 this.httpOptions.Value.Authority = incomingAuthority;
             }
 
-            // AzureMonitorConnectionString: InstrumentationKey=efc770fb-0443-4268-ba9f-a7bf293a68c8;IngestionEndpoint=https://northeurope-0.in.applicationinsights.azure.com/;LiveEndpoint=https://northeurope.livediagnostics.monitor.azure.com/;ApplicationId=abf064f1-a9aa-45c6-adc7-42b2684bcb5c
             var azureMonitorConnectionStringPattern = @"AzureMonitorConnectionString: InstrumentationKey=(.*);IngestionEndpoint=(.*)/;LiveEndpoint=(.*);ApplicationId=(.*)";
             var azureMonitorConnectionStringMatch = Regex.Match(logContent, azureMonitorConnectionStringPattern);
             if (azureMonitorConnectionStringMatch.Success)

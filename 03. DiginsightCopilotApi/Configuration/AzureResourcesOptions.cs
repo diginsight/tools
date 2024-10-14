@@ -7,6 +7,7 @@ public class AzureResourcesOptions
     public string IngestionEndpoint { get; set; }
     public string LiveEndpoint { get; set; }
     public string ApplicationId { get; set; }
+    public string ApplicationInsightId { get; set; }
     public string ApplicationInsightName { get; set; }
     public string ApplicationInsightResourceGroup { get; set; }
     public string SubscriptionId { get; set; }

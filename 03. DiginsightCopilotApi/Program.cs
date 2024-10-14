@@ -41,13 +41,15 @@ public class Program
         builder.Services.AddEndpointsApiExplorer(); logger.LogDebug($"builder.Services.AddEndpointsApiExplorer();");
         builder.Services.AddSwaggerGen(); logger.LogDebug($"builder.Services.AddSwaggerGen();");
 
-        
-        builder.Services.Configure<HttpContextOptions>(builder.Configuration.GetSection("HttpContext"));
-        builder.Services.Configure<AzureDevopsOptions>(builder.Configuration.GetSection("Devops"));
+
+        builder.Services.Configure<AzureAdOptions>(builder.Configuration.GetSection("AzureAd"));
         builder.Services.Configure<BlobStorageOptions>(builder.Configuration.GetSection("BlobStorage"));
         builder.Services.Configure<PromptOptions>(builder.Configuration.GetSection("Prompt"));
         builder.Services.Configure<AzureOpenAiOptions>(builder.Configuration.GetSection("AzureOpenAi"));
         builder.Services.Configure<EmailOptions>(builder.Configuration.GetSection("Email"));
+        
+        builder.Services.Configure<AzureDevopsOptions>(builder.Configuration.GetSection("Devops"));
+        builder.Services.Configure<HttpContextOptions>(builder.Configuration.GetSection("HttpContext"));
         builder.Services.Configure<AzureResourcesOptions>(builder.Configuration.GetSection("AzureResources"));
 
         builder.Services.AddSingleton<IAzureDevopsService, AzureDevopsService>();
