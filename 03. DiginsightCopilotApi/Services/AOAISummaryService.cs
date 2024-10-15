@@ -224,7 +224,7 @@ public class AOAISummaryService : ISummaryService
         string folderNamePrefix = $"{DateTime.UtcNow:yyyyMMdd HHmm} - ";
         string logFileName = $"{folderNamePrefix}LogStream";
         var azureResourcesConfig = this.azureResourcesOptions.Value;
-        var devopsConfig = this.azureResourcesOptions.Value;
+        var devopsConfig = this.devopsOptions.Value;
         var httpConfig = this.httpOptions.Value;
 
         var traceIdPattern = @"DBUG ([0-9a-fA-F]{32})(.*)LandingCallMiddleware.InvokeAsync";

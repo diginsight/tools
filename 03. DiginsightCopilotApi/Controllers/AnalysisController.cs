@@ -162,15 +162,15 @@ namespace DiginsightCopilotApi.Controllers
                     {
                         var buildNumber = metadataValue;
                         logger.LogDebug("buildNumber: {buildNumber}", buildNumber);
-                        devopsOptions.Value.Project = buildNumber!;
+                        devopsOptions.Value.BuildNumber = buildNumber!;
                     }
                     else if (metadataName == "Build.SourceBranch")
                     {
                         var sourceBranch = metadataValue;
                         logger.LogDebug("sourceBranch: {sourceBranch}", sourceBranch);
-                        devopsOptions.Value.Project = sourceBranch!;
+                        devopsOptions.Value.Branch = sourceBranch!;
                     }
-                    else if (metadataName == "Build.Repository")
+                    else if (metadataName == "Build.Repository.Name")
                     {
                         var devopsRepository = metadataValue;
                         logger.LogDebug("devopsRepository: {devopsRepository}", devopsRepository);
