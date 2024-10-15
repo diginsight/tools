@@ -185,7 +185,7 @@
             </div>
             <div class="table-row">
                 <div class="table-cell param-name">Appinsight:</div>
-                <div class="table-cell param-value" colspan="3"><a href="https://portal.azure.com/#@ABB.onmicrosoft.com/resource/subscriptions/{{azureResourcesConfig.SubscriptionId}}/resourceGroups/{{azureResourcesConfig.ApplicationInsightResourceGroup}}/providers/microsoft.insights/components/{{azureResourcesConfig.ApplicationInsightName}}/searchV1">{{traceId}}</a></div>
+                <div class="table-cell param-value" colspan="3"><a href="https://portal.azure.com/#@ABB.onmicrosoft.com/resource/subscriptions/{{azureResourcesConfig.SubscriptionId}}/resourceGroups/{{azureResourcesConfig.ApplicationInsightResourceGroup}}/providers/microsoft.insights/components/{{azureResourcesConfig.ApplicationInsightName}}/searchV1">{{azureResourcesConfig.ApplicationInsightTraceId}}</a></div>
             </div>
             <div class="table-row">
                 <div class="table-cell param-name">Log stream:</div>

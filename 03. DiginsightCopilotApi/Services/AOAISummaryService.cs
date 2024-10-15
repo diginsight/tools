@@ -226,11 +226,16 @@ public class AOAISummaryService : ISummaryService
         var azureResourcesConfig = this.azureResourcesOptions.Value;
         var devopsConfig = this.azureResourcesOptions.Value;
         var httpConfig = this.httpOptions.Value;
-        var traceId = "666d0447c75de5e945abd60b949a8e2f";
 
-        // DBUG 666d0447c75de5e945abd60b949a8e2f              1  LandingCallMiddleware.InvokeAsync
-        //"DBUG (\w+)(.*)LandingCallMiddleware.InvokeAsync"
+        var traceIdPattern = @"DBUG ([0-9a-fA-F]{32})(.*)LandingCallMiddleware.InvokeAsync";
+        var traceIdMatch = Regex.Match(logContent, traceIdPattern);
+        if (traceIdMatch.Success)
+        {
+            var traceId = traceIdMatch.Groups[1].Value;
+            logger.LogDebug("traceId: {traceId}", traceId);
 
+            this.azureResourcesOptions.Value.ApplicationInsightTraceId = traceId;
+        }
 
         // Title FileName SASToken FileName
         List<ChatMessage> chatMessages = new();
@@ -238,7 +243,7 @@ public class AOAISummaryService : ISummaryService
         {
             var message = messageObject as IDictionary<object, object>;
             var requestHeaders = httpConfig.Headers;
-            message["Value"] = PromptReplacePlaceholders(message["Value"] as string, new { nowOffsetUtc, logContent, devopsConfig, httpConfig, azureResourcesConfig, changes, buildId, analysisSasToken, assemblyMetadata, requestHeaders, workItems, folderNamePrefix, logFileName, traceId });
+            message["Value"] = PromptReplacePlaceholders(message["Value"] as string, new { nowOffsetUtc, logContent, devopsConfig, httpConfig, azureResourcesConfig, changes, buildId, analysisSasToken, assemblyMetadata, requestHeaders, workItems, folderNamePrefix, logFileName });
             if (message["Type"].Equals("SystemChatMessage")) { chatMessages.Add(new SystemChatMessage(message["Value"] as string)); }
             else if (message["Type"].Equals("UserChatMessage")) { chatMessages.Add(new UserChatMessage(message["Value"] as string)); }
         }
