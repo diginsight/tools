@@ -61,30 +61,41 @@
                 font-size: 16px;
                 color: #333;
             }
-            .content ul {
+            ul {
                 list-style-type: none;
                 padding: 0;
-                font-size: 14px;
+                font-size: 12px;
                 margin-top: 5px;
             }
-            .content li {
-                background-color: #f1f1f1;
-                margin: 10px 0;
-                padding: 15px 0px 15px 10px;
-                font-size: 14px;
-                border-radius: 10px;
+            /* li {
+                display: 0 1 flex;
+                margin-top: 8px; 
                 width: 100%;
+                border: 0px solid #ddd;
+            } */
+            li {
+                position: relative;
+                margin-bottom: 10px;
+                padding-left: 20px; 
             }
-            .content li a {
-                color: #007BFF;
-                text-decoration: none;
-                font-size: 14px;
-                font-weight: bold;
+            li::before {
+                content: "•"; /* Bullet point character */
+                position: absolute; /* Position it absolutely */
+                left: 0; /* Align it to the left */
+                top: 0; /* Align it to the top */
+                font-size: 1.2em; /* Adjust size as needed */
+                line-height: 1; /* Adjust line height */
+                color: black; /* Bullet point color */
             }
-            .content li p {
-                margin: 10px 0 0;
-                font-size: 14px;
-                color: #555;
+            li span {
+                display: block; /* Make descriptions start on a new line */
+                margin-top: 2px; /* Optional: space between code and description */
+            }
+            p {
+                font-size: 16px; /* Inherit the font size from the parent <p> element */
+            } 
+            p code {
+                font-size: inherit; /* Inherit the font size from the parent <p> element */
             } 
             .button {
                 display: inline-block;
@@ -104,8 +115,29 @@
                 width: 100%;
                 border-collapse: collapse;
             }
+            .table-container-grid {
+                display: grid;
+                grid-template-columns: auto 1fr; /* First column auto-sized, second column takes remaining space */
+                width: 100%;
+                border-collapse: collapse;
+            }
+            .table-row-grid {
+                display: contents; /* Allow grid items to span multiple rows */
+                width: 100%;
+                border: 0px solid #ddd;
+            }
             .table-row {
                 display: flex;
+                width: 100%;
+                border: 0px solid #ddd;
+            }
+            .table-row-auto {
+                display: 0 1 flex;
+                width: 100%;
+                border: 0px solid #ddd;
+            }
+            .table-row-grid {
+                display: contents; /* Allow grid items to span multiple rows */
                 width: 100%;
                 border: 0px solid #ddd;
             }
@@ -218,7 +250,7 @@
                 <div class="table-cell-noborder param-name-flex">CURL to reproduce the call:</div>
             </div>
             <div class="table-row">
-                <div class="code-container" id="curlCommand" ><pre><code>{{curl}}</code></pre></div>
+                <div class="code-container" id="curlCommand" ><pre><code>{{httpConfig.Curl}}</code></pre></div>
             </div>
             <button class="copy-button" onclick="copyToClipboard()">Copy</button>
         </div>
@@ -236,7 +268,11 @@
       . the section title should be with <h3> tags.
     - a first paragraph should explain what method is being executed and if it is failing.
     - a list should follow with the most important parameters received by the method.
-      . for every parameter, its name, value and a short description should be provided.
+      . for every parameter, its name, value and a short description should be provided as shown below.
+        <li>
+            <code>parameter name</code>:<strong><code>parameter value</code></strong>
+            <span>Description: parameter description.</span>
+        </li>
 
     - In case of failure, the summary should explain a reason why the failure is happening.
     - In case an error message is reported, the error message should be shown in dark red.
@@ -250,6 +286,7 @@
               <div class="code-container" ><pre><code>{{Exception}}</code></pre></div>
           </div>
       </div>
+
     - before the CODE section a left aligned link shoud be added to the failing code
       the link should be in the form
       https://dev.azure.com/{{devopsConfig.OrgName}}/{{devopsConfig.Project}}/_git/{{devopsConfig.Repository}}
@@ -261,16 +298,28 @@
   Value: |
     - After the 'Application flow resources' a section with title 'Application flow resources' should report all databases or external services accessed by the application.
       the table rows may include Database information, Http external service information or Service Bus information as shown below:
-      Database: '{{DatabaseUrl}}', Collection: '{{Table}}'
-      Http external service: '{{HttpBaseUrl}}'
-      Service Bus: '{{ServiceBusBaseUrl}}'
+      <div class="table-container">
+          <div class="table-row-auto">
+              <div class="table-cell param-name">Database:</div>
+              <div class="table-cell param-value" colspan="3"><code>'{{DatabaseUrl}}'</code>, Collection: '<code>{{Table}}</code>'</div>
+          </div>
+          <div class="table-row-auto">
+              <div class="table-cell param-name">Service Bus:</div>
+              <div class="table-cell param-value" colspan="3"><code>{{ServiceBusBaseUrl}}</code></div>
+          </div>
+          <div class="table-row-auto">
+              <div class="table-cell param-name">Http external service:</div>
+              <div class="table-cell param-value" colspan="3"><code>{{HttpBaseUrl}}</code></div>
+          </div>
+      </div>
       fields should be left aligned and field values should be Bold.
-      Please, consider that the '{{httpConfig.Scheme}}://{{httpConfig.Host}}' is not an external resource and should not be included into this table.
-      Also, all endpoint with hostname applicationinsights.azure.com should be omitted
+      . Please, consider that the '{{httpConfig.Scheme}}://{{httpConfig.Host}}' is not an external resource and should not be included into this table.
+      . Also, all endpoint with hostname applicationinsights.azure.com should be omitted
+      . Also, traces from LandingCallMiddleware should not be considered for this
       . the section title should be with <h3> tags.
 
     - After the 'Application flow resources' a 'Reference' section should include the following data.
-      <div class="table-container">
+      <div class="table-container" >
           <div class="table-row">
               <div class="table-cell param-name">Build:</div>
               <div class="table-cell param-value">{{devopsConfig.BuildNumber}}</div>
@@ -279,7 +328,7 @@
           </div>
           <div class="table-row">
               <div class="table-cell param-name">Repository:</div>
-              <div class="table-cell param-value">{{devopsConfig.Repository}}</div>
+              <div class="table-cell param-value"><a href="https://dev.azure.com/{{devopsConfig.OrgName}}/{{devopsConfig.Project}}/_git/{{devopsConfig.Repository}}" >{{devopsConfig.Repository}}</a></div>
               <div class="table-cell param-name">Branch:</div>
               <div class="table-cell param-value">{{devopsConfig.Branch}}</div>
           </div>

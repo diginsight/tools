@@ -104,65 +104,6 @@ public class AOAISummaryService : ISummaryService
             return json.access_token;
         }
     }
-    private async Task GetApplicationInsightResourceAsync(string instrumentationKey, string accessToken)
-    {
-        using var activity = Observability.ActivitySource.StartMethodActivity(logger, new { instrumentationKey });
-
-        var subscriptionId = azureResourcesOptions.Value.SubscriptionId;
-
-        using (var httpClient = new HttpClient())
-        {
-            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
-
-            var query = new
-            {
-                subscriptions = new[] { subscriptionId },
-                query = $""" 
-                         Resources
-                         | where type == 'microsoft.insights/components'
-                         | where properties.InstrumentationKey == '{instrumentationKey}'
-                         | project id
-                         | take 1
-                         """
-            };
-            logger.LogDebug("query: {query}", query);
-
-            var content = new StringContent(JsonConvert.SerializeObject(query), Encoding.UTF8, "application/json");
-            var response = await httpClient.PostAsync(resourceGraphEndpoint, content);
-            response.EnsureSuccessStatusCode();
-
-            var responseBody = await response.Content.ReadAsStringAsync();
-            Console.WriteLine(responseBody);
-        }
-
-    }
-
-    private async Task<ResourceQueryResult> GetApplicationInsightResourceAsync(string instrumentationKey, TokenCredential tokenCredential)
-    {
-        using var activity = Observability.ActivitySource.StartMethodActivity(logger, new { instrumentationKey });
-
-        var armClient = new ArmClient(tokenCredential);
-        var tenantCollection = armClient.GetTenants();
-        var tenants = tenantCollection.GetAllAsync(cancellationToken: default);
-        var tenant = await tenants.FirstAsync(cancellationToken: default);
-        var subscriptions = tenant.GetSubscriptions();
-
-        var query = $""" 
-                     Resources
-                     | where type == 'microsoft.insights/components'
-                     | where properties.InstrumentationKey == '{instrumentationKey}'
-                     | project id
-                     | take 1
-                     """;
-
-        var subscriptionId = azureResourcesOptions.Value.SubscriptionId;
-        var queryContent = new ResourceQueryContent(query);
-        queryContent.Subscriptions.Add(subscriptionId);
-
-        var response = await tenant.GetResourcesAsync(queryContent);
-        return response.Value; // ResourceGroup, Name, SubscriptionId
-    }
-
     public async Task<Analysis> GenerateSummary(string logContent, int buildId, IEnumerable<WorkItemParam> workItems, IEnumerable<ChangeParam> changes, IEnumerable<AssemblyMetadata> assemblyMetadata)
     {
         using var activity = Observability.ActivitySource.StartMethodActivity(logger, new { logContent, buildId, workItems, changes });
@@ -190,72 +131,12 @@ public class AOAISummaryService : ISummaryService
         var analysisSasToken = containerClient.GenerateSasUri(BlobContainerSasPermissions.Read, DateTimeOffset.UtcNow.AddHours(1)).Query;
         logger.LogDebug("analysisSasToken: {analysisSasToken}", analysisSasToken);
 
-        var instrumentationKey = azureResourcesOptions.Value.InstrumentationKey;
-        if (!string.IsNullOrEmpty(instrumentationKey))
-        {
-            var tenantId = azureAdOptions.Value.TenantId;
-            var clientId = azureAdOptions.Value.ClientId;
-            var clientSecret = azureAdOptions.Value.ClientSecret;
-            var tokenCredential = new ClientSecretCredential(tenantId, clientId, clientSecret);
-            var resourceQueryResult = await GetApplicationInsightResourceAsync(instrumentationKey, tokenCredential);
-            var jsonDocument = JsonDocument.Parse(resourceQueryResult.Data.ToString());
-            var root = jsonDocument?.RootElement != null && jsonDocument.RootElement.GetArrayLength() > 0 ? jsonDocument.RootElement[0] : default(JsonElement);
-            var applicationInsightId = root.GetProperty("id").ToString();
-
-            azureResourcesOptions.Value.ApplicationInsightId = applicationInsightId;
-            if (!string.IsNullOrEmpty(applicationInsightId))
-            {
-                var applicationInsightIdStringPattern = "/subscriptions/(.*)/resourceGroups/(.*)/providers/microsoft.insights/components/(.*)";
-                var applicationInsightIdStringMatch = Regex.Match(applicationInsightId, applicationInsightIdStringPattern);
-                if (applicationInsightIdStringMatch.Success)
-                {
-                    var subscriptionId = applicationInsightIdStringMatch.Groups[1].Value;
-                    var resourceGroup = applicationInsightIdStringMatch.Groups[2].Value;
-                    var applicationInsightName = applicationInsightIdStringMatch.Groups[3].Value;
-                    logger.LogDebug("subscriptionId: {subscriptionId}, resourceGroup: {resourceGroup}, applicationInsightName: {applicationInsightName}, applicationId: {applicationId}", subscriptionId, resourceGroup, applicationInsightName);
-
-                    azureResourcesOptions.Value.SubscriptionId = subscriptionId;
-                    azureResourcesOptions.Value.ApplicationInsightName = applicationInsightName;
-                    azureResourcesOptions.Value.ApplicationInsightResourceGroup = resourceGroup;
-                }
-            }
-        }
-
         string folderNamePrefix = $"{DateTime.UtcNow:yyyyMMdd HHmm} - ";
         string logFileName = $"{folderNamePrefix}LogStream";
         var azureResourcesConfig = this.azureResourcesOptions.Value;
         var devopsConfig = this.devopsOptions.Value;
         var httpConfig = this.httpOptions.Value;
         var azureAdConfig = this.azureAdOptions.Value;
-
-        var traceIdPattern = @"DBUG ([0-9a-fA-F]{32})(.*)LandingCallMiddleware.InvokeAsync";
-        var traceIdMatch = Regex.Match(logContent, traceIdPattern);
-        if (traceIdMatch.Success)
-        {
-            var traceId = traceIdMatch.Groups[1].Value;
-            logger.LogDebug("traceId: {traceId}", traceId);
-
-            this.azureResourcesOptions.Value.ApplicationInsightTraceId = traceId;
-        }
-
-        // curl 'https://stage.api.electrification.ability.abb/common/api/plant/77903d8a-ba6e-4510-b1bb-d96f415f2120/panel/f48ae63d-8af9-4894-9d04-2aba8157af76/widget/983ff3c1-c4db-431e-8ff0-16de69d5a4df/?plantType=EDCS' \
-        var first = $@"curl '{httpConfig.Scheme}://{httpConfig.Host}{httpConfig.Path}/{httpConfig.Query}' \";
-        var second = $@"-X '{httpConfig.Method}' \";
-        var headerStrings = new List<string>();
-        foreach (var header in httpConfig.Headers)
-        {
-            if (header.Name == "Authorization") { continue; }
-            headerStrings.Add($@"-H '{header.Name}: {header.Value}' \");
-        }
-        var headers = string.Join("\r\n", headerStrings);
-        // --data-raw '{"id":"983ff3c1-c4db-431e-8ff0-16de69d5a4df","settings":"{\"configurationId\":\"418120fb-94ac-44d1-bf3f-4b28577a363d\",\"period\":\"Day\",\"viewType\":\"multiLevelView\",\"fromDate\":\"2023-01-04\",\"toDate\":\"2023-01-05\",\"dates\":[{\"from_date\":\"2023-01-04\",\"to_date\":\"2023-01-05\"}],\"chartType\":\"barGraph\",\"group\":\"FifteenMinutes\",\"type\":\"PQConfigurationData\",\"subType\":\"Energy\",\"selectedPQEvent\":[{\"id\":3,\"name\":\"Active energy\",\"disabled\":false,\"checked\":true,\"color\":\"#c2347b\",\"colorCompare\":\"#c2347b80\",\"showHide\":false,\"labelName\":\"activeEnergy\",\"previouslabelName\":\"previousActiveEnergy\"},{\"id\":4,\"name\":\"Reactive energy\",\"disabled\":false,\"checked\":true,\"color\":\"#b3e6ff\",\"colorCompare\":\"#b3e6ff80\",\"showHide\":false,\"labelName\":\"reactiveEnergy\",\"previouslabelName\":\"previousReactiveEnergy\"},{\"id\":5,\"name\":\"Apparent energy\",\"disabled\":false,\"checked\":true,\"color\":\"#00acec\",\"colorCompare\":\"#00acec80\",\"showHide\":false,\"labelName\":\"apparentEnergy\",\"previouslabelName\":\"previousApparentEnergy\"}],\"selectedHDEvent\":[],\"requestView\":\"MultiLevelView\",\"groupName\":\"Scanning\"}","templateName":"CustomAnalysisChart","panelId":"f48ae63d-8af9-4894-9d04-2aba8157af76","plantId":"77903d8a-ba6e-4510-b1bb-d96f415f2120","templateId":"f91ba9d1-9877-4583-baea-91aae22e8fc4","title":"Custom Chart","description":"Enables the visualization of charts created and saved in the \"Analysis\" tab","templateSizes":[],"defaultDropdownChange":false,"isSmartTrackerEnabled":false,"isPowerProtectionEnabled":true,"gridSize":{"cols":2,"rows":2},"x":0,"y":3,"xSm":0,"ySm":1,"xMd":1,"yMd":0,"xLg":1,"yLg":0,"xXl":1,"yXl":0}'
-
-        var curl = $"""
-                   {first}
-                   {second}
-                   {headers}
-                   """.Trim();
-                   //--data-raw '{"id":"983ff3c1-c4db-431e-8ff0-16de69d5a4df","settings":"{\"configurationId\":\"418120fb-94ac-44d1-bf3f-4b28577a363d\",\"period\":\"Day\",\"viewType\":\"multiLevelView\",\"fromDate\":\"2023-01-04\",\"toDate\":\"2023-01-05\",\"dates\":[{\"from_date\":\"2023-01-04\",\"to_date\":\"2023-01-05\"}],\"chartType\":\"barGraph\",\"group\":\"FifteenMinutes\",\"type\":\"PQConfigurationData\",\"subType\":\"Energy\",\"selectedPQEvent\":[{\"id\":3,\"name\":\"Active energy\",\"disabled\":false,\"checked\":true,\"color\":\"#c2347b\",\"colorCompare\":\"#c2347b80\",\"showHide\":false,\"labelName\":\"activeEnergy\",\"previouslabelName\":\"previousActiveEnergy\"},{\"id\":4,\"name\":\"Reactive energy\",\"disabled\":false,\"checked\":true,\"color\":\"#b3e6ff\",\"colorCompare\":\"#b3e6ff80\",\"showHide\":false,\"labelName\":\"reactiveEnergy\",\"previouslabelName\":\"previousReactiveEnergy\"},{\"id\":5,\"name\":\"Apparent energy\",\"disabled\":false,\"checked\":true,\"color\":\"#00acec\",\"colorCompare\":\"#00acec80\",\"showHide\":false,\"labelName\":\"apparentEnergy\",\"previouslabelName\":\"previousApparentEnergy\"}],\"selectedHDEvent\":[],\"requestView\":\"MultiLevelView\",\"groupName\":\"Scanning\"}","templateName":"CustomAnalysisChart","panelId":"f48ae63d-8af9-4894-9d04-2aba8157af76","plantId":"77903d8a-ba6e-4510-b1bb-d96f415f2120","templateId":"f91ba9d1-9877-4583-baea-91aae22e8fc4","title":"Custom Chart","description":"Enables the visualization of charts created and saved in the \"Analysis\" tab","templateSizes":[],"defaultDropdownChange":false,"isSmartTrackerEnabled":false,"isPowerProtectionEnabled":true,"gridSize":{"cols":2,"rows":2},"x":0,"y":3,"xSm":0,"ySm":1,"xMd":1,"yMd":0,"xLg":1,"yLg":0,"xXl":1,"yXl":0}'
 
         List<ChatMessage> chatMessages = new();
         foreach (var messageObject in yamlObject)
@@ -276,8 +157,7 @@ public class AOAISummaryService : ISummaryService
                                                              requestHeaders,
                                                              workItems,
                                                              folderNamePrefix,
-                                                             logFileName,
-                                                             curl
+                                                             logFileName
                                                          });
 
             if (message["Type"].Equals("SystemChatMessage")) { chatMessages.Add(new SystemChatMessage(message["Value"] as string)); }

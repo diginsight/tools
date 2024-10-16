@@ -15,6 +15,7 @@ public class HttpContextOptions
     public string Referer { get; set; }
     public string RefererHost { get; set; }
     public string Authority { get; set; }
+    public string Curl { get; set; }
     public List<HttpRequestHeader> Headers { get; set; }
 }
 

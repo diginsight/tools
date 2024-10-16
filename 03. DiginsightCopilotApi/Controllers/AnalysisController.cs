@@ -1,3 +1,6 @@
+using Azure.Identity;
+using Azure.ResourceManager.ResourceGraph.Models;
+using Azure.ResourceManager;
 using Diginsight.Diagnostics;
 using DiginsightCopilotApi.Abstractions;
 using DiginsightCopilotApi.Configuration;
@@ -7,8 +10,14 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using Microsoft.TeamFoundation.Build.WebApi;
 using MimeKit;
+using Newtonsoft.Json;
+using System.Net.Http.Headers;
+using System.Text;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using static System.Net.WebRequestMethods;
+using Azure.ResourceManager.ResourceGraph;
+using Azure.Core;
 
 namespace DiginsightCopilotApi.Controllers
 {
@@ -16,7 +25,9 @@ namespace DiginsightCopilotApi.Controllers
     [Route("[controller]")]
     public class AnalysisController : ControllerBase
     {
+        private static readonly string resourceGraphEndpoint = "https://management.azure.com/providers/Microsoft.ResourceGraph/resources?api-version=2022-10-01";
         private readonly ILogger<AnalysisController> logger;
+        private readonly IOptions<AzureAdOptions> azureAdOptions;
         private readonly IOptions<AzureDevopsOptions> devopsOptions;
         private readonly IOptions<HttpContextOptions> httpOptions;
         private readonly IOptions<AzureResourcesOptions> azureResourcesOptions;
@@ -27,6 +38,7 @@ namespace DiginsightCopilotApi.Controllers
 
         public AnalysisController(
             ILogger<AnalysisController> logger,
+            IOptions<AzureAdOptions> azureAdOptions,
             IOptions<AzureDevopsOptions> devopsOptions,
             IOptions<HttpContextOptions> httpOptions,
             IOptions<AzureResourcesOptions> azureResourcesOptions,
@@ -38,6 +50,7 @@ namespace DiginsightCopilotApi.Controllers
             this.logger = logger;
             using var activity = Observability.ActivitySource.StartMethodActivity(logger, new { logger });
 
+            this.azureAdOptions = azureAdOptions;
             this.devopsOptions = devopsOptions;
             this.httpOptions = httpOptions;
             this.azureResourcesOptions = azureResourcesOptions;
@@ -83,14 +96,24 @@ namespace DiginsightCopilotApi.Controllers
                 this.httpOptions.Value.Authority = incomingAuthority;
             }
 
+            var traceIdPattern = @"DBUG ([0-9a-fA-F]{32})(.*)LandingCallMiddleware.InvokeAsync";
+            var traceIdMatch = Regex.Match(logContent, traceIdPattern);
+            if (traceIdMatch.Success)
+            {
+                var traceId = traceIdMatch.Groups[1].Value;
+                logger.LogDebug("traceId: {traceId}", traceId);
+
+                this.azureResourcesOptions.Value.ApplicationInsightTraceId = traceId;
+            }
+
             var azureMonitorConnectionStringPattern = @"AzureMonitorConnectionString: InstrumentationKey=(.*);IngestionEndpoint=(.*)/;LiveEndpoint=(.*);ApplicationId=(.*)";
             var azureMonitorConnectionStringMatch = Regex.Match(logContent, azureMonitorConnectionStringPattern);
             if (azureMonitorConnectionStringMatch.Success)
             {
                 var azureMonitorConnectionString = azureMonitorConnectionStringMatch.Value;
-                var instrumentationKey = azureMonitorConnectionStringMatch.Groups[1].Value; 
-                var ingestionEndpoint = azureMonitorConnectionStringMatch.Groups[2].Value; 
-                var liveEndpoint =  azureMonitorConnectionStringMatch.Groups[3].Value;
+                var instrumentationKey = azureMonitorConnectionStringMatch.Groups[1].Value;
+                var ingestionEndpoint = azureMonitorConnectionStringMatch.Groups[2].Value;
+                var liveEndpoint = azureMonitorConnectionStringMatch.Groups[3].Value;
                 var applicationId = azureMonitorConnectionStringMatch.Groups[4].Value;
                 logger.LogDebug("instrumentationKey: {instrumentationKey}, ingestionEndpoint: {ingestionEndpoint}, liveEndpoint: {liveEndpoint}, applicationId: {applicationId}", instrumentationKey, ingestionEndpoint, liveEndpoint, applicationId);
 
@@ -99,6 +122,36 @@ namespace DiginsightCopilotApi.Controllers
                 this.azureResourcesOptions.Value.IngestionEndpoint = ingestionEndpoint;
                 this.azureResourcesOptions.Value.LiveEndpoint = liveEndpoint;
                 this.azureResourcesOptions.Value.ApplicationId = applicationId;
+                
+                if (!string.IsNullOrEmpty(instrumentationKey))
+                {
+                    var tenantId = azureAdOptions.Value.TenantId;
+                    var clientId = azureAdOptions.Value.ClientId;
+                    var clientSecret = azureAdOptions.Value.ClientSecret;
+                    var tokenCredential = new ClientSecretCredential(tenantId, clientId, clientSecret);
+                    var resourceQueryResult = await GetApplicationInsightResourceAsync(instrumentationKey, tokenCredential);
+                    var jsonDocument = JsonDocument.Parse(resourceQueryResult.Data.ToString());
+                    var root = jsonDocument?.RootElement != null && jsonDocument.RootElement.GetArrayLength() > 0 ? jsonDocument.RootElement[0] : default(JsonElement);
+                    var applicationInsightId = root.GetProperty("id").ToString();
+
+                    azureResourcesOptions.Value.ApplicationInsightId = applicationInsightId;
+                    if (!string.IsNullOrEmpty(applicationInsightId))
+                    {
+                        var applicationInsightIdStringPattern = "/subscriptions/(.*)/resourceGroups/(.*)/providers/microsoft.insights/components/(.*)";
+                        var applicationInsightIdStringMatch = Regex.Match(applicationInsightId, applicationInsightIdStringPattern);
+                        if (applicationInsightIdStringMatch.Success)
+                        {
+                            var subscriptionId = applicationInsightIdStringMatch.Groups[1].Value;
+                            var resourceGroup = applicationInsightIdStringMatch.Groups[2].Value;
+                            var applicationInsightName = applicationInsightIdStringMatch.Groups[3].Value;
+                            logger.LogDebug("subscriptionId: {subscriptionId}, resourceGroup: {resourceGroup}, applicationInsightName: {applicationInsightName}, applicationId: {applicationId}", subscriptionId, resourceGroup, applicationInsightName);
+
+                            azureResourcesOptions.Value.SubscriptionId = subscriptionId;
+                            azureResourcesOptions.Value.ApplicationInsightName = applicationInsightName;
+                            azureResourcesOptions.Value.ApplicationInsightResourceGroup = resourceGroup;
+                        }
+                    }
+                }
             }
 
             var httpRequestHeaders = new List<HttpRequestHeader>();
@@ -126,9 +179,29 @@ namespace DiginsightCopilotApi.Controllers
                         else { devopsOptions.Value.Environment = "Production"; }
                     }
                 }
-
             }
             this.httpOptions.Value.Headers = httpRequestHeaders;
+
+            var httpConfig = this.httpOptions.Value;
+            var first = $@"curl '{httpConfig.Scheme}://{httpConfig.Host}{httpConfig.Path}{httpConfig.Query}' \";
+            var second = $@"-X '{httpConfig.Method}' \";
+            var headerStrings = new List<string>();
+            if (httpConfig.Headers != null)
+            {
+                foreach (var header in httpConfig.Headers)
+                {
+                    if (header.Name == "Authorization") { continue; }
+                    headerStrings.Add($@"-H '{header.Name}: {header.Value}' \");
+                }
+            }
+            var headers = string.Join("\r\n", headerStrings);
+            // --data-raw ''
+            var curl = $"""
+                   {first}
+                   {second}
+                   {headers}
+                   """.Trim();
+            this.httpOptions.Value.Curl = curl;
 
             var buildId = 0; var devopsProject = "";
             var assemblyMetadata = new List<AssemblyMetadata>();
@@ -225,6 +298,66 @@ namespace DiginsightCopilotApi.Controllers
             logger.LogDebug("logContent:\r\n{logContent}");
 
             return analysis.Details; // Ok()
+        }
+
+
+        private async Task GetApplicationInsightResourceAsync(string instrumentationKey, string accessToken)
+        {
+            using var activity = Observability.ActivitySource.StartMethodActivity(logger, new { instrumentationKey });
+
+            var subscriptionId = azureResourcesOptions.Value.SubscriptionId;
+
+            using (var httpClient = new HttpClient())
+            {
+                httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+
+                var query = new
+                {
+                    subscriptions = new[] { subscriptionId },
+                    query = $""" 
+                         Resources
+                         | where type == 'microsoft.insights/components'
+                         | where properties.InstrumentationKey == '{instrumentationKey}'
+                         | project id
+                         | take 1
+                         """
+                };
+                logger.LogDebug("query: {query}", query);
+
+                var content = new StringContent(JsonConvert.SerializeObject(query), Encoding.UTF8, "application/json");
+                var response = await httpClient.PostAsync(resourceGraphEndpoint, content);
+                response.EnsureSuccessStatusCode();
+
+                var responseBody = await response.Content.ReadAsStringAsync();
+                Console.WriteLine(responseBody);
+            }
+
+        }
+
+        private async Task<ResourceQueryResult> GetApplicationInsightResourceAsync(string instrumentationKey, TokenCredential tokenCredential)
+        {
+            using var activity = Observability.ActivitySource.StartMethodActivity(logger, new { instrumentationKey });
+
+            var armClient = new ArmClient(tokenCredential);
+            var tenantCollection = armClient.GetTenants();
+            var tenants = tenantCollection.GetAllAsync(cancellationToken: default);
+            var tenant = await tenants.FirstAsync(cancellationToken: default);
+            var subscriptions = tenant.GetSubscriptions();
+
+            var query = $""" 
+                     Resources
+                     | where type == 'microsoft.insights/components'
+                     | where properties.InstrumentationKey == '{instrumentationKey}'
+                     | project id
+                     | take 1
+                     """;
+
+            var subscriptionId = azureResourcesOptions.Value.SubscriptionId;
+            var queryContent = new ResourceQueryContent(query);
+            queryContent.Subscriptions.Add(subscriptionId);
+
+            var response = await tenant.GetResourcesAsync(queryContent);
+            return response.Value; // ResourceGroup, Name, SubscriptionId
         }
     }
 }
