@@ -226,6 +226,7 @@ public class AOAISummaryService : ISummaryService
         var azureResourcesConfig = this.azureResourcesOptions.Value;
         var devopsConfig = this.devopsOptions.Value;
         var httpConfig = this.httpOptions.Value;
+        var azureAdConfig = this.azureAdOptions.Value;
 
         var traceIdPattern = @"DBUG ([0-9a-fA-F]{32})(.*)LandingCallMiddleware.InvokeAsync";
         var traceIdMatch = Regex.Match(logContent, traceIdPattern);
@@ -237,13 +238,48 @@ public class AOAISummaryService : ISummaryService
             this.azureResourcesOptions.Value.ApplicationInsightTraceId = traceId;
         }
 
-        // Title FileName SASToken FileName
+        // curl 'https://stage.api.electrification.ability.abb/common/api/plant/77903d8a-ba6e-4510-b1bb-d96f415f2120/panel/f48ae63d-8af9-4894-9d04-2aba8157af76/widget/983ff3c1-c4db-431e-8ff0-16de69d5a4df/?plantType=EDCS' \
+        var first = $@"curl '{httpConfig.Scheme}://{httpConfig.Host}{httpConfig.Path}/{httpConfig.Query}' \";
+        var second = $@"-X '{httpConfig.Method}' \";
+        var headerStrings = new List<string>();
+        foreach (var header in httpConfig.Headers)
+        {
+            if (header.Name == "Authorization") { continue; }
+            headerStrings.Add($@"-H '{header.Name}: {header.Value}' \");
+        }
+        var headers = string.Join("\r\n", headerStrings);
+        // --data-raw '{"id":"983ff3c1-c4db-431e-8ff0-16de69d5a4df","settings":"{\"configurationId\":\"418120fb-94ac-44d1-bf3f-4b28577a363d\",\"period\":\"Day\",\"viewType\":\"multiLevelView\",\"fromDate\":\"2023-01-04\",\"toDate\":\"2023-01-05\",\"dates\":[{\"from_date\":\"2023-01-04\",\"to_date\":\"2023-01-05\"}],\"chartType\":\"barGraph\",\"group\":\"FifteenMinutes\",\"type\":\"PQConfigurationData\",\"subType\":\"Energy\",\"selectedPQEvent\":[{\"id\":3,\"name\":\"Active energy\",\"disabled\":false,\"checked\":true,\"color\":\"#c2347b\",\"colorCompare\":\"#c2347b80\",\"showHide\":false,\"labelName\":\"activeEnergy\",\"previouslabelName\":\"previousActiveEnergy\"},{\"id\":4,\"name\":\"Reactive energy\",\"disabled\":false,\"checked\":true,\"color\":\"#b3e6ff\",\"colorCompare\":\"#b3e6ff80\",\"showHide\":false,\"labelName\":\"reactiveEnergy\",\"previouslabelName\":\"previousReactiveEnergy\"},{\"id\":5,\"name\":\"Apparent energy\",\"disabled\":false,\"checked\":true,\"color\":\"#00acec\",\"colorCompare\":\"#00acec80\",\"showHide\":false,\"labelName\":\"apparentEnergy\",\"previouslabelName\":\"previousApparentEnergy\"}],\"selectedHDEvent\":[],\"requestView\":\"MultiLevelView\",\"groupName\":\"Scanning\"}","templateName":"CustomAnalysisChart","panelId":"f48ae63d-8af9-4894-9d04-2aba8157af76","plantId":"77903d8a-ba6e-4510-b1bb-d96f415f2120","templateId":"f91ba9d1-9877-4583-baea-91aae22e8fc4","title":"Custom Chart","description":"Enables the visualization of charts created and saved in the \"Analysis\" tab","templateSizes":[],"defaultDropdownChange":false,"isSmartTrackerEnabled":false,"isPowerProtectionEnabled":true,"gridSize":{"cols":2,"rows":2},"x":0,"y":3,"xSm":0,"ySm":1,"xMd":1,"yMd":0,"xLg":1,"yLg":0,"xXl":1,"yXl":0}'
+
+        var curl = $"""
+                   {first}
+                   {second}
+                   {headers}
+                   """.Trim();
+                   //--data-raw '{"id":"983ff3c1-c4db-431e-8ff0-16de69d5a4df","settings":"{\"configurationId\":\"418120fb-94ac-44d1-bf3f-4b28577a363d\",\"period\":\"Day\",\"viewType\":\"multiLevelView\",\"fromDate\":\"2023-01-04\",\"toDate\":\"2023-01-05\",\"dates\":[{\"from_date\":\"2023-01-04\",\"to_date\":\"2023-01-05\"}],\"chartType\":\"barGraph\",\"group\":\"FifteenMinutes\",\"type\":\"PQConfigurationData\",\"subType\":\"Energy\",\"selectedPQEvent\":[{\"id\":3,\"name\":\"Active energy\",\"disabled\":false,\"checked\":true,\"color\":\"#c2347b\",\"colorCompare\":\"#c2347b80\",\"showHide\":false,\"labelName\":\"activeEnergy\",\"previouslabelName\":\"previousActiveEnergy\"},{\"id\":4,\"name\":\"Reactive energy\",\"disabled\":false,\"checked\":true,\"color\":\"#b3e6ff\",\"colorCompare\":\"#b3e6ff80\",\"showHide\":false,\"labelName\":\"reactiveEnergy\",\"previouslabelName\":\"previousReactiveEnergy\"},{\"id\":5,\"name\":\"Apparent energy\",\"disabled\":false,\"checked\":true,\"color\":\"#00acec\",\"colorCompare\":\"#00acec80\",\"showHide\":false,\"labelName\":\"apparentEnergy\",\"previouslabelName\":\"previousApparentEnergy\"}],\"selectedHDEvent\":[],\"requestView\":\"MultiLevelView\",\"groupName\":\"Scanning\"}","templateName":"CustomAnalysisChart","panelId":"f48ae63d-8af9-4894-9d04-2aba8157af76","plantId":"77903d8a-ba6e-4510-b1bb-d96f415f2120","templateId":"f91ba9d1-9877-4583-baea-91aae22e8fc4","title":"Custom Chart","description":"Enables the visualization of charts created and saved in the \"Analysis\" tab","templateSizes":[],"defaultDropdownChange":false,"isSmartTrackerEnabled":false,"isPowerProtectionEnabled":true,"gridSize":{"cols":2,"rows":2},"x":0,"y":3,"xSm":0,"ySm":1,"xMd":1,"yMd":0,"xLg":1,"yLg":0,"xXl":1,"yXl":0}'
+
         List<ChatMessage> chatMessages = new();
         foreach (var messageObject in yamlObject)
         {
             var message = messageObject as IDictionary<object, object>;
             var requestHeaders = httpConfig.Headers;
-            message["Value"] = PromptReplacePlaceholders(message["Value"] as string, new { nowOffsetUtc, logContent, devopsConfig, httpConfig, azureResourcesConfig, changes, buildId, analysisSasToken, assemblyMetadata, requestHeaders, workItems, folderNamePrefix, logFileName });
+            message["Value"] = PromptReplacePlaceholders(message["Value"] as string,
+                                                         new {
+                                                             nowOffsetUtc,
+                                                             logContent,
+                                                             httpConfig,
+                                                             azureAdConfig,
+                                                             azureResourcesConfig,
+                                                             devopsConfig,
+                                                             changes,
+                                                             analysisSasToken,
+                                                             assemblyMetadata,
+                                                             requestHeaders,
+                                                             workItems,
+                                                             folderNamePrefix,
+                                                             logFileName,
+                                                             curl
+                                                         });
+
             if (message["Type"].Equals("SystemChatMessage")) { chatMessages.Add(new SystemChatMessage(message["Value"] as string)); }
             else if (message["Type"].Equals("UserChatMessage")) { chatMessages.Add(new UserChatMessage(message["Value"] as string)); }
         }
