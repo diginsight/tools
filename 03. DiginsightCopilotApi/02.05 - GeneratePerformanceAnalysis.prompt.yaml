@@ -1,0 +1,56 @@
+- Type: SystemChatMessage
+  Value: |
+    Your goal is to write an html section with a human readable 'Performance analysis' that analyzes latencies within a method execution and explains if they are unreasonable or how they can be improved.
+    The method execution is described by the the 'log content' reported below. 
+    Rules:
+    - The output must always be in html with a valid html syntax, according to the following template
+      <section>
+          <h3>Performance Analysis</h3>
+          Performance Analysis content
+      </section>
+
+    The 'log content' describing the method exevution is reported here:
+    ###
+    {{logContent}}
+    ###   
+ 
+- Type: UserChatMessage
+  Value: |
+    - 'Performance Analysis content' should describe if method execution overall latency can be reasonable, according to the method complexity and the the task accomplished.
+      - few examples below show how to evaluate wether latencies can be reasonable:   
+      . latencies below 3 secs can be acceptable for a standard business method that should not be called frequently (eg. a request for LOB data one or more devices energy, current, power or voltage, a long list of devices with specific filters etc)
+      . latencies below 1 secs can be acceptable for a business method, or accessory methods that may be called very frequently (eg. a query for accessory data, anagraphic data, user profile, user grants, key value pairs etc)
+      . latencies up to 10 secs can be reasonable for very complex business methods that should not be called frequently (eg. a report generation, a wide data extraction)
+    - In case of high latencies => the 'Performance Analysis content' should identify and explain some reasons why this is happening 
+      . few examples below below show reasons why methods latencies can be high: 
+        - the overall latency can be high because one or more <inner methods> have highest latencies
+        - the overall latency can be high because one or more <inner methods> are repeated many times
+        - one <outer method> or <inner method> latency can be high because it is receiving large inbound data or it is fetching or returning large outbound data.
+    - Also, 'Performance Analysis content' provide warning in case the same inner method is called multiple times across the flow, with the same parameters.
+
+    - a first 'summary analysis' paragraph should explain if overall performance for the method can be reasonable, according to the method type.
+      examples of 'summary analysis' are provided below:   
+      Method overall latency of '<nn>' secs can be reasonable for method <classname>.<methodname> that is fetching .... 
+      Method overall latency of '<nn>' secs is relevant as much time is spent into the following expensive inner methods <classname1>.<methodname1>, <classname2>.<methodname2>...
+      Method overall latency of '<nn>' secs is relevant as the following expensive inner method <classname1>.<methodname1> is fetching very large data (eg. <count> devices events, a 10MB response payload...)
+
+    - if Method overall latency is reasonable => the 'Performance Analysis content' can be closed with a statement like:
+      Latency of 'nnn' secs seem acceptable and no issue is detected for method <classname>.<methodname>'
+      and no additional paragraphs should be added to the analysis.
+
+    - after the 'summary analysis' few 'high latency calls' paragraphs should explain which are the most expensive inner methods and why their latencies can be high.
+      example 'high latency calls' paragraphs are provided below:   
+      please, consider that call <classname1>.<methodname1> is taking <nnn> secs that represents a xx% of the overall latency.
+    
+    - after the 'high latency calls' paragraphs few 'calls repeated multiple times' paragraphs should explain which are the methods that are repeated miltiple times.
+      example 'calls repeated multiple times' paragraphs are provided below:   
+      please, consider that call <classname2>.<methodname2> is repeated <nnn> times and this takes a relevant latency.
+      . in case a inner method <classnameN>.<methodnameN> is called multiple times with the same parameters the 'calls repeated multiple times' paragraph can be added as a warning, as shown below:
+        . WARNiNG: please consider that GetUserProfile() is called 3 times to fetch the user profile for user darioa@microsoft.com
+        . WARNiNG: please consider that GetDeviceConfiguration() is called 2 times to fetch the configuration for device 'DEVICEH1'
+
+
+      
+
+
+

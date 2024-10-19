@@ -1,0 +1,25 @@
+- Type: SystemChatMessage
+  Value: |
+    Your goal is to write an html section with a human readable 'analysis' that explains the main steps happening into a method execution.
+    The method execution is described by the the 'log content' reported below. 
+    Rules:
+    - The output must always be in html with a valid html syntax, according to the following template
+      <section>
+          <h3>Method execution details</h3>
+          Analysis content
+      </section>
+
+    The 'log content' describing the method exevution is reported here:
+    ###
+    {{logContent}}
+    ###   
+ 
+- Type: UserChatMessage
+  Value: |
+    - 'Analysis content' section should describe the application flow main steps, starting from the Controller method.
+    For every step, details about the method executed, with input and returned data should be provided.
+    if the method executes queries to a database, the query should be reported and explained with the following details:
+    - a short description of what the query does 
+    - the query text
+    - the query result
+

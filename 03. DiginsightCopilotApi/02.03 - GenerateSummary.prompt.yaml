@@ -1,0 +1,63 @@
+- Type: SystemChatMessage
+  Value: |
+    Your goal is to write an html section with a human readable 'summary' that explains what is happening into a method execution.
+    The method execution is described by the the 'log content' reported below. 
+    Rules:
+    - The output must always be in html with a valid html syntax, according to the following template
+      <section>
+          <h3>{{Title}}</h3>
+          Summary content
+      </section>
+
+    - The Summary content should NOT repeat the Title 
+    - The Summary content should instead explain the title or provide additional details of what is happening during the execution, that is causing a ISSUE or a specific result.
+
+    The 'log content' describing the method exevution is reported here:
+    ###
+    {{logContent}}
+    ###   
+ 
+- Type: UserChatMessage
+  Value: |
+    - The 'Summary content' must start with a 'initial description' of the method result with some context information about when it is happening.
+    - The 'initial description' should explain what method is being executed and if it is failing.
+      . if a Controller Class is available within the flow     => the initial description should use the controller class.
+        (eg. '<Controller Class short name>.<Method> fails with' and it should include the exception short type name.)
+      . if a Controller Class is NOT available within the flow => the <classname>.<methodname> should refer to the outer possible business component (Aspnet components or middlewares should not be considered for this).
+      . if NO business component is available within the flow  => Aspnet components or middlewares can be considered.
+    - if the log includes <WidgetTemplate> and the <WidgetTemplate Name> => the 'initial description' should include 'for widget <WidgetTemplate Name>'.
+    - if the log includes a Plant name => the 'initial description' should include 'for site <Plant name>'.
+    - if the log includes a User name => the 'initial description' should include 'for user <User name>'.
+    - Some examples for the 'initial description' can be:
+       . Method <classname>.<methodname> failed with ... for user ... 
+       . Method <classname>.<methodname> failed with ... for site... 
+       . Method <classname>.<methodname> failed with ... when <some conditions describing when the problem can happen>...
+       . Method <classname>.<methodname> returned a valid user profile for user ... <some context information about the user or conditions when the call is happening>
+       . Method <classname>.<methodname> returned a plant information for site ... 
+
+    - after the 'initial description' the 'method invocation explanation' can explain the method invocation in better detail:
+      . 'method invocation explanation' can start with a paragraph like:
+        <classname>.<methodname>() was invoked with the following data:
+      . after that, a list should follow with the most important parameters received by the method.
+           . for every parameter, its name, value and a short description should be provided as shown below.
+           <li>
+               <code>parameter name</code>:<strong><code>parameter value</code></strong>
+               <span>Description: parameter description.</span>
+           </li>
+
+    - After the 'method invocation explanation' a 'in depth explanation' can better explain the reason why the failure is happening:
+      . if an exception is happening into a inner method => the 'in depth explanation' can explain that <classname>.<methodname> is failing because an exception <ExceptionShortTypeName> is happening in <InnerClassname>.<InnerMethodname>.
+      . if no exception is available withing the 'log content' and method is returning with a failure code => the 'in depth explanation' can explain that the method is failing with code <Nnn> and a possible reason why the failure code is being returned.
+      . if an exception is available withing the 'log content' and method is returning with a failure code => the 'in depth explanation' can explain that the method is returninf with SUCCESS code <Nnn> but <ExceptionShortTypeName> whas raised within the execution flow, so resulting data can be incomplete.
+    - Some examples for the 'in depth explanation' can be:
+       . Method <classname>.<methodname> is failing because exception a <ExceptionShortTypeName>: '<ExceptionMessage>' is happening in method '<InnerMethodname>' of class '<InnerClassname>'.
+         <ExceptionShortTypeName> may be happening because....
+       . Method <classname>.<methodname> is failing with code <Nnn> but no exception can be observed across the method execution.
+         This may be happening because....
+       . Method <classname>.<methodname> returning successfully with code <Nnn> but an exception can be observed within the method execution.
+         For this reason ... 
+
+    - In case any <ExceptionShortTypeName> or <ExceptionMessage> is reported, the message should be shown in dark red.
+    - The 'Summary content' should not include the full exception stack trace, but onlt short Exception type names and Exception messages
+ 
+

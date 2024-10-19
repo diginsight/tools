@@ -301,22 +301,22 @@
       <div class="table-container">
           <div class="table-row-auto">
               <div class="table-cell param-name">Database:</div>
-              <div class="table-cell param-value" colspan="3"><code>'{{DatabaseUrl}}'</code>, Collection: '<code>{{Table}}</code>'</div>
+              <div class="table-cell param-value" ><code>'{{DatabaseUrl}}'</code>, Collection: '<code>{{Table}}</code>'</div>
           </div>
           <div class="table-row-auto">
               <div class="table-cell param-name">Service Bus:</div>
-              <div class="table-cell param-value" colspan="3"><code>{{ServiceBusBaseUrl}}</code></div>
+              <div class="table-cell param-value" ><code>{{ServiceBusBaseUrl}}</code></div>
           </div>
           <div class="table-row-auto">
               <div class="table-cell param-name">Http external service:</div>
-              <div class="table-cell param-value" colspan="3"><code>{{HttpBaseUrl}}</code></div>
+              <div class="table-cell param-value" ><code>{{HttpBaseUrl}}</code></div>
           </div>
       </div>
       fields should be left aligned and field values should be Bold.
       . Please, consider that the '{{httpConfig.Scheme}}://{{httpConfig.Host}}' is not an external resource and should not be included into this table.
       . Also, all endpoint with hostname applicationinsights.azure.com should be omitted
-      . Also, traces from LandingCallMiddleware should not be considered for this
-      . the section title should be with <h3> tags.
+      . Also, traces from LandingCallMiddleware should not be considered for this table
+      . The section title should be with <h3> tags.
 
     - After the 'Application flow resources' a 'Reference' section should include the following data.
       <div class="table-container" >
