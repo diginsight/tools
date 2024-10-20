@@ -1,7 +1,5 @@
-﻿
-namespace DiginsightCopilotApi.Models;
+﻿namespace DiginsightCopilotApi.Models;
 
-// Root myDeserializedClass = JsonConvert.DeserializeObject<Root>(myJsonResponse);
 public class Approver
 {
     public string displayName { get; set; }

@@ -18,6 +18,7 @@ using System.Text.RegularExpressions;
 using static System.Net.WebRequestMethods;
 using Azure.ResourceManager.ResourceGraph;
 using Azure.Core;
+using Microsoft.AspNetCore.Http.Headers;
 
 namespace DiginsightCopilotApi.Controllers
 {
@@ -211,13 +212,13 @@ namespace DiginsightCopilotApi.Controllers
             }
             this.httpOptions.Value.Headers = httpRequestHeaders;
 
-            var httpConfig = this.httpOptions.Value;
-            var first = $@"curl '{httpConfig.Scheme}://{httpConfig.Host}{httpConfig.Path}{httpConfig.Query}' \";
-            var second = $@"-X '{httpConfig.Method}' \";
+            var httpInformation = this.httpOptions.Value;
+            var first = $@"curl '{httpInformation.Scheme}://{httpInformation.Host}{httpInformation.Path}{httpInformation.Query}' \";
+            var second = $@"-X '{httpInformation.Method}' \";
             var headerStrings = new List<string>();
-            if (httpConfig.Headers != null)
+            if (httpInformation.Headers != null)
             {
-                foreach (var header in httpConfig.Headers)
+                foreach (var header in httpInformation.Headers)
                 {
                     if (header.Name == "Authorization") { continue; }
                     headerStrings.Add($@"-H '{header.Name}: {header.Value}' \");
@@ -317,10 +318,38 @@ namespace DiginsightCopilotApi.Controllers
 
             }
 
-            var analysisTitle = await this.openAiService.GenerateTitle(logContent, buildId, workItemParams, changeParams, assemblyMetadata);
-            var analysisPlaceholders = await this.openAiService.InferPlaceholders(logContent, analysisTitle.Title, buildId, workItemParams, changeParams, assemblyMetadata);
+            var utcNow = DateTimeOffset.UtcNow;
+            // GenerateDeterministicPlaceholders
+            //      {{UserDisplayName}} {{UserEmail}}
 
-            var analysis = await this.openAiService.GenerateFullSummary(logContent, buildId, workItemParams, changeParams, assemblyMetadata);
+            // nowOffsetUtc,              // timeInformation
+            // logContent,                // logInformation
+            // httpInformation,           // httpInformation
+            // requestHeaders,            // requestInformation
+            // azureAdInformation,        // azureAdInformation
+            // azureResourcesInformation, // azureResourcesInformation
+            // devopsInformation,         // devopsInformation
+            // changes,                   // devopsChanges
+            // workItems,                 // devopsWorkItems
+            // analysisSasToken,          // storageInformation
+            // folderNamePrefix,          // storageInformation
+            // logFileName,               // storageInformation
+            // assemblyMetadata           // assemblyInformation
+            // inferredInformation
+
+            var analysisTitle = await this.openAiService.GenerateTitle(logContent, utcNow, buildId, workItemParams, changeParams, assemblyMetadata);
+            var analysisPlaceholders = await this.openAiService.InferPlaceholders(logContent, utcNow, analysisTitle.Title, buildId, workItemParams, changeParams, assemblyMetadata);
+            // GenerateCurlTable
+            // GenerateApplicationFlowTable
+            // GenerateExceptionStacktraceTable
+            // GenerateApplicationResourcesTable
+            // GenerateDevopsReferencesTable
+            // GenerateFooter
+            var analysisSummary = await this.openAiService.GenerateSummary(logContent, utcNow, analysisTitle.Title, buildId, workItemParams, changeParams, assemblyMetadata);
+            //var analysisDetails = await this.openAiService.GenerateDetails(logContent, utcNow, analysisTitle.Title, buildId, workItemParams, changeParams, assemblyMetadata);
+            //var analysisPerformance = await this.openAiService.GeneratePerformanceAnalysis(logContent, utcNow, analysisTitle.Title, buildId, workItemParams, changeParams, assemblyMetadata);
+
+            var analysis = await this.openAiService.GenerateFullAnalysis(logContent, utcNow, analysisTitle.Title, buildId, workItemParams, changeParams, assemblyMetadata);
 
             // Add response header
             Response.Headers.Add("analysis-url", analysis.Url);

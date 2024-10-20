@@ -244,17 +244,17 @@
             </div>
             <div class="table-row">
                 <div class="table-cell param-name">User:</div>
-                <div class="table-cell param-value" colspan="3">{{UserDisplayName}} ({{UserEmail}})</div>
+                <div class="table-cell param-value" colspan="3">{{userInformation.DisplayName}} ({{userInformation.Email}})</div>
             </div>
             <div class="table-row">
                 <div class="table-cell param-name">Environment:</div>
-                <div class="table-cell param-value">{{devopsConfig.Environment}}</div>
+                <div class="table-cell param-value">{{devopsInformation.Environment}}</div>
                 <div class="table-cell param-name">Site:</div>
-                <div class="table-cell param-value">{{httpConfig.RefererHost}}</div>
+                <div class="table-cell param-value">{{httpInformation.RefererHost}}</div>
             </div>
             <div class="table-row">
                 <div class="table-cell param-name">Appinsight:</div>
-                <div class="table-cell param-value" colspan="3"><a href="https://portal.azure.com/#@{{azureAdConfig.Domain}}/resource/subscriptions/{{azureResourcesConfig.SubscriptionId}}/resourceGroups/{{azureResourcesConfig.ApplicationInsightResourceGroup}}/providers/microsoft.insights/components/{{azureResourcesConfig.ApplicationInsightName}}/searchV1">{{azureResourcesConfig.ApplicationInsightTraceId}}</a></div>
+                <div class="table-cell param-value" colspan="3"><a href="https://portal.azure.com/#@{{azureAdInformation.Domain}}/resource/subscriptions/{{azureResourcesInformation.SubscriptionId}}/resourceGroups/{{azureResourcesInformation.ApplicationInsightResourceGroup}}/providers/microsoft.insights/components/{{azureResourcesInformation.ApplicationInsightName}}/searchV1">{{azureResourcesInformation.ApplicationInsightTraceId}}</a></div>
             </div>
             <div class="table-row">
                 <div class="table-cell param-name">Log stream:</div>
@@ -273,7 +273,7 @@
                     <div class="table-cell-noborder param-name-flex">CURL to reproduce the call:</div>
                 </div>
                 <div class="table-row">
-                    <div class="code-container" id="curlCommand" ><pre><code>{{httpConfig.Curl}}</code></pre></div>
+                    <div class="code-container" id="curlCommand" ><pre><code>{{httpInformation.Curl}}</code></pre></div>
                 </div>
                 <div class="copy-button-container">
                     <button class="copy-button" onclick="copyToClipboard('curlCommand')">Copy</button>
@@ -304,26 +304,26 @@
     - In case an error message is reported, the error message should be shown in dark red.
     - In case an <exception> with its <stacktrace> are available into the log,
       a CODE section should be included to document including both <exception> and the <stacktrace> as shown below.
-        <div class="container">
-            <div class="table-container">
-              <div class="row-container">
-                  <div class="left-aligned">Exception Stack trace:</div>
-                  <div class="right-aligned"><a href="link_to_failing_code">Link to failing code</a></div>
-              </div>
-              <div class="table-row">
-                  <div class="code-container" id="exceptionCommand" ><pre><code>{{Exception}}</code></pre></div>
-              </div>
-              <div class="copy-button-container">
-                  <button class="copy-button" onclick="copyToClipboard('exceptionCommand')">Copy</button>
-              </div>
+      <div class="container">
+          <div class="table-container">
+             <div class="row-container">
+                 <div class="left-aligned">Exception Stack trace:</div>
+                 <div class="right-aligned"><a href="link_to_failing_code">Link to failing code</a></div>
+             </div>
+             <div class="table-row">
+                 <div class="code-container" id="exceptionCommand" ><pre><code>{{Exception}}</code></pre></div>
+             </div>
+             <div class="copy-button-container">
+                 <button class="copy-button" onclick="copyToClipboard('exceptionCommand')">Copy</button>
+             </div>
           </div>
       </div>
     - before the CODE section a left aligned link shoud be added to the failing code
       the link should be in the form
-      https://dev.azure.com/{{devopsConfig.OrgName}}/{{devopsConfig.Project}}/_git/{{devopsConfig.Repository}}
+      https://dev.azure.com/{{devopsInformation.OrgName}}/{{devopsInformation.Project}}/_git/{{devopsInformation.Repository}}
     . the exception message and stacktrace rows should be trimmed to avoid leading blanks within the CODE section
     . the exception message should be reported in dark red 
-    - At the end of the body and in the center, add an 'Report Issue' button that links to the following url 'https://dev.azure.com/{{devopsConfig.OrgName}}/{{devopsConfig.Project}}/_build/results?buildId={{devopsConfig.BuildID}}'
+    - At the end of the body and in the center, add an 'Report Issue' button that links to the following url 'https://dev.azure.com/{{devopsInformation.OrgName}}/{{devopsInformation.Project}}/_build/results?buildId={{devopsInformation.BuildID}}'
 
 - Type: UserChatMessage
   Value: |
@@ -344,7 +344,7 @@
           </div>
       </div>
       fields should be left aligned and field values should be Bold.
-      . Please, consider that the '{{httpConfig.Scheme}}://{{httpConfig.Host}}' is not an external resource and should not be included into this table.
+      . Please, consider that the '{{httpInformation.Scheme}}://{{httpInformation.Host}}' is not an external resource and should not be included into this table.
       . Also, all endpoint with hostname applicationinsights.azure.com should be omitted
       . Also, traces from LandingCallMiddleware should not be considered for this table
       . Please, make sure that the table doesn't contain duplicated entries.
@@ -354,19 +354,19 @@
       <div class="table-container" >
           <div class="table-row">
               <div class="table-cell param-name">Build:</div>
-              <div class="table-cell param-value">{{devopsConfig.BuildNumber}}</div>
+              <div class="table-cell param-value">{{devopsInformation.BuildNumber}}</div>
               <div class="table-cell param-name">Build Id:</div>
-              <div class="table-cell param-value">{{devopsConfig.BuildID}}</div>
+              <div class="table-cell param-value">{{devopsInformation.BuildID}}</div>
           </div>
           <div class="table-row">
               <div class="table-cell param-name">Repository:</div>
-              <div class="table-cell param-value"><a href="https://dev.azure.com/{{devopsConfig.OrgName}}/{{devopsConfig.Project}}/_git/{{devopsConfig.Repository}}" >{{devopsConfig.Repository}}</a></div>
+              <div class="table-cell param-value"><a href="https://dev.azure.com/{{devopsInformation.OrgName}}/{{devopsInformation.Project}}/_git/{{devopsInformation.Repository}}" >{{devopsInformation.Repository}}</a></div>
               <div class="table-cell param-name">Branch:</div>
-              <div class="table-cell param-value">{{devopsConfig.Branch}}</div>
+              <div class="table-cell param-value">{{devopsInformation.Branch}}</div>
           </div>
           <div class="table-row">
               <div class="table-cell param-name">Project:</div>
-              <div class="table-cell param-value" colspan="3">https://dev.azure.com/{{devopsConfig.OrgName}}/{{devopsConfig.Project}}</div>
+              <div class="table-cell param-value" colspan="3">https://dev.azure.com/{{devopsInformation.OrgName}}/{{devopsInformation.Project}}</div>
           </div>
       </div>
       

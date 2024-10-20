@@ -1,0 +1,19 @@
+<h3>Reference</h3>
+<div class="table-container">
+    <div class="table-row">
+        <div class="table-cell param-name">Build:</div>
+        <div class="table-cell param-value">{{devopsInformation.BuildNumber}}</div>
+        <div class="table-cell param-name">Build Id:</div>
+        <div class="table-cell param-value">{{devopsInformation.BuildID}}</div>
+    </div>
+    <div class="table-row">
+        <div class="table-cell param-name">Repository:</div>
+        <div class="table-cell param-value"><a href="https://dev.azure.com/{{devopsInformation.OrgName}}/{{devopsInformation.Project}}/_git/{{devopsInformation.Repository}}">{{devopsInformation.Repository}}</a></div>
+        <div class="table-cell param-name">Branch:</div>
+        <div class="table-cell param-value">{{devopsInformation.Branch}}</div>
+    </div>
+    <div class="table-row">
+        <div class="table-cell param-name">Project:</div>
+        <div class="table-cell param-value" colspan="3">https://dev.azure.com/{{devopsInformation.OrgName}}/{{devopsInformation.Project}}</div>
+    </div>
+</div>
