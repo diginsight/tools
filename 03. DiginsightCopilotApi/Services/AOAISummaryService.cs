@@ -105,7 +105,7 @@ public class AOAISummaryService : ISummaryService
             return json.access_token;
         }
     }
-    public async Task<Analysis> GenerateSummary(string logContent, int buildId, IEnumerable<WorkItemParam> workItems, IEnumerable<ChangeParam> changes, IEnumerable<AssemblyMetadata> assemblyMetadata)
+    public async Task<Analysis> GenerateFullSummary(string logContent, int buildId, IEnumerable<WorkItemParam> workItems, IEnumerable<ChangeParam> changes, IEnumerable<AssemblyMetadata> assemblyMetadata)
     {
         using var activity = Observability.ActivitySource.StartMethodActivity(logger, new { logContent, buildId, workItems, changes });
 
@@ -233,7 +233,8 @@ public class AOAISummaryService : ISummaryService
         List<PromptChatMessage>? messages = null;
         var promptConfig = promptOptions.Value;
         var promptFolder = promptConfig.PromptFolder;
-        var promptFileName = string.IsNullOrEmpty(promptFolder) ? "02.01 - GenerateTitle.prompt.yaml" : $"{promptFolder}\\02.01 - GenerateTitle.prompt.yaml";
+        var promptName = "02.01 - GenerateTitle";
+        var promptFileName = string.IsNullOrEmpty(promptFolder) ? $"{promptName}.prompt.yaml" : $"{promptFolder}\\{promptName}.prompt.yaml";
 
         var promptYamlTemplate = File.ReadAllText(promptFileName);
         var deserializer = new DeserializerBuilder()
@@ -303,19 +304,19 @@ public class AOAISummaryService : ISummaryService
         var ret = response.Value.Content?.FirstOrDefault()?.Text ?? "";
 
         var markdownContentPattern = "```html(.*)```";
-        var match = Regex.Match(ret, markdownContentPattern, RegexOptions.Multiline);
-        var itemHtmlResponse = match.Groups[0].Value?.Trim();
+        var match = Regex.Match(ret, markdownContentPattern, RegexOptions.Singleline);
+        var itemHtmlResponse = match.Groups[1].Value?.Trim();
 
         var doc = new HtmlDocument();
-        doc.LoadHtml(ret);
+        doc.LoadHtml(itemHtmlResponse);
         var titleNode = doc.DocumentNode.SelectSingleNode("/section/h1");
         var title = titleNode.InnerText.Trim();
 
         string folderName = $"{folderNamePrefix}{title}";
 
-        string analysisFileName = $"{folderName}";
+        string analysisFileName = $"{promptName}";
         var analysisBlobClient = containerClient.GetBlobClient($"{folderName}/{analysisFileName}.htm");
-        using var analysisStream = new MemoryStream(Encoding.UTF8.GetBytes(ret));
+        using var analysisStream = new MemoryStream(Encoding.UTF8.GetBytes(itemHtmlResponse));
         await analysisBlobClient.UploadAsync(analysisStream, overwrite: true);
 
         var logBlobClientLog = containerClient.GetBlobClient($"{folderName}/{logFileName}.log");
@@ -330,7 +331,7 @@ public class AOAISummaryService : ISummaryService
         {
             Title = title,
             Description = "",
-            Details = ret,
+            Details = itemHtmlResponse,
             Url = analysisFileUrl,
             LogUrl = logFileUrl,
         };
@@ -338,6 +339,126 @@ public class AOAISummaryService : ISummaryService
         activity?.SetOutput(analysis);
         return analysis;
     }
+    public async Task<Analysis> InferPlaceholders(string logContent, string title, int buildId, IEnumerable<WorkItemParam> workItems, IEnumerable<ChangeParam> changes, IEnumerable<AssemblyMetadata> assemblyMetadata)
+    {
+        using var activity = Observability.ActivitySource.StartMethodActivity(logger, new { logContent, buildId, workItems, changes });
+
+        var openAiConfig = openAiOptions.Value;
+        var client = azureOpenAiClient.GetChatClient(openAiConfig.ChatModel); logger.LogDebug($"var client = azureOpenAiClient.GetChatClient({openAiConfig.ChatModel});");
+
+        var nowOffset = DateTimeOffset.Now;
+        var nowOffsetUtc = DateTimeOffset.UtcNow;
+
+        List<PromptChatMessage>? messages = null;
+        var promptConfig = promptOptions.Value;
+        var promptFolder = promptConfig.PromptFolder;
+        var promptName = "02.02 - InferPlaceholders";
+        var promptFileName = string.IsNullOrEmpty(promptFolder) ? $"{promptName}.prompt.yaml" : $"{promptFolder}\\{promptName}.prompt.yaml";
+
+        var promptYamlTemplate = File.ReadAllText(promptFileName);
+        var deserializer = new DeserializerBuilder()
+                           .WithNamingConvention(new PascalCaseNamingConvention())
+                           .Build();
+        var yamlObject = deserializer.Deserialize(new StringReader(promptYamlTemplate)) as IList<object>;
+
+        var blobStorageConfig = this.blobStorageOptions.Value;
+        var blobServiceClient = new BlobServiceClient(blobStorageConfig.BlobStorageConnectionString);
+        var containerClient = blobServiceClient.GetBlobContainerClient("analysis");
+        var analysisSasToken = containerClient.GenerateSasUri(BlobContainerSasPermissions.Read, DateTimeOffset.UtcNow.AddHours(1)).Query;
+        logger.LogDebug("analysisSasToken: {analysisSasToken}", analysisSasToken);
+
+        string folderNamePrefix = $"{DateTime.UtcNow:yyyyMMdd HHmm} - ";
+        string logFileName = $"{folderNamePrefix}LogStream";
+        var azureResourcesConfig = this.azureResourcesOptions.Value;
+        var devopsConfig = this.devopsOptions.Value;
+        var httpConfig = this.httpOptions.Value;
+        var azureAdConfig = this.azureAdOptions.Value;
+
+        List<ChatMessage> chatMessages = new();
+        foreach (var messageObject in yamlObject)
+        {
+            var message = messageObject as IDictionary<object, object>;
+            var requestHeaders = httpConfig.Headers;
+            message["Value"] = PromptReplacePlaceholders(message["Value"] as string,
+                                                         new
+                                                         {
+                                                             nowOffsetUtc,
+                                                             logContent,
+                                                             httpConfig,
+                                                             azureAdConfig,
+                                                             azureResourcesConfig,
+                                                             devopsConfig,
+                                                             changes,
+                                                             analysisSasToken,
+                                                             assemblyMetadata,
+                                                             requestHeaders,
+                                                             workItems,
+                                                             folderNamePrefix,
+                                                             logFileName
+                                                         });
+
+            if (message["Type"].Equals("SystemChatMessage")) { chatMessages.Add(new SystemChatMessage(message["Value"] as string)); }
+            else if (message["Type"].Equals("UserChatMessage")) { chatMessages.Add(new UserChatMessage(message["Value"] as string)); }
+        }
+
+        var isDevelopment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development"; logger.LogDebug("isDevelopment: {isDevelopment}", isDevelopment);
+        if (isDevelopment)
+        {
+            var serializer = new SerializerBuilder()
+                                .WithNamingConvention(new CamelCaseNamingConvention())
+                                .Build();
+            var actualPrompt = serializer.Serialize(yamlObject);
+            var userProfilePath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+            var applicationName = AppDomain.CurrentDomain.FriendlyName;
+            var actualPromptFolder = $"{userProfilePath}\\{applicationName}";
+            Directory.CreateDirectory(actualPromptFolder);
+            var actualPromptPath = $"{actualPromptFolder}\\02.01 - GenerateTitle.prompt.actual.yaml";
+            logger.LogDebug("actualPromptPath: {actualPromptPath}", actualPromptPath);
+            await File.WriteAllTextAsync(actualPromptPath, actualPrompt); logger.LogDebug($"await File.WriteAllTextAsync({actualPromptPath}, actualPrompt);");
+        }
+
+        logger.LogDebug($"before client.CompleteChatAsync({chatMessages});");
+        var response = await client.CompleteChatAsync(chatMessages);
+        logger.LogDebug($"{response} = await client.CompleteChatAsync({chatMessages});");
+        var ret = response.Value.Content?.FirstOrDefault()?.Text ?? "";
+
+        var markdownContentPattern = "```html(.*)```";
+        var match = Regex.Match(ret, markdownContentPattern, RegexOptions.Singleline);
+        var itemHtmlResponse = match.Groups[1].Value?.Trim();
+
+        //var doc = new HtmlDocument();
+        //doc.LoadHtml(itemHtmlResponse);
+        //var titleNode = doc.DocumentNode.SelectSingleNode("/section/h1");
+        //var title = titleNode.InnerText.Trim();
+
+        string folderName = $"{folderNamePrefix}{title}";
+
+        string analysisFileName = $"{promptName}";
+        var analysisBlobClient = containerClient.GetBlobClient($"{folderName}/{analysisFileName}.htm");
+        using var analysisStream = new MemoryStream(Encoding.UTF8.GetBytes(itemHtmlResponse));
+        await analysisBlobClient.UploadAsync(analysisStream, overwrite: true);
+
+        var logBlobClientLog = containerClient.GetBlobClient($"{folderName}/{logFileName}.log");
+        using var logStream = new MemoryStream(Encoding.UTF8.GetBytes(logContent));
+        await logBlobClientLog.UploadAsync(logStream, overwrite: true);
+
+
+        var analysisFileUrl = $"{containerClient.Uri.AbsoluteUri}/{folderName}/{analysisFileName}.htm{analysisSasToken}";
+        var logFileUrl = $"{containerClient.Uri.AbsoluteUri}/{folderName}/{logFileName}.log{analysisSasToken}";
+
+        var analysis = new Analysis()
+        {
+            Title = title,
+            Description = "",
+            Details = itemHtmlResponse,
+            Url = analysisFileUrl,
+            LogUrl = logFileUrl,
+        };
+
+        activity?.SetOutput(analysis);
+        return analysis;
+    }
+
     private string PromptReplacePlaceholders(string message, object variables)
     {
         using var activity = Observability.ActivitySource.StartMethodActivity(logger, new { message = message?.GetLogString(), variables });

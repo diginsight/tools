@@ -62,22 +62,22 @@
             color: #333;
         }
         ul {
-            list-style-type: none;
-            padding: 0;
+            list-style-type: none; /* Remove default bullet points */
             font-size: 12px;
-            margin-top: 5px;
+            padding-left: 0px; /* Add some padding to the left for better alignment */
+            margin-top: 0px;
         }
         li {
             position: relative;
             margin-bottom: 10px;
-            padding-left: 20px;
+            padding-left: 20px; /* Add padding to make space for the custom bullet */
         }
         li::before {
-            content: "•";
+            content: '•'; /* Use a bullet character */
             position: absolute;
             left: 0;
             top: 0;
-            font-size: 1.2em;
+            font-size: 1.5em; /* Adjust the size of the bullet */
             line-height: 1;
             color: black;
         }
@@ -87,10 +87,10 @@
         }
         p {
             font-size: 16px;
-        } 
+        }
         p code {
             font-size: inherit;
-        } 
+        }
         .button {
             display: inline-block;
             padding: 15px 30px;
@@ -165,7 +165,7 @@
         }
         .param-value code {
             white-space: nowrap; /* Prevent line breaks within the code element */
-        }        
+        }
         .container {
             width: 100%;
             display: flex;
@@ -203,7 +203,7 @@
             /* align-self: flex-start; */
             cursor: pointer;
         }
-        </style>
+       </style>
 
     - The html page must always start with a title with a one line short description of the problem.
       (eg. ISSUE: ... method fails with ... when ...) 

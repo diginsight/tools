@@ -318,8 +318,9 @@ namespace DiginsightCopilotApi.Controllers
             }
 
             var analysisTitle = await this.openAiService.GenerateTitle(logContent, buildId, workItemParams, changeParams, assemblyMetadata);
+            var analysisPlaceholders = await this.openAiService.InferPlaceholders(logContent, analysisTitle.Title, buildId, workItemParams, changeParams, assemblyMetadata);
 
-            var analysis = await this.openAiService.GenerateSummary(logContent, buildId, workItemParams, changeParams, assemblyMetadata);
+            var analysis = await this.openAiService.GenerateFullSummary(logContent, buildId, workItemParams, changeParams, assemblyMetadata);
 
             // Add response header
             Response.Headers.Add("analysis-url", analysis.Url);

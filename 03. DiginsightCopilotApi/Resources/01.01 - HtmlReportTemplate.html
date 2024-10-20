@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{Title}}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+        .email-container {
+            max-width: 800px;
+            margin: 20px auto;
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            text-align: left;
+            padding: 10px;
+            font-size: 2em;
+            background-color: #C00000;
+            color: white;
+            border-radius: 10px 10px 0 0;
+        }
+        .issue {
+            background-color: #C00000;
+            color: white;
+        }
+        .warning {
+            background-color: #E6AF00;
+            color: white;
+        }
+        .success {
+            background-color: #3B7D23;
+            color: white;
+        }
+        .content {
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .content p {
+            font-size: 16px;
+            color: #333;
+        }
+        ul {
+            list-style-type: none;
+            font-size: 12px;
+            padding-left: 0px;
+            margin-top: 0px;
+        }
+        li {
+            position: relative;
+            margin-bottom: 10px;
+            padding-left: 20px;
+        }
+        li::before {
+            content: '•';
+            position: absolute;
+            left: 0;
+            top: 0;
+            font-size: 1.5em;
+            line-height: 1;
+            color: black;
+        }
+        li span {
+            display: block;
+            margin-top: 2px;
+        }
+        p {
+            font-size: 16px;
+        }
+        p code {
+            font-size: inherit;
+        }
+        .button {
+            display: inline-block;
+            padding: 15px 30px;
+            margin: 20px 0;
+            font-size: 18px;
+            color: white;
+            background-color: #007BFF;
+            text-decoration: none;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+        .button:hover {
+            background-color: #0056b3;
+        }
+        .table-row-grid {
+            display: contents;
+            width: 100%;
+            border: 0px solid #ddd;
+        }
+        .table-row {
+            display: flex;
+            width: 100%;
+            border: 0px solid #ddd;
+        }
+        .row-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            border: 0px solid #ddd;
+            margin-bottom: 8px;
+        }
+        .table-row-auto {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            border: 0px solid #ddd;
+        }
+        .table-row-grid {
+            display: contents;
+            width: 100%;
+            border: 0px solid #ddd;
+        }
+        .table-cell {
+            padding: 8px;
+            border: 1px solid #ddd;
+        }
+        .table-cell-noborder {
+            flex: 1;
+            padding: 8px;
+            border: 0px solid #ddd;
+        }
+        .param-name {
+            font-weight: normal;
+            flex: 0 0 150px;
+        }
+        .param-name-flex {
+            font-weight: normal;
+            flex: 1;
+        }
+        .param-value {
+            font-weight: bold;
+            flex: 1;
+            display: inline;
+        }
+        .left-aligned {
+            text-align: left;
+        }
+        .right-aligned {
+            text-align: right;
+        }
+        .param-value code {
+            white-space: nowrap;
+        }
+        .container {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        .table-container {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .table-container-grid {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .code-container {
+            width: 100%;
+            max-height: 300px;
+            overflow: auto;
+            font-family: monospace;
+            white-space: pre-wrap;
+            border: 1px solid #ccc;
+            padding: 10px;
+            background-color: #f9f9f9;
+            position: relative;
+        }
+        .copy-button-container {
+            display: flex;
+            justify-content: flex-end;
+            width: 100%;
+        }
+        .copy-button {
+            margin-top: 10px;
+            cursor: pointer;
+        }
+    </style>
+    <script>
+        function copyToClipboard(elementId) {
+            const curlCommand = document.getElementById(elementId).innerText;
+            navigator.clipboard.writeText(curlCommand).then(() => {
+                alert('text copied to clipboard!');
+            }, (err) => {
+                console.error('Could not copy text: ', err);
+            });
+        }
+    </script>
+</head>
+<body>
+    <div class="email-container">
+        <h1 class="header issue">{{Title}}</h1>
+        <h3>Diginsight Analysis:</h3>
+        <h3>Application flow information</h3>
+        {{ApplicationFlowTable}}
+        {{CurlTable}}
+
+        <h3>Summary</h3>
+        {{SummaryContent}}
+        {{ExceptionStacktraceTable}}
+
+        <h3>Application flow resources</h3>
+        {{ApplicationResourcesTable}}
+
+        <h3>Reference</h3>
+        {{DevopsReferencesTable}}
+
+        <div class="content">
+            <a class="button" href="https://dev.azure.com/ABBSace/ABB_Portfolio/_build/results?buildId=238659">Report Issue</a>
+        </div>
+    </div>
+
+</body></html>
