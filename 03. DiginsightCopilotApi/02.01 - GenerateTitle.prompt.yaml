@@ -38,7 +38,7 @@
   Value: |
     Consider the following logContent:
     ###
-    {{logContent}}
+    {{logInformation.LogContent}}
     ###
     can you generate the html section with the title describing the logContent above?
 

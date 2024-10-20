@@ -19,6 +19,7 @@ using OpenAI;
 using OpenAI.Chat;
 using System.ClientModel;
 using System.Collections;
+using System.Drawing.Imaging;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
@@ -105,19 +106,19 @@ public class AOAISummaryService : ISummaryService
             return json.access_token;
         }
     }
-    public async Task<Analysis> GenerateFullAnalysis(string logContent, DateTimeOffset utcNow, string title, int buildId, IEnumerable<WorkItemParam> workItems, IEnumerable<ChangeParam> changes, IEnumerable<AssemblyMetadata> assemblyMetadata)
+
+    public async Task<Analysis> GenerateFullAnalysis(string logContent, string title, IDictionary<string, object> placeholders)
     {
-        using var activity = Observability.ActivitySource.StartMethodActivity(logger, new { logContent, utcNow, buildId, workItems, changes });
+        using var activity = Observability.ActivitySource.StartMethodActivity(logger, new { logContent, title, placeholders });
 
         var openAiConfig = openAiOptions.Value;
         var client = azureOpenAiClient.GetChatClient(openAiConfig.ChatModel); logger.LogDebug($"var client = azureOpenAiClient.GetChatClient({openAiConfig.ChatModel});");
 
-        var nowOffsetUtc = utcNow;
+        var timeInformation = placeholders.TryGetValue("timeInformation", out var timeInformationObj) ? (TimeInformation)timeInformationObj : new TimeInformation();
+        var nowOffsetUtc = timeInformation.UtcNow;
 
         List<PromptChatMessage>? messages = null;
         var promptConfig = promptOptions.Value;
-        //var promptFolder = promptConfig.PromptFolder;
-        //var promptFileName = string.IsNullOrEmpty(promptFolder) ? "01.00 - GenerateFullAnalysis.prompt.yaml" : $"{promptFolder}\\01.00 - GenerateFullAnalysis.prompt.yaml";
         var promptFolder = promptConfig.PromptFolder;
         var promptName = "01.00 - GenerateFullAnalysis";
         var promptFileName = string.IsNullOrEmpty(promptFolder) ? $"{promptName}.prompt.yaml" : $"{promptFolder}\\{promptName}.prompt.yaml";
@@ -141,28 +142,17 @@ public class AOAISummaryService : ISummaryService
         var httpInformation = this.httpOptions.Value;
         var azureAdInformation = this.azureAdOptions.Value;
 
+        var otherInformation = placeholders.TryGetValue("otherInformation", out var otherInformationObj) ? (Dictionary<string, object?>)otherInformationObj : new Dictionary<string, object?>();
+        if (!otherInformation.ContainsKey("analysisSasToken")) { otherInformation.Add("analysisSasToken", analysisSasToken); }
+        if (!otherInformation.ContainsKey("folderNamePrefix")) { otherInformation.Add("folderNamePrefix", folderNamePrefix); }
+        if (!otherInformation.ContainsKey("logFileName")) { otherInformation.Add("logFileName", logFileName); }
+
         List<ChatMessage> chatMessages = new();
         foreach (var messageObject in yamlObject)
         {
             var message = messageObject as IDictionary<object, object>;
             var requestHeaders = httpInformation.Headers;
-            message["Value"] = PromptReplacePlaceholders(message["Value"] as string,
-                                                         new
-                                                         {
-                                                             nowOffsetUtc,
-                                                             logContent,
-                                                             httpInformation,
-                                                             azureAdInformation,
-                                                             azureResourcesInformation,
-                                                             devopsInformation,
-                                                             changes,
-                                                             analysisSasToken,
-                                                             assemblyMetadata,
-                                                             requestHeaders,
-                                                             workItems,
-                                                             folderNamePrefix,
-                                                             logFileName
-                                                         });
+            message["Value"] = PromptReplacePlaceholders(message["Value"] as string, placeholders);
 
             if (message["Type"].Equals("SystemChatMessage")) { chatMessages.Add(new SystemChatMessage(message["Value"] as string)); }
             else if (message["Type"].Equals("UserChatMessage")) { chatMessages.Add(new UserChatMessage(message["Value"] as string)); }
@@ -222,14 +212,15 @@ public class AOAISummaryService : ISummaryService
         return analysis;
     }
 
-    public async Task<Analysis> GenerateTitle(string logContent, DateTimeOffset utcNow, int buildId, IEnumerable<WorkItemParam> workItems, IEnumerable<ChangeParam> changes, IEnumerable<AssemblyMetadata> assemblyMetadata)
+    public async Task<Analysis> GenerateTitle(string logContent, IDictionary<string, object> placeholders)
     {
-        using var activity = Observability.ActivitySource.StartMethodActivity(logger, new { logContent, utcNow, buildId, workItems, changes });
+        using var activity = Observability.ActivitySource.StartMethodActivity(logger, new { logContent, placeholders });
 
         var openAiConfig = openAiOptions.Value;
         var client = azureOpenAiClient.GetChatClient(openAiConfig.ChatModel); logger.LogDebug($"var client = azureOpenAiClient.GetChatClient({openAiConfig.ChatModel});");
 
-        var nowOffsetUtc = utcNow;
+        var timeInformation = placeholders.TryGetValue("timeInformation", out var timeInformationObj) ? (TimeInformation)timeInformationObj : new TimeInformation();
+        var nowOffsetUtc = timeInformation.UtcNow;
 
         List<PromptChatMessage>? messages = null;
         var promptConfig = promptOptions.Value;
@@ -256,28 +247,17 @@ public class AOAISummaryService : ISummaryService
         var httpInformation = this.httpOptions.Value;
         var azureAdInformation = this.azureAdOptions.Value;
 
+        var otherInformation = placeholders.TryGetValue("otherInformation", out var otherInformationObj) ? (Dictionary<string, object?>)otherInformationObj : new Dictionary<string, object?>();
+        if (!otherInformation.ContainsKey("analysisSasToken")) { otherInformation.Add("analysisSasToken", analysisSasToken); }
+        if (!otherInformation.ContainsKey("folderNamePrefix")) { otherInformation.Add("folderNamePrefix", folderNamePrefix); }
+        if (!otherInformation.ContainsKey("logFileName")) { otherInformation.Add("logFileName", logFileName); }
+
         List<ChatMessage> chatMessages = new();
         foreach (var messageObject in yamlObject)
         {
             var message = messageObject as IDictionary<object, object>;
             var requestHeaders = httpInformation.Headers;
-            message["Value"] = PromptReplacePlaceholders(message["Value"] as string,
-                                                         new
-                                                         {
-                                                             nowOffsetUtc,              // timeInformation
-                                                             logContent,                // logContent
-                                                             httpInformation,           // httpInformation
-                                                             requestHeaders,            // requestInformation
-                                                             azureAdInformation,        // azureAdInformation
-                                                             azureResourcesInformation, // azureResourcesInformation
-                                                             devopsInformation,         // devopsInformation
-                                                             changes,                   // devopsChanges
-                                                             workItems,                 // devopsWorkItems
-                                                             analysisSasToken,          // storageInformation
-                                                             folderNamePrefix,          // storageInformation
-                                                             logFileName,               // storageInformation
-                                                             assemblyMetadata           // assemblyInformation
-                                                         });
+            message["Value"] = PromptReplacePlaceholders(message["Value"] as string, placeholders);
 
             if (message["Type"].Equals("SystemChatMessage")) { chatMessages.Add(new SystemChatMessage(message["Value"] as string)); }
             else if (message["Type"].Equals("UserChatMessage")) { chatMessages.Add(new UserChatMessage(message["Value"] as string)); }
@@ -314,6 +294,9 @@ public class AOAISummaryService : ISummaryService
         var titleNode = doc.DocumentNode.SelectSingleNode("/section/h1");
         var title = titleNode.InnerText.Trim();
 
+        var inferredInformation = placeholders.TryGetValue("inferredInformation", out var inferredInformationObj) ? (IDictionary<string, object?>)inferredInformationObj : new Dictionary<string, object?>();
+        if (!inferredInformation.ContainsKey("Title")) { inferredInformation.Add("Title", title); }
+
         string folderName = $"{folderNamePrefix}{title}";
 
         string analysisFileName = $"{promptName}";
@@ -341,14 +324,15 @@ public class AOAISummaryService : ISummaryService
         activity?.SetOutput(analysis);
         return analysis;
     }
-    public async Task<Analysis> InferPlaceholders(string logContent, DateTimeOffset utcNow, string title, int buildId, IEnumerable<WorkItemParam> workItems, IEnumerable<ChangeParam> changes, IEnumerable<AssemblyMetadata> assemblyMetadata)
+    public async Task<Analysis> InferPlaceholders(string logContent, string title, IDictionary<string, object> placeholders)
     {
-        using var activity = Observability.ActivitySource.StartMethodActivity(logger, new { logContent, utcNow, buildId, workItems, changes });
+        using var activity = Observability.ActivitySource.StartMethodActivity(logger, new { logContent, title, placeholders });
 
         var openAiConfig = openAiOptions.Value;
         var client = azureOpenAiClient.GetChatClient(openAiConfig.ChatModel); logger.LogDebug($"var client = azureOpenAiClient.GetChatClient({openAiConfig.ChatModel});");
 
-        var nowOffsetUtc = utcNow;
+        var timeInformation = placeholders.TryGetValue("timeInformation", out var timeInformationObj) ? (TimeInformation)timeInformationObj : new TimeInformation();
+        var nowOffsetUtc = timeInformation.UtcNow;
 
         List<PromptChatMessage>? messages = null;
         var promptConfig = promptOptions.Value;
@@ -375,28 +359,17 @@ public class AOAISummaryService : ISummaryService
         var httpInformation = this.httpOptions.Value;
         var azureAdInformation = this.azureAdOptions.Value;
 
+        var otherInformation = placeholders.TryGetValue("otherInformation", out var otherInformationObj) ? (Dictionary<string, object?>)otherInformationObj : new Dictionary<string, object?>();
+        if (!otherInformation.ContainsKey("analysisSasToken")) { otherInformation.Add("analysisSasToken", analysisSasToken); }
+        if (!otherInformation.ContainsKey("folderNamePrefix")) { otherInformation.Add("folderNamePrefix", folderNamePrefix); }
+        if (!otherInformation.ContainsKey("logFileName")) { otherInformation.Add("logFileName", logFileName); }
+
         List<ChatMessage> chatMessages = new();
         foreach (var messageObject in yamlObject)
         {
             var message = messageObject as IDictionary<object, object>;
             var requestHeaders = httpInformation.Headers;
-            message["Value"] = PromptReplacePlaceholders(message["Value"] as string,
-                                                         new
-                                                         {
-                                                             nowOffsetUtc,
-                                                             logContent,
-                                                             httpInformation,
-                                                             azureAdInformation,
-                                                             azureResourcesInformation,
-                                                             devopsInformation,
-                                                             changes,
-                                                             analysisSasToken,
-                                                             assemblyMetadata,
-                                                             requestHeaders,
-                                                             workItems,
-                                                             folderNamePrefix,
-                                                             logFileName
-                                                         });
+            message["Value"] = PromptReplacePlaceholders(message["Value"] as string, placeholders);
 
             if (message["Type"].Equals("SystemChatMessage")) { chatMessages.Add(new SystemChatMessage(message["Value"] as string)); }
             else if (message["Type"].Equals("UserChatMessage")) { chatMessages.Add(new UserChatMessage(message["Value"] as string)); }
@@ -428,10 +401,16 @@ public class AOAISummaryService : ISummaryService
         var itemHtmlResponse = match.Groups[1].Value?.Trim();
         if (string.IsNullOrEmpty(itemHtmlResponse)) { itemHtmlResponse = ret; }
 
-        //var doc = new HtmlDocument();
-        //doc.LoadHtml(itemHtmlResponse);
-        //var titleNode = doc.DocumentNode.SelectSingleNode("/section/h1");
-        //var title = titleNode.InnerText.Trim();
+        var inferredPlaceholders = GetInferredPlaceholders(itemHtmlResponse);
+
+        var inferredInformation = placeholders.TryGetValue("inferredInformation", out var inferredInformationObj) ? (IDictionary<string, object?>)inferredInformationObj : new Dictionary<string, object?>();
+        var userInformation = placeholders.TryGetValue("userInformation", out var userInformationObj) ? (UserInformation)userInformationObj : new UserInformation();
+        foreach (var placeholder in inferredPlaceholders)
+        {
+            if (!inferredInformation.ContainsKey(placeholder.Key)) { inferredInformation.Add(placeholder.Key, placeholder.Value); }
+            if (placeholder.Key == "userDisplayName:") { userInformation.DisplayName = placeholder.Value?.ToString()!; }
+            if (placeholder.Key == "userEmail:") { userInformation.DisplayName = placeholder.Value?.ToString()!; }
+        }
 
         string folderName = $"{folderNamePrefix}{title}";
 
@@ -460,26 +439,103 @@ public class AOAISummaryService : ISummaryService
         activity?.SetOutput(analysis);
         return analysis;
     }
-    public async Task<Analysis> GenerateSummary(string logContent, DateTimeOffset utcNow, string title, int buildId, IEnumerable<WorkItemParam> workItems, IEnumerable<ChangeParam> changes, IEnumerable<AssemblyMetadata> assemblyMetadata)
+    public async Task<Analysis> GenerateApplicationFlowInformation(string logContent, string title, IDictionary<string, object> placeholders)
     {
-        using var activity = Observability.ActivitySource.StartMethodActivity(logger, new { logContent, utcNow, buildId, workItems, changes });
+        using var activity = Observability.ActivitySource.StartMethodActivity(logger, new { logContent, title, placeholders });
+
+        //var openAiConfig = openAiOptions.Value;
+        //var client = azureOpenAiClient.GetChatClient(openAiConfig.ChatModel); logger.LogDebug($"var client = azureOpenAiClient.GetChatClient({openAiConfig.ChatModel});");
+
+        var timeInformation = placeholders.TryGetValue("timeInformation", out var timeInformationObj) ? (TimeInformation)timeInformationObj : new TimeInformation();
+        var nowOffsetUtc = timeInformation.UtcNow;
+
+        //List<PromptChatMessage>? messages = null;
+        var promptConfig = promptOptions.Value;
+        var templateFolder = promptConfig.TemplateFolder;
+        var templateName = "01.02 - ApplicationFlowInformation";
+        var templateFileName = string.IsNullOrEmpty(templateFolder) ? $"{templateName}Template.html" : $"{templateFolder}\\{templateName}Template.html";
+
+        var htmlTemplateContent = File.ReadAllText(templateFileName);
+        //var deserializer = new DeserializerBuilder()
+        //                   .WithNamingConvention(new PascalCaseNamingConvention())
+        //                   .Build();
+        //var yamlObject = deserializer.Deserialize(new StringReader(promptYamlTemplate)) as IList<object>;
+
+        var blobStorageConfig = this.blobStorageOptions.Value;
+        var blobServiceClient = new BlobServiceClient(blobStorageConfig.BlobStorageConnectionString);
+        var containerClient = blobServiceClient.GetBlobContainerClient("analysis");
+        var analysisSasToken = containerClient.GenerateSasUri(BlobContainerSasPermissions.Read, DateTimeOffset.UtcNow.AddHours(1)).Query;
+        logger.LogDebug("analysisSasToken: {analysisSasToken}", analysisSasToken);
+
+        string folderNamePrefix = $"{nowOffsetUtc.DateTime:yyyyMMdd HHmm} - ";
+        string logFileName = $"{folderNamePrefix}LogStream";
+        //var azureResourcesInformation = this.azureResourcesOptions.Value;
+        //var devopsInformation = this.devopsOptions.Value;
+        //var httpInformation = this.httpOptions.Value;
+        //var azureAdInformation = this.azureAdOptions.Value;
+
+        var otherInformation = placeholders.TryGetValue("otherInformation", out var otherInformationObj) ? (Dictionary<string, object?>)otherInformationObj : new Dictionary<string, object?>();
+        if (!otherInformation.ContainsKey("analysisSasToken")) { otherInformation.Add("analysisSasToken", analysisSasToken); }
+        if (!otherInformation.ContainsKey("folderNamePrefix")) { otherInformation.Add("folderNamePrefix", folderNamePrefix); }
+        if (!otherInformation.ContainsKey("logFileName")) { otherInformation.Add("logFileName", logFileName); }
+
+
+        var itemHtmlResponse = PromptReplacePlaceholders(htmlTemplateContent, placeholders);
+
+        //var doc = new HtmlDocument();
+        //doc.LoadHtml(itemHtmlResponse);
+        //var titleNode = doc.DocumentNode.SelectSingleNode("/section/h1");
+        //var title = titleNode.InnerText.Trim();
+
+        string folderName = $"{folderNamePrefix}{title}";
+
+        string analysisFileName = $"{templateName}";
+        var analysisBlobClient = containerClient.GetBlobClient($"{folderName}/{analysisFileName}.htm");
+        using var analysisStream = new MemoryStream(Encoding.UTF8.GetBytes(itemHtmlResponse));
+        await analysisBlobClient.UploadAsync(analysisStream, overwrite: true);
+
+        var logBlobClientLog = containerClient.GetBlobClient($"{folderName}/{logFileName}.log");
+        using var logStream = new MemoryStream(Encoding.UTF8.GetBytes(logContent));
+        await logBlobClientLog.UploadAsync(logStream, overwrite: true);
+
+        var analysisFileUrl = $"{containerClient.Uri.AbsoluteUri}/{folderName}/{analysisFileName}.htm{analysisSasToken}";
+        var logFileUrl = $"{containerClient.Uri.AbsoluteUri}/{folderName}/{logFileName}.log{analysisSasToken}";
+
+        var analysis = new Analysis()
+        {
+            Title = title,
+            Description = "",
+            Details = itemHtmlResponse,
+            Url = analysisFileUrl,
+            LogUrl = logFileUrl,
+        };
+
+        activity?.SetOutput(analysis);
+        return analysis;
+    }
+    public async Task<Analysis> GenerateSummary(string logContent, string title, IDictionary<string, object> placeholders)
+    {
+        using var activity = Observability.ActivitySource.StartMethodActivity(logger, new { logContent, title, placeholders });
 
         var openAiConfig = openAiOptions.Value;
         var client = azureOpenAiClient.GetChatClient(openAiConfig.ChatModel); logger.LogDebug($"var client = azureOpenAiClient.GetChatClient({openAiConfig.ChatModel});");
 
-        var nowOffsetUtc = utcNow;
+        var timeInformation = placeholders.TryGetValue("timeInformation", out var timeInformationObj) ? (TimeInformation)timeInformationObj : new TimeInformation();
+        var nowOffsetUtc = timeInformation.UtcNow;
 
         List<PromptChatMessage>? messages = null;
         var promptConfig = promptOptions.Value;
-        var promptFolder = promptConfig.PromptFolder;
-        var promptName = "02.03 - GenerateSummary";
-        var promptFileName = string.IsNullOrEmpty(promptFolder) ? $"{promptName}.prompt.yaml" : $"{promptFolder}\\{promptName}.prompt.yaml";
+        var templateFolder = promptConfig.TemplateFolder;
+        var templateName = "01.03 - SummaryInformation";
+        var promptFileName = string.IsNullOrEmpty(templateFolder) ? $"{templateName}.prompt.yaml" : $"{templateFolder}\\{templateName}.prompt.yaml";
+        var templateFileName = string.IsNullOrEmpty(templateFolder) ? $"{templateName}.template.html" : $"{templateFolder}\\{templateName}.template.html";
 
         var promptYamlTemplate = File.ReadAllText(promptFileName);
         var deserializer = new DeserializerBuilder()
                            .WithNamingConvention(new PascalCaseNamingConvention())
                            .Build();
         var yamlObject = deserializer.Deserialize(new StringReader(promptYamlTemplate)) as IList<object>;
+
 
         var blobStorageConfig = this.blobStorageOptions.Value;
         var blobServiceClient = new BlobServiceClient(blobStorageConfig.BlobStorageConnectionString);
@@ -494,28 +550,17 @@ public class AOAISummaryService : ISummaryService
         var httpInformation = this.httpOptions.Value;
         var azureAdInformation = this.azureAdOptions.Value;
 
+        var otherInformation = placeholders.TryGetValue("otherInformation", out var otherInformationObj) ? (Dictionary<string, object?>)otherInformationObj : new Dictionary<string, object?>();
+        if (!otherInformation.ContainsKey("analysisSasToken")) { otherInformation.Add("analysisSasToken", analysisSasToken); }
+        if (!otherInformation.ContainsKey("folderNamePrefix")) { otherInformation.Add("folderNamePrefix", folderNamePrefix); }
+        if (!otherInformation.ContainsKey("logFileName")) { otherInformation.Add("logFileName", logFileName); }
+
         List<ChatMessage> chatMessages = new();
         foreach (var messageObject in yamlObject)
         {
             var message = messageObject as IDictionary<object, object>;
             var requestHeaders = httpInformation.Headers;
-            message["Value"] = PromptReplacePlaceholders(message["Value"] as string,
-                                                         new
-                                                         {
-                                                             nowOffsetUtc,
-                                                             logContent,
-                                                             httpInformation,
-                                                             azureAdInformation,
-                                                             azureResourcesInformation,
-                                                             devopsInformation,
-                                                             changes,
-                                                             analysisSasToken,
-                                                             assemblyMetadata,
-                                                             requestHeaders,
-                                                             workItems,
-                                                             folderNamePrefix,
-                                                             logFileName
-                                                         });
+            message["Value"] = PromptReplacePlaceholders(message["Value"] as string, placeholders);
 
             if (message["Type"].Equals("SystemChatMessage")) { chatMessages.Add(new SystemChatMessage(message["Value"] as string)); }
             else if (message["Type"].Equals("UserChatMessage")) { chatMessages.Add(new UserChatMessage(message["Value"] as string)); }
@@ -532,7 +577,7 @@ public class AOAISummaryService : ISummaryService
             var applicationName = AppDomain.CurrentDomain.FriendlyName;
             var actualPromptFolder = $"{userProfilePath}\\{applicationName}";
             Directory.CreateDirectory(actualPromptFolder);
-            var actualPromptPath = $"{actualPromptFolder}\\{promptName}.prompt.actual.yaml";
+            var actualPromptPath = $"{actualPromptFolder}\\{templateName}.prompt.actual.yaml";
             logger.LogDebug("actualPromptPath: {actualPromptPath}", actualPromptPath);
             await File.WriteAllTextAsync(actualPromptPath, actualPrompt); logger.LogDebug($"await File.WriteAllTextAsync({actualPromptPath}, actualPrompt);");
         }
@@ -554,7 +599,7 @@ public class AOAISummaryService : ISummaryService
 
         string folderName = $"{folderNamePrefix}{title}";
 
-        string analysisFileName = $"{promptName}";
+        string analysisFileName = $"{templateName}";
         var analysisBlobClient = containerClient.GetBlobClient($"{folderName}/{analysisFileName}.htm");
         using var analysisStream = new MemoryStream(Encoding.UTF8.GetBytes(itemHtmlResponse));
         await analysisBlobClient.UploadAsync(analysisStream, overwrite: true);
@@ -579,14 +624,15 @@ public class AOAISummaryService : ISummaryService
         activity?.SetOutput(analysis);
         return analysis;
     }
-    public async Task<Analysis> GenerateDetails(string logContent, DateTimeOffset utcNow, string title, int buildId, IEnumerable<WorkItemParam> workItems, IEnumerable<ChangeParam> changes, IEnumerable<AssemblyMetadata> assemblyMetadata)
+    public async Task<Analysis> GenerateDetails(string logContent, string title, IDictionary<string, object> placeholders)
     {
-        using var activity = Observability.ActivitySource.StartMethodActivity(logger, new { logContent, utcNow, buildId, workItems, changes });
+        using var activity = Observability.ActivitySource.StartMethodActivity(logger, new { logContent, title, placeholders });
 
         var openAiConfig = openAiOptions.Value;
         var client = azureOpenAiClient.GetChatClient(openAiConfig.ChatModel); logger.LogDebug($"var client = azureOpenAiClient.GetChatClient({openAiConfig.ChatModel});");
 
-        var nowOffsetUtc = utcNow;
+        var timeInformation = placeholders.TryGetValue("timeInformation", out var timeInformationObj) ? (TimeInformation)timeInformationObj : new TimeInformation();
+        var nowOffsetUtc = timeInformation.UtcNow;
 
         List<PromptChatMessage>? messages = null;
         var promptConfig = promptOptions.Value;
@@ -613,28 +659,18 @@ public class AOAISummaryService : ISummaryService
         var httpInformation = this.httpOptions.Value;
         var azureAdInformation = this.azureAdOptions.Value;
 
+        var otherInformation = placeholders.TryGetValue("otherInformation", out var otherInformationObj) ? (Dictionary<string, object?>)otherInformationObj : new Dictionary<string, object?>();
+        if (!otherInformation.ContainsKey("analysisSasToken")) { otherInformation.Add("analysisSasToken", analysisSasToken); }
+        if (!otherInformation.ContainsKey("folderNamePrefix")) { otherInformation.Add("folderNamePrefix", folderNamePrefix); }
+        if (!otherInformation.ContainsKey("logFileName")) { otherInformation.Add("logFileName", logFileName); }
+
+
         List<ChatMessage> chatMessages = new();
         foreach (var messageObject in yamlObject)
         {
             var message = messageObject as IDictionary<object, object>;
             var requestHeaders = httpInformation.Headers;
-            message["Value"] = PromptReplacePlaceholders(message["Value"] as string,
-                                                         new
-                                                         {
-                                                             nowOffsetUtc,
-                                                             logContent,
-                                                             httpInformation,
-                                                             azureAdInformation,
-                                                             azureResourcesInformation,
-                                                             devopsInformation,
-                                                             changes,
-                                                             analysisSasToken,
-                                                             assemblyMetadata,
-                                                             requestHeaders,
-                                                             workItems,
-                                                             folderNamePrefix,
-                                                             logFileName
-                                                         });
+            message["Value"] = PromptReplacePlaceholders(message["Value"] as string, placeholders);
 
             if (message["Type"].Equals("SystemChatMessage")) { chatMessages.Add(new SystemChatMessage(message["Value"] as string)); }
             else if (message["Type"].Equals("UserChatMessage")) { chatMessages.Add(new UserChatMessage(message["Value"] as string)); }
@@ -698,14 +734,15 @@ public class AOAISummaryService : ISummaryService
         activity?.SetOutput(analysis);
         return analysis;
     }
-    public async Task<Analysis> GeneratePerformanceAnalysis(string logContent, DateTimeOffset utcNow, string title, int buildId, IEnumerable<WorkItemParam> workItems, IEnumerable<ChangeParam> changes, IEnumerable<AssemblyMetadata> assemblyMetadata)
+    public async Task<Analysis> GeneratePerformanceAnalysis(string logContent, string title, IDictionary<string, object> placeholders)
     {
-        using var activity = Observability.ActivitySource.StartMethodActivity(logger, new { logContent, utcNow, buildId, workItems, changes });
+        using var activity = Observability.ActivitySource.StartMethodActivity(logger, new { logContent, title, placeholders });
 
         var openAiConfig = openAiOptions.Value;
         var client = azureOpenAiClient.GetChatClient(openAiConfig.ChatModel); logger.LogDebug($"var client = azureOpenAiClient.GetChatClient({openAiConfig.ChatModel});");
 
-        var nowOffsetUtc = utcNow;
+        var timeInformation = placeholders.TryGetValue("timeInformation", out var timeInformationObj) ? (TimeInformation)timeInformationObj : new TimeInformation();
+        var nowOffsetUtc = timeInformation.UtcNow;
 
         List<PromptChatMessage>? messages = null;
         var promptConfig = promptOptions.Value;
@@ -732,28 +769,18 @@ public class AOAISummaryService : ISummaryService
         var httpInformation = this.httpOptions.Value;
         var azureAdInformation = this.azureAdOptions.Value;
 
+        var otherInformation = placeholders.TryGetValue("otherInformation", out var otherInformationObj) ? (Dictionary<string, object?>)otherInformationObj : new Dictionary<string, object?>();
+        if (!otherInformation.ContainsKey("analysisSasToken")) { otherInformation.Add("analysisSasToken", analysisSasToken); }
+        if (!otherInformation.ContainsKey("folderNamePrefix")) { otherInformation.Add("folderNamePrefix", folderNamePrefix); }
+        if (!otherInformation.ContainsKey("logFileName")) { otherInformation.Add("logFileName", logFileName); }
+
+
         List<ChatMessage> chatMessages = new();
         foreach (var messageObject in yamlObject)
         {
             var message = messageObject as IDictionary<object, object>;
             var requestHeaders = httpInformation.Headers;
-            message["Value"] = PromptReplacePlaceholders(message["Value"] as string,
-                                                         new
-                                                         {
-                                                             nowOffsetUtc,
-                                                             logContent,
-                                                             httpInformation,
-                                                             azureAdInformation,
-                                                             azureResourcesInformation,
-                                                             devopsInformation,
-                                                             changes,
-                                                             analysisSasToken,
-                                                             assemblyMetadata,
-                                                             requestHeaders,
-                                                             workItems,
-                                                             folderNamePrefix,
-                                                             logFileName
-                                                         });
+            message["Value"] = PromptReplacePlaceholders(message["Value"] as string, placeholders);
 
             if (message["Type"].Equals("SystemChatMessage")) { chatMessages.Add(new SystemChatMessage(message["Value"] as string)); }
             else if (message["Type"].Equals("UserChatMessage")) { chatMessages.Add(new UserChatMessage(message["Value"] as string)); }
@@ -820,6 +847,40 @@ public class AOAISummaryService : ISummaryService
 
 
 
+    private Dictionary<string, object?> GetInferredPlaceholders(string itemHtmlResponse)
+    {
+        var doc = new HtmlDocument();
+        doc.LoadHtml(itemHtmlResponse);
+
+        var paramDic = new Dictionary<string, object?>();
+
+        var rows = doc.DocumentNode.SelectNodes("//div[@class='table-row-auto']");
+        if (rows != null)
+        {
+            foreach (var row in rows)
+            {
+                var nameNode = row.SelectSingleNode(".//div[@class='table-cell param-name']");
+                var valueNode = row.SelectSingleNode(".//div[@class='table-cell param-value']");
+
+                if (nameNode != null && valueNode != null)
+                {
+                    var paramName = nameNode.InnerText.Trim();
+                    var paramValue = valueNode.InnerText.Trim();
+                    if (!paramDic.ContainsKey(paramName))
+                    {
+                        paramDic.Add(paramName, paramValue);
+                    }
+                    else
+                    {
+                        var currentValue = paramDic[paramName];
+                        paramDic[paramName] = $"{currentValue}\r\n{paramValue}";
+                    }
+                }
+            }
+        }
+
+        return paramDic;
+    }
     private string PromptReplacePlaceholders(string message, object variables)
     {
         using var activity = Observability.ActivitySource.StartMethodActivity(logger, new { message = message?.GetLogString(), variables });
@@ -839,27 +900,36 @@ public class AOAISummaryService : ISummaryService
     {
         using var activity = Observability.ActivitySource.StartMethodActivity(logger, new { message = message?.GetLogString(), variables });
         if (variables == null) { return message; }
+        if (string.IsNullOrEmpty(message)) { return message; }
 
-        foreach (var propName in variables.Keys)
+        foreach (var placeholderName in variables.Keys)
         {
-            var value = variables[propName];
-            if (value == null) { continue; }
-            var type = value.GetType();
-            if (type.IsPrimitive || type == typeof(decimal) || type == typeof(string) || type == typeof(DateTime) || type == typeof(DateTimeOffset))
+            var placeholderValue = variables[placeholderName];
+            if (placeholderValue == null) { continue; }
+            var placeholderType = placeholderValue.GetType();
+            if (placeholderType.IsPrimitive || placeholderType == typeof(decimal) || placeholderType == typeof(string) || placeholderType == typeof(DateTime) || placeholderType == typeof(DateTimeOffset))
             {
-                message = message.Replace($"{{{{{propName}}}}}", value.ToString());
+                message = message.Replace($"{{{{{placeholderName}}}}}", placeholderValue.ToString());
             }
-            else if (IsEnumerableButNotPrimitive(value))
+            else if (placeholderValue is IDictionary<string, object?>)
             {
-                var valueProperties = value.GetType().GetProperties().Where(p => p.GetIndexParameters().Length == 0);
+                var valueDictionary = placeholderValue as IDictionary<string, object?>;
+                foreach (var item in valueDictionary!)
+                {
+                    message = PromptReplacePlaceholders(message, valueDictionary);
+                }
+            }
+            else if (IsEnumerableButNotPrimitive(placeholderValue))
+            {
+                var valueProperties = placeholderValue.GetType().GetProperties().Where(p => p.GetIndexParameters().Length == 0);
                 foreach (var itemProp in valueProperties)
                 {
                     object? itemValue = null;
-                    try { itemValue = itemProp.GetValue(value); } catch { continue; }
-                    message = message.Replace($"{{{{{propName}.{itemProp.Name}}}}}", itemValue?.ToString());
+                    try { itemValue = itemProp.GetValue(placeholderValue); } catch { continue; }
+                    message = message.Replace($"{{{{{placeholderName}.{itemProp.Name}}}}}", itemValue?.ToString());
                 }
 
-                var start = "{{#each {{propName}}}}".Replace("{{propName}}", propName);
+                var start = "{{#each {{propName}}}}".Replace("{{propName}}", placeholderName);
                 var end = "{{/each}}";
 
                 var pattern = $"{start}(.*?){end}";
@@ -870,11 +940,11 @@ public class AOAISummaryService : ISummaryService
                 itemHtmlTemplate = itemHtmlTemplate.Replace(start, "");
                 itemHtmlTemplate = itemHtmlTemplate.Replace(end, "");
                 var itemsText = new List<string>();
-                foreach (var item in (value as IEnumerable)!)
+                foreach (var item in (placeholderValue as IEnumerable)!)
                 {
                     var dic = new Dictionary<string, object?>(variables);
-                    dic.Remove(propName);
-                    dic.Add(propName.TrimEnd('s'), item);
+                    dic.Remove(placeholderName);
+                    dic.Add(placeholderName.TrimEnd('s'), item);
                     var workItemHtml = PromptReplacePlaceholders(itemHtmlTemplate, dic);
                     itemsText.Add(workItemHtml.Trim());
                 }
@@ -882,13 +952,23 @@ public class AOAISummaryService : ISummaryService
             }
             else
             {
-                var itemProperties = value.GetType().GetProperties().Where(p => p.GetIndexParameters().Length == 0);
+                var itemProperties = placeholderValue.GetType().GetProperties().Where(p => p.GetIndexParameters().Length == 0);
                 foreach (var itemProp in itemProperties)
                 {
                     object? itemValue = null;
-                    try { itemValue = itemProp.GetValue(value); } catch { continue; }
+                    try { itemValue = itemProp.GetValue(placeholderValue); } catch { continue; }
 
-                    message = message.Replace($"{{{{{propName}.{itemProp.Name}}}}}", itemValue?.ToString());
+                    if (itemValue == null) { message = message.Replace($"{{{{{placeholderName}.{itemProp.Name}}}}}", null); continue; }
+
+                    var type = itemValue.GetType();
+                    if (type.IsPrimitive || type == typeof(decimal) || type == typeof(string) || type == typeof(DateTime) || type == typeof(DateTimeOffset))
+                    {
+                        message = message.Replace($"{{{{{placeholderName}.{itemProp.Name}}}}}", itemValue?.ToString());
+                    }
+                    else if (itemValue is IDictionary<string, object?>)
+                    {
+                        message = PromptReplacePlaceholders(message, itemValue as IDictionary<string, object?>);
+                    }
                 }
             }
         }

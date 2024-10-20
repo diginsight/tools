@@ -2,21 +2,21 @@
 <div class="table-container">
     <div class="table-row">
         <div class="table-cell param-name">Date:</div>
-        <div class="table-cell param-value" colspan="3">{{nowOffsetUtc}}</div>
+        <div class="table-cell param-value" colspan="3">{{timeInformation.UtcNow}}</div>
     </div>
     <div class="table-row">
         <div class="table-cell param-name">User:</div>
-        <div class="table-cell param-value" colspan="3">{{UserDisplayName}} ({{UserEmail}})</div>
+        <div class="table-cell param-value" colspan="3">{{userInformation.DisplayName}} ({{userInformation.Email}})</div>
     </div>
     <div class="table-row">
         <div class="table-cell param-name">Environment:</div>
-        <div class="table-cell param-value">{{devopsConfig.Environment}}</div>
+        <div class="table-cell param-value">{{devopsInformation.Environment}}</div>
         <div class="table-cell param-name">Site:</div>
-        <div class="table-cell param-value">{{httpConfig.RefererHost}}</div>
+        <div class="table-cell param-value">{{httpInformation.RefererHost}}</div>
     </div>
     <div class="table-row">
         <div class="table-cell param-name">Appinsight:</div>
-        <div class="table-cell param-value" colspan="3"><a href="https://portal.azure.com/#@{{azureAdConfig.Domain}}/resource/subscriptions/{{azureResourcesConfig.SubscriptionId}}/resourceGroups/{{azureResourcesConfig.ApplicationInsightResourceGroup}}/providers/microsoft.insights/components/{{azureResourcesConfig.ApplicationInsightName}}/searchV1">{{azureResourcesConfig.ApplicationInsightTraceId}}</a></div>
+        <div class="table-cell param-value" colspan="3"><a href="https://portal.azure.com/#@{{azureAdInformation.Domain}}/resource/subscriptions/{{azureResourcesInformation.SubscriptionId}}/resourceGroups/{{azureResourcesInformation.ApplicationInsightResourceGroup}}/providers/microsoft.insights/components/{{azureResourcesInformation.ApplicationInsightName}}/searchV1">{{azureResourcesInformation.ApplicationInsightTraceId}}</a></div>
     </div>
     <div class="table-row">
         <div class="table-cell param-name">Log stream:</div>
@@ -29,7 +29,7 @@
             <div class="table-cell-noborder param-name-flex">CURL to reproduce the call:</div>
         </div>
         <div class="table-row">
-            <div class="code-container" id="curlCommand" ><pre><code>{{httpConfig.Curl}}</code></pre></div>
+            <div class="code-container" id="curlCommand" ><pre><code>{{httpInformation.Curl}}</code></pre></div>
         </div>
         <div class="copy-button-container">
             <button class="copy-button" onclick="copyToClipboard('curlCommand')">Copy</button>

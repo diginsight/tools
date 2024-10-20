@@ -53,7 +53,7 @@
 	  <None Update="02.04 - GenerateCallDetails.prompt.yaml">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </None>
-	  <None Update="02.03 - GenerateSummary.prompt.yaml">
+	  <None Update="Resources\01.03 - SummaryInformation.prompt.yaml">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </None>
 	  <None Update="02.02 - InferPlaceholders.prompt.yaml">

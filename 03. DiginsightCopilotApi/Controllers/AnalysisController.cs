@@ -19,6 +19,7 @@ using static System.Net.WebRequestMethods;
 using Azure.ResourceManager.ResourceGraph;
 using Azure.Core;
 using Microsoft.AspNetCore.Http.Headers;
+using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace DiginsightCopilotApi.Controllers
 {
@@ -66,8 +67,58 @@ namespace DiginsightCopilotApi.Controllers
         {
             using var activity = Observability.ActivitySource.StartMethodActivity(logger, new { });
 
+
             using var reader = new StreamReader(Request.Body);
             var logContent = await reader.ReadToEndAsync();
+
+            var placeholders = await GeneratePlaceholders(logContent);
+
+            var analysisTitle = await this.openAiService.GenerateTitle(logContent, placeholders);
+            var analysisPlaceholders = await this.openAiService.InferPlaceholders(logContent, analysisTitle.Title, placeholders);
+            var applicationFlowInformation = await this.openAiService.GenerateApplicationFlowInformation(logContent, analysisTitle.Title, placeholders);
+
+            // GenerateCurlTable
+            // GenerateApplicationFlowTable
+            // GenerateExceptionStacktraceTable
+            // GenerateApplicationResourcesTable
+            // GenerateDevopsReferencesTable
+            // GenerateFooter
+            var analysisSummary = await this.openAiService.GenerateSummary(logContent, analysisTitle.Title, placeholders);
+            //var analysisDetails = await this.openAiService.GenerateDetails(logContent, timeInformation, analysisTitle.Title, workItemParams, changeParams, assemblyMetadata);
+            //var analysisPerformance = await this.openAiService.GeneratePerformanceAnalysis(logContent, timeInformation, analysisTitle.Title, workItemParams, changeParams, assemblyMetadata);
+
+            var analysis = await this.openAiService.GenerateFullAnalysis(logContent, analysisTitle.Title, placeholders);
+
+            // Add response header
+            Response.Headers.Add("analysis-url", analysis.Url);
+            Response.Headers.Add("log-url", analysis.LogUrl);
+
+            // Process the log content as needed
+            logger.LogDebug("logContent:\r\n{logContent}");
+
+            return analysis.Details; // Ok()
+        }
+
+        private async Task<IDictionary<string, object?>> GeneratePlaceholders(string logContent)
+        {
+            var dicPlaceholders = new Dictionary<string, object?>();
+
+            var logInformation = new LogInformation();
+            logInformation.LogContent = logContent; 
+            dicPlaceholders.Add("logInformation", logInformation);
+
+            var timeInformation = new TimeInformation();
+            timeInformation.UtcNow = DateTimeOffset.UtcNow;
+            dicPlaceholders.Add("timeInformation", timeInformation);
+
+            var azureAdInformation = this.azureAdOptions.Value;
+            dicPlaceholders.Add("azureAdInformation", azureAdInformation);
+
+            var inferredInformation = new Dictionary<string, object?>();
+            dicPlaceholders.Add("inferredInformation", inferredInformation);
+
+            var otherInformation = new Dictionary<string, object?>();
+            dicPlaceholders.Add("otherInformation", otherInformation);
 
             var incomingRequestPattern = @"Incoming Request: (.*) (http.*)";
             var incomingRequestMatch = Regex.Match(logContent, incomingRequestPattern);
@@ -96,6 +147,7 @@ namespace DiginsightCopilotApi.Controllers
                 this.httpOptions.Value.Scheme = incomingScheme;
                 this.httpOptions.Value.Authority = incomingAuthority;
             }
+            dicPlaceholders.Add("httpInformation", this.httpOptions.Value);
 
             var traceIdPattern = @"DBUG ([0-9a-fA-F]{32})(.*)LandingCallMiddleware.InvokeAsync";
             var traceIdMatch = Regex.Match(logContent, traceIdPattern);
@@ -123,7 +175,7 @@ namespace DiginsightCopilotApi.Controllers
                 this.azureResourcesOptions.Value.IngestionEndpoint = ingestionEndpoint;
                 this.azureResourcesOptions.Value.LiveEndpoint = liveEndpoint;
                 this.azureResourcesOptions.Value.ApplicationId = applicationId;
-                
+
                 if (!string.IsNullOrEmpty(instrumentationKey))
                 {
                     var tenantId = azureAdOptions.Value.TenantId;
@@ -161,9 +213,6 @@ namespace DiginsightCopilotApi.Controllers
                         }
                     }
 
-
-
-
                     azureResourcesOptions.Value.ApplicationInsightId = applicationInsightId;
                     if (!string.IsNullOrEmpty(applicationInsightId))
                     {
@@ -183,6 +232,7 @@ namespace DiginsightCopilotApi.Controllers
                     }
                 }
             }
+            dicPlaceholders.Add("azureResourcesInformation", this.azureResourcesOptions.Value);
 
             var httpRequestHeaders = new List<HttpRequestHeader>();
             var incomingRequestHeaderPattern = @"Incoming Request Header: (.*) - (.*)";
@@ -232,6 +282,8 @@ namespace DiginsightCopilotApi.Controllers
                    {headers}
                    """.Trim();
             this.httpOptions.Value.Curl = curl;
+            dicPlaceholders.Add("requestInformation", this.httpOptions.Value);
+
 
             var buildId = 0; var devopsProject = "";
             var assemblyMetadata = new List<AssemblyMetadata>();
@@ -281,6 +333,8 @@ namespace DiginsightCopilotApi.Controllers
                     }
                 }
             }
+            dicPlaceholders.Add("devopsInformation", this.devopsOptions.Value);
+            dicPlaceholders.Add("assemblyInformation", assemblyMetadata);
 
             var workItemParams = new List<WorkItemParam>();
             var changeParams = new List<ChangeParam>();
@@ -315,52 +369,12 @@ namespace DiginsightCopilotApi.Controllers
                         DisplayUriAbsoluteUri = change.DisplayUri.AbsoluteUri,
                     });
                 }
-
             }
+            dicPlaceholders.Add("devopsWorkItems", workItemParams);
+            dicPlaceholders.Add("devopsChanges", changeParams);
 
-            var utcNow = DateTimeOffset.UtcNow;
-            // GenerateDeterministicPlaceholders
-            //      {{UserDisplayName}} {{UserEmail}}
-
-            // nowOffsetUtc,              // timeInformation
-            // logContent,                // logInformation
-            // httpInformation,           // httpInformation
-            // requestHeaders,            // requestInformation
-            // azureAdInformation,        // azureAdInformation
-            // azureResourcesInformation, // azureResourcesInformation
-            // devopsInformation,         // devopsInformation
-            // changes,                   // devopsChanges
-            // workItems,                 // devopsWorkItems
-            // analysisSasToken,          // storageInformation
-            // folderNamePrefix,          // storageInformation
-            // logFileName,               // storageInformation
-            // assemblyMetadata           // assemblyInformation
-            // inferredInformation
-
-            var analysisTitle = await this.openAiService.GenerateTitle(logContent, utcNow, buildId, workItemParams, changeParams, assemblyMetadata);
-            var analysisPlaceholders = await this.openAiService.InferPlaceholders(logContent, utcNow, analysisTitle.Title, buildId, workItemParams, changeParams, assemblyMetadata);
-            // GenerateCurlTable
-            // GenerateApplicationFlowTable
-            // GenerateExceptionStacktraceTable
-            // GenerateApplicationResourcesTable
-            // GenerateDevopsReferencesTable
-            // GenerateFooter
-            var analysisSummary = await this.openAiService.GenerateSummary(logContent, utcNow, analysisTitle.Title, buildId, workItemParams, changeParams, assemblyMetadata);
-            //var analysisDetails = await this.openAiService.GenerateDetails(logContent, utcNow, analysisTitle.Title, buildId, workItemParams, changeParams, assemblyMetadata);
-            //var analysisPerformance = await this.openAiService.GeneratePerformanceAnalysis(logContent, utcNow, analysisTitle.Title, buildId, workItemParams, changeParams, assemblyMetadata);
-
-            var analysis = await this.openAiService.GenerateFullAnalysis(logContent, utcNow, analysisTitle.Title, buildId, workItemParams, changeParams, assemblyMetadata);
-
-            // Add response header
-            Response.Headers.Add("analysis-url", analysis.Url);
-            Response.Headers.Add("log-url", analysis.LogUrl);
-
-            // Process the log content as needed
-            logger.LogDebug("logContent:\r\n{logContent}");
-
-            return analysis.Details; // Ok()
+            return dicPlaceholders;
         }
-
 
         private async Task GetApplicationInsightResourceAsync(string instrumentationKey, string accessToken)
         {
@@ -424,5 +438,6 @@ namespace DiginsightCopilotApi.Controllers
             activity?.SetOutput(response.Value);
             return response.Value; // ResourceGroup, Name, SubscriptionId
         }
+
     }
 }

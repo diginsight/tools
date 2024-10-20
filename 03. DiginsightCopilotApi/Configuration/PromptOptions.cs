@@ -6,4 +6,5 @@ public class PromptOptions
     public string StorageAccount { get; set; }
     public string Container { get; set; }
     public string PromptFolder { get; set; }
+    public string TemplateFolder { get; set; }
 }

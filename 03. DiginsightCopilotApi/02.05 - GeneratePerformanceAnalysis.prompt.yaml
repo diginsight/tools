@@ -11,7 +11,7 @@
 
     The 'log content' describing the method exevution is reported here:
     ###
-    {{logContent}}
+    {{logInformation.LogContent}}
     ###   
  
 - Type: UserChatMessage
