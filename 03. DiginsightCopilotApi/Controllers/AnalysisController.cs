@@ -132,7 +132,36 @@ namespace DiginsightCopilotApi.Controllers
                     var resourceQueryResult = await GetApplicationInsightResourceAsync(instrumentationKey, tokenCredential);
                     var jsonDocument = JsonDocument.Parse(resourceQueryResult.Data.ToString());
                     var root = jsonDocument?.RootElement != null && jsonDocument.RootElement.GetArrayLength() > 0 ? jsonDocument.RootElement[0] : default(JsonElement);
-                    var applicationInsightId = root.GetProperty("id").ToString();
+
+                    // add a check for existence of root.GetProperty("id")
+                    // var applicationInsightId =  root.GetProperty("id").ToString();
+                    // add a check for existence of root.GetProperty("id")
+                    var applicationInsightId = azureResourcesOptions.Value.ApplicationInsightId;
+                    if (root.ValueKind != JsonValueKind.Undefined && root.TryGetProperty("id", out var applicationInsightIdProperty))
+                    {
+                        applicationInsightId = applicationInsightIdProperty.ToString();
+                        azureResourcesOptions.Value.ApplicationInsightId = applicationInsightId;
+                        if (!string.IsNullOrEmpty(applicationInsightId))
+                        {
+                            var applicationInsightIdStringPattern = "/subscriptions/(.*)/resourceGroups/(.*)/providers/microsoft.insights/components/(.*)";
+                            var applicationInsightIdStringMatch = Regex.Match(applicationInsightId, applicationInsightIdStringPattern);
+                            if (applicationInsightIdStringMatch.Success)
+                            {
+                                var subscriptionId = applicationInsightIdStringMatch.Groups[1].Value;
+                                var resourceGroup = applicationInsightIdStringMatch.Groups[2].Value;
+                                var applicationInsightName = applicationInsightIdStringMatch.Groups[3].Value;
+                                logger.LogDebug("subscriptionId: {subscriptionId}, resourceGroup: {resourceGroup}, applicationInsightName: {applicationInsightName}, applicationId: {applicationId}", subscriptionId, resourceGroup, applicationInsightName);
+
+                                azureResourcesOptions.Value.ApplicationInsightId = applicationId;
+                                azureResourcesOptions.Value.SubscriptionId = subscriptionId;
+                                azureResourcesOptions.Value.ApplicationInsightName = applicationInsightName;
+                                azureResourcesOptions.Value.ApplicationInsightResourceGroup = resourceGroup;
+                            }
+                        }
+                    }
+
+
+
 
                     azureResourcesOptions.Value.ApplicationInsightId = applicationInsightId;
                     if (!string.IsNullOrEmpty(applicationInsightId))
@@ -288,6 +317,8 @@ namespace DiginsightCopilotApi.Controllers
 
             }
 
+            var analysisTitle = await this.openAiService.GenerateTitle(logContent, buildId, workItemParams, changeParams, assemblyMetadata);
+
             var analysis = await this.openAiService.GenerateSummary(logContent, buildId, workItemParams, changeParams, assemblyMetadata);
 
             // Add response header
@@ -352,11 +383,15 @@ namespace DiginsightCopilotApi.Controllers
                      | take 1
                      """;
 
+            logger.LogDebug("query: {query}", query);
+
             var subscriptionId = azureResourcesOptions.Value.SubscriptionId;
             var queryContent = new ResourceQueryContent(query);
             queryContent.Subscriptions.Add(subscriptionId);
 
             var response = await tenant.GetResourcesAsync(queryContent);
+
+            activity?.SetOutput(response.Value);
             return response.Value; // ResourceGroup, Name, SubscriptionId
         }
     }

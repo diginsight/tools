@@ -6,10 +6,10 @@
     - The output must never begin with '```html'.
     - the html file should use the following script:
       <script>
-          function copyToClipboard() {
-              const curlCommand = document.getElementById('curlCommand').innerText;
+          function copyToClipboard(elementId) {
+              const curlCommand = document.getElementById(elementId).innerText;
               navigator.clipboard.writeText(curlCommand).then(() => {
-                  alert('CURL command copied to clipboard!');
+                  alert('text copied to clipboard!');
               }, (err) => {
                   console.error('Could not copy text: ', err);
               });
@@ -17,170 +17,192 @@
       </script>
     - the html file should use the following style:
       <style>
-            body {
-                font-family: Arial, sans-serif;
-                background-color: #f4f4f4;
-                margin: 0;
-                padding: 0;
-            }
-            .email-container {
-                max-width: 800px;
-                margin: 20px auto;
-                background-color: #ffffff;
-                padding: 20px;
-                border-radius: 10px;
-                box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            }
-            .header {
-                text-align: left;
-                padding: 10px;
-                font-size: 2em;
-                background-color: #007BFF;
-                color: white;
-                border-radius: 10px 10px 0 0;
-            }
-            .issue {
-                background-color: #C00000;
-                color: white;
-            }
-            .warning {
-                background-color: #E6AF00;
-                color: white;
-            }
-            .success {
-                background-color: #3B7D23;
-                color: white;
-            }
-            .content {
-                padding: 10px;
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-            }
-            .content p {
-                font-size: 16px;
-                color: #333;
-            }
-            ul {
-                list-style-type: none;
-                padding: 0;
-                font-size: 12px;
-                margin-top: 5px;
-            }
-            /* li {
-                display: 0 1 flex;
-                margin-top: 8px; 
-                width: 100%;
-                border: 0px solid #ddd;
-            } */
-            li {
-                position: relative;
-                margin-bottom: 10px;
-                padding-left: 20px; 
-            }
-            li::before {
-                content: "•"; /* Bullet point character */
-                position: absolute; /* Position it absolutely */
-                left: 0; /* Align it to the left */
-                top: 0; /* Align it to the top */
-                font-size: 1.2em; /* Adjust size as needed */
-                line-height: 1; /* Adjust line height */
-                color: black; /* Bullet point color */
-            }
-            li span {
-                display: block; /* Make descriptions start on a new line */
-                margin-top: 2px; /* Optional: space between code and description */
-            }
-            p {
-                font-size: 16px; /* Inherit the font size from the parent <p> element */
-            } 
-            p code {
-                font-size: inherit; /* Inherit the font size from the parent <p> element */
-            } 
-            .button {
-                display: inline-block;
-                padding: 15px 30px; 
-                margin: 20px 0;
-                font-size: 18px; 
-                color: white;
-                background-color: #007BFF;
-                text-decoration: none;
-                border-radius: 5px;
-                transition: background-color 0.3s ease;
-            }
-            .button:hover {
-                background-color: #0056b3;
-            }
-            .table-container {
-                width: 100%;
-                border-collapse: collapse;
-            }
-            .table-container-grid {
-                display: grid;
-                grid-template-columns: auto 1fr; /* First column auto-sized, second column takes remaining space */
-                width: 100%;
-                border-collapse: collapse;
-            }
-            .table-row-grid {
-                display: contents; /* Allow grid items to span multiple rows */
-                width: 100%;
-                border: 0px solid #ddd;
-            }
-            .table-row {
-                display: flex;
-                width: 100%;
-                border: 0px solid #ddd;
-            }
-            .table-row-auto {
-                display: 0 1 flex;
-                width: 100%;
-                border: 0px solid #ddd;
-            }
-            .table-row-grid {
-                display: contents; /* Allow grid items to span multiple rows */
-                width: 100%;
-                border: 0px solid #ddd;
-            }
-            .table-cell {
-                flex: 1;
-                padding: 8px;
-                border: 1px solid #ddd;
-            }
-            .table-cell-noborder {
-                flex: 1;
-                padding: 8px;
-                border: 0px solid #ddd;
-            }
-            .param-name {
-                font-weight: normal;
-                flex: 0 0 150px; 
-            }
-            .param-name-flex {
-                font-weight: normal;
-                flex: 1; 
-            }
-            .param-value {
-                font-weight: bold;
-                flex: 1;
-            }
-            .code-container {
-                width: 100%; /* Adjust width as needed */
-                max-height: 300px; /* Set a max height for vertical scrolling */
-                overflow: auto; /* Enable scrolling */
-                font-family: monospace; /* Fixed-size font */
-                white-space: pre-wrap; /* Preserve whitespace and allow wrapping */
-                border: 1px solid #ccc; /* Optional border */
-                padding: 10px; /* Optional padding */
-                background-color: #f9f9f9; /* Optional background color */
-                position: relative; /* Position relative for absolute positioning of button */
-            }
-            .copy-button {
-                position: absolute; /* Position absolute to place it in the container */
-                bottom: 10px; /* Distance from the bottom */
-                right: 10px; /* Distance from the right */
-                padding: 5px 10px; /* Button padding */
-                cursor: pointer; /* Pointer cursor on hover */
-            }
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+        .email-container {
+            max-width: 800px;
+            margin: 20px auto;
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            text-align: left;
+            padding: 10px;
+            font-size: 2em;
+            background-color: #C00000;
+            color: white;
+            border-radius: 10px 10px 0 0;
+        }
+        .issue {
+            background-color: #C00000;
+            color: white;
+        }
+        .warning {
+            background-color: #E6AF00;
+            color: white;
+        }
+        .success {
+            background-color: #3B7D23;
+            color: white;
+        }
+        .content {
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .content p {
+            font-size: 16px;
+            color: #333;
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+        li {
+            position: relative;
+            margin-bottom: 10px;
+            padding-left: 20px;
+        }
+        li::before {
+            content: "•";
+            position: absolute;
+            left: 0;
+            top: 0;
+            font-size: 1.2em;
+            line-height: 1;
+            color: black;
+        }
+        li span {
+            display: block;
+            margin-top: 2px;
+        }
+        p {
+            font-size: 16px;
+        } 
+        p code {
+            font-size: inherit;
+        } 
+        .button {
+            display: inline-block;
+            padding: 15px 30px;
+            margin: 20px 0;
+            font-size: 18px;
+            color: white;
+            background-color: #007BFF;
+            text-decoration: none;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+        .button:hover {
+            background-color: #0056b3;
+        }
+        .table-row-grid {
+            display: contents;
+            width: 100%;
+            border: 0px solid #ddd;
+        }
+        .table-row {
+            display: flex;
+            width: 100%;
+            border: 0px solid #ddd;
+        }
+        .row-container {
+            display: flex;
+            justify-content: space-between; /* Distribute space between the items */
+            align-items: center; /* Align items vertically in the center */
+            width: 100%;
+            border: 0px solid #ddd;
+            margin-bottom: 8px; /* Add margin to the bottom of the row */
+        }
+        .table-row-auto {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            border: 0px solid #ddd;
+        }
+        .table-row-grid {
+            display: contents;
+            width: 100%;
+            border: 0px solid #ddd;
+        }
+        .table-cell {
+            /* flex: 1; */
+            padding: 8px;
+            border: 1px solid #ddd;
+        }
+        .table-cell-noborder {
+            flex: 1;
+            padding: 8px;
+            border: 0px solid #ddd;
+        }
+        .param-name {
+            font-weight: normal;
+            flex: 0 0 150px;
+        }
+        .param-name-flex {
+            font-weight: normal;
+            flex: 1;
+        }
+        .param-value {
+            font-weight: bold;
+            flex: 1;
+            display: inline;
+        }
+        .left-aligned {
+            text-align: left;
+        }
+        .right-aligned {
+            text-align: right;
+        }
+        .param-value code {
+            white-space: nowrap; /* Prevent line breaks within the code element */
+        }        
+        .container {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start; /* Align items to the start of the container */
+        }
+        .table-container {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .table-container-grid {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .code-container {
+            width: 100%;
+            max-height: 300px;
+            overflow: auto;
+            font-family: monospace;
+            white-space: pre-wrap;
+            border: 1px solid #ccc;
+            padding: 10px;
+            background-color: #f9f9f9;
+            position: relative;
+        }
+        .copy-button-container {
+            display: flex; /* Adjust as needed */
+            justify-content: flex-end;
+            width: 100%;
+        }
+        .copy-button {
+            margin-top: 10px; /* Adjust as needed */
+            /* align-self: flex-start; */
+            cursor: pointer;
+        }
         </style>
 
     - The html page must always start with a title with a one line short description of the problem.
@@ -245,14 +267,18 @@
         In case User is not available into the log, UserDisplayName should be 'Not available' and UserEmail should be empty.
 
         After the table a further <div> structure should report the CURL to reproduce the call as shown below:
-        <div class="table-container">
-            <div class="table-row">
-                <div class="table-cell-noborder param-name-flex">CURL to reproduce the call:</div>
+        <div class="container">
+            <div class="table-container">
+                <div class="table-row">
+                    <div class="table-cell-noborder param-name-flex">CURL to reproduce the call:</div>
+                </div>
+                <div class="table-row">
+                    <div class="code-container" id="curlCommand" ><pre><code>{{httpConfig.Curl}}</code></pre></div>
+                </div>
+                <div class="copy-button-container">
+                    <button class="copy-button" onclick="copyToClipboard('curlCommand')">Copy</button>
+                </div>
             </div>
-            <div class="table-row">
-                <div class="code-container" id="curlCommand" ><pre><code>{{httpConfig.Curl}}</code></pre></div>
-            </div>
-            <button class="copy-button" onclick="copyToClipboard()">Copy</button>
         </div>
 
 - Type: UserChatMessage
@@ -278,15 +304,20 @@
     - In case an error message is reported, the error message should be shown in dark red.
     - In case an <exception> with its <stacktrace> are available into the log,
       a CODE section should be included to document including both <exception> and the <stacktrace> as shown below.
-      <div class="table-container">
-          <div class="table-row">
-              <div class="table-cell-noborder param-name-flex">Exception Stack trace:</div>
-          </div>
-          <div class="table-row">
-              <div class="code-container" ><pre><code>{{Exception}}</code></pre></div>
+        <div class="container">
+            <div class="table-container">
+              <div class="row-container">
+                  <div class="left-aligned">Exception Stack trace:</div>
+                  <div class="right-aligned"><a href="link_to_failing_code">Link to failing code</a></div>
+              </div>
+              <div class="table-row">
+                  <div class="code-container" id="exceptionCommand" ><pre><code>{{Exception}}</code></pre></div>
+              </div>
+              <div class="copy-button-container">
+                  <button class="copy-button" onclick="copyToClipboard('exceptionCommand')">Copy</button>
+              </div>
           </div>
       </div>
-
     - before the CODE section a left aligned link shoud be added to the failing code
       the link should be in the form
       https://dev.azure.com/{{devopsConfig.OrgName}}/{{devopsConfig.Project}}/_git/{{devopsConfig.Repository}}
@@ -316,6 +347,7 @@
       . Please, consider that the '{{httpConfig.Scheme}}://{{httpConfig.Host}}' is not an external resource and should not be included into this table.
       . Also, all endpoint with hostname applicationinsights.azure.com should be omitted
       . Also, traces from LandingCallMiddleware should not be considered for this table
+      . Please, make sure that the table doesn't contain duplicated entries.
       . The section title should be with <h3> tags.
 
     - After the 'Application flow resources' a 'Reference' section should include the following data.

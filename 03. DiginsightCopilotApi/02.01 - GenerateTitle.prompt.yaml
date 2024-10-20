@@ -1,32 +1,34 @@
 - Type: SystemChatMessage
   Value: |
-    Your goal is to write an html section with a human readable 'title' that explains what is happening into a method execution.
-    The method execution is described by the the log content reported below. 
+    Your goal is to write an html section with a human readable 'title'.
+    The title should explain into a one line description what is happening into a method execution.
+    The method execution is described by the the log content provided by a user message. 
     Rules:
     - The output must always be in html with a valid html syntax, according to the following template
       <section>
           <h1>Title</h1>
       </section>
 
+    - The title should use the following pattern:
+      <titlePrefix>: <titleContent>
+      . where <titlePrefix> can be ISSUE, WARNING or SUCCESS.
+      . The <titleContent> should contain a one row description of the problem.
+
+    - if the log contains an exception => the <titlePrefix> should be ISSUE
+    - if the log contains Response StatusCode: <4xx> => the <titlePrefix> should be ISSUE
+    - if the log contains Response StatusCode: <5xx> => the <titlePrefix> should be ISSUE
+    - otherwise => the prefix should be SUCCESS.
+    - In case of Success, if the latency is long => the prefix should be WARNING
+      
+    - In case of ISSUES:
+      . if a Controller Class is available within the flow => the title should include the following description:
+          '<Controller Class short name>.<Method> fails with' and it should include the exception short type name.
+      . if the log includes <WidgetTemplate> and the <WidgetTemplate Name> => the email title should include 'for widget <WidgetTemplate Name>'.
+      . if the log includes a Plant name => the email title should include 'for site <Plant name>'.
+
     - the title must be a one line short description of the problem.
       (eg. ISSUE: ... method fails with ... when ...) 
       the title should be chosen according to the following rules:
-
-      . the title format should use the following pattern:
-        <titlePrefix>: <titleContent>
-        where <titlePrefix> can be ISSUE, WARNING or SUCCESS.
-        . if the log contains an exception => the prefix should be ISSUE
-        . if the log contains Response StatusCode: <4xx> => the prefix should be ISSUE
-        . if the log contains Response StatusCode: <5xx> => the prefix should be ISSUE
-        . otherwise => the prefix should be SUCCESS.
-        . In case of Success, if the latency is long => the prefix should be WARNING
-      
-      . The <titleContent> should contain a one row description of the problem.
-        . In case of ISSUES:
-            - if a Controller Class is available within the flow => the title should include the following description:
-              '<Controller Class short name>.<Method> fails with' and it should include the exception short type name.
-            - if the log includes <WidgetTemplate> and the <WidgetTemplate Name> => the email title should include 'for widget <WidgetTemplate Name>'.
-            - if the log includes a Plant name => the email title should include 'for site <Plant name>'.
 
         - in case of ISSUE => the title should have 'issue' class
         - in case of WARNING => the title should have 'warning' class
@@ -34,10 +36,11 @@
 
 - Type: UserChatMessage
   Value: |
-    The text bsed log is reported below:
+    Consider the following logContent:
     ###
     {{logContent}}
-    ###   
+    ###
+    can you generate the html section with the title describing the logContent above?
 
 
       
