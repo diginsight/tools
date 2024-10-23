@@ -331,6 +331,28 @@ public class AOAISummaryService : ISummaryService
         var openAiConfig = openAiOptions.Value;
         var client = azureOpenAiClient.GetChatClient(openAiConfig.ChatModel); logger.LogDebug($"var client = azureOpenAiClient.GetChatClient({openAiConfig.ChatModel});");
 
+        //// Initialize kernel.
+        //Kernel kernel = Kernel.CreateBuilder()
+        //    .AddOpenAIChatCompletion(
+        //        modelId: "gpt-4o-2024-08-06",
+        //        apiKey: Environment.GetEnvironmentVariable("OpenAI__ApiKey"))
+        //    .Build();
+
+        //// Specify response format by setting Type object in prompt execution settings.
+        //var executionSettings = new OpenAIPromptExecutionSettings
+        //{
+        //    ResponseFormat = typeof(MovieResult)
+        //};
+
+        //// Send a request and pass prompt execution settings with desired response format.
+        //var result = await kernel.InvokePromptAsync("What are the top 10 movies of all time?", new(executionSettings));
+
+        //// Deserialize string response to a strong type to access type properties.
+        //// At this point, the deserialization logic won't fail, because MovieResult type was specified as desired response format.
+        //// This ensures that response string is a serialized version of MovieResult type.
+        //var movieResult = JsonSerializer.Deserialize<MovieResult>(result.ToString());
+
+
         var timeInformation = placeholders.TryGetValue("timeInformation", out var timeInformationObj) ? (TimeInformation)timeInformationObj : new TimeInformation();
         var nowOffsetUtc = timeInformation.UtcNow;
 

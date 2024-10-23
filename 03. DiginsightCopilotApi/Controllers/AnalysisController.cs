@@ -82,7 +82,6 @@ namespace DiginsightCopilotApi.Controllers
 
             var fullAnalysis = await this.openAiService.ComposeAnalysis(logContent, analysisTitle.Title, placeholders);
 
-
             //var analysisDetails = await this.openAiService.GenerateDetails(logContent, timeInformation, analysisTitle.Title, workItemParams, changeParams, assemblyMetadata);
             //var analysisPerformance = await this.openAiService.GeneratePerformanceAnalysis(logContent, timeInformation, analysisTitle.Title, workItemParams, changeParams, assemblyMetadata);
 
