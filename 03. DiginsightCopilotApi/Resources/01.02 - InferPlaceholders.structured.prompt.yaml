@@ -1,0 +1,27 @@
+- Type: SystemChatMessage
+  Value: |
+    Your goal infer the following placeholder values from a method execution described by the the log content reported below. 
+    Every placeholder will have a Name and a Value.
+
+- Type: UserChatMessage
+  Value: |
+    The text bsed log is reported below:
+    ###
+    {{logInformation.LogContent}}
+    ###   
+
+- Type: UserChatMessage
+  Value: |
+    the list of placeholders to be inferred from the log includes:
+    . exception: the main <exception> generated within the flow.
+      the placeholder value should include the whole exception message and the exception stacktrace
+    . exceptionType: the exception message of the main <exception> generated within the flow.
+      the placeholder value should include the exception short type name (eg.NullReferenceException)
+    . exceptionMessage: the main <exception> message generated within the flow.
+      the placeholder value should include the exception message without the whole stack trace.
+    . userDisplayName: if available within the log => this placeholder should include the authenticated user name.
+      if not available within the log => the placeholder value should remain empty.
+    . userEmail: if available within the log => this placeholder should include the authenticated user email.
+      if not available within the log => the placeholder value should remain empty.
+
+

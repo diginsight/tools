@@ -14,14 +14,17 @@
     <PackageReference Include="Azure.ResourceManager.ResourceGraph" Version="1.*" />
     <PackageReference Include="Azure.ResourceManager.Resources" Version="1.*" />
     <PackageReference Include="Azure.ResourceManager.Storage" Version="1.*" />
-    <PackageReference Include="Azure.Storage.Blobs" Version="12.22.2" />
     <PackageReference Include="HtmlAgilityPack.NetCore" Version="1.5.0.1" />
   </ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.10" />
+		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.*" />
+		<PackageReference Include="Microsoft.SemanticKernel" Version="1.24.1" />
 		<PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.*" />
-		<PackageReference Include="Microsoft.VisualStudio.Services.Client" Version="19.225.1" />
+		<PackageReference Include="Microsoft.VisualStudio.Services.Client" Version="19.*" />
+		<PackageReference Include="Microsoft.TeamFoundationServer.Client" Version="19.*" />
+		<PackageReference Include="Microsoft.TeamFoundation.DistributedTask.Common.Contracts" Version="19.*" />
+		<PackageReference Include="Microsoft.TeamFoundation.DistributedTask.WebApi" Version="19.*" />
 		<PackageReference Include="Azure.Extensions.AspNetCore.Configuration.Secrets" Version="1.*" />
 		<PackageReference Include="Azure.Identity" Version="1.*" />
 
@@ -32,20 +35,21 @@
 		<PackageReference Include="Diginsight.Diagnostics" Version="3.1.*" />
 		<PackageReference Include="Diginsight.Diagnostics.Log4Net" Version="3.1.*" />
 
-		<PackageReference Include="MailKit" Version="4.8.0" />
+		<PackageReference Include="MailKit" Version="4.8.*" />
 
-		<PackageReference Include="Azure.AI.OpenAI" Version="2.0.0" />
+		<PackageReference Include="Azure.AI.OpenAI" Version="2.*" />
 		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.*" />
 		<PackageReference Include="Microsoft.Extensions.Options" Version="8.*" />
-		<PackageReference Include="Microsoft.TeamFoundationServer.Client" Version="19.*" />
-		<PackageReference Include="Microsoft.TeamFoundation.DistributedTask.Common.Contracts" Version="19.225.1" />
-		<PackageReference Include="Microsoft.TeamFoundation.DistributedTask.WebApi" Version="19.225.1" />
-		<PackageReference Include="System.Linq.Async" Version="6.0.1" />
-		<PackageReference Include="WindowsAzure.Storage" Version="9.3.3" />
+		<PackageReference Include="System.Linq.Async" Version="6.*" />
+    <PackageReference Include="Azure.Storage.Blobs" Version="12.*" />
+		<PackageReference Include="WindowsAzure.Storage" Version="9.*" />
 		<PackageReference Include="YamlDotNet.NetCore" Version="1.*" />
 	</ItemGroup>
 
 	<ItemGroup>
+	  <None Update="Resources\01.02 - InferPlaceholders.structured.prompt.yaml">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
 	  <None Update="Resources\02.04 - Resources.prompt.yaml">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </None>

@@ -1,13 +1,33 @@
 - Type: SystemChatMessage
   Value: |
-    Your goal is to write an html section with a human readable 'analysis' that explains which external resources have been accessed across a method execution.
-    The method execution is described by the the 'log content' provided by a user message. 
+    Your goal is to write an html section with a table of the external resources accessed across a method execution.
+    The method execution is described by the the 'log content' provided into a user message. 
     Rules:
+    - 'log content' traces from LandingCallMiddleware => must not be considered 
+    - Also, consider that the '{{httpInformation.Scheme}}://{{httpInformation.Host}}' is not an external resource and should not be included into this table.
+    - Also, all endpoint with host domain 'applicationinsights.azure.com' should be omitted from the table
+    
     - The output must always be in html with a valid html syntax, according to the following template
       <section>
           <h3>Application Flow Resources</h3>
           Analysis content
       </section>
+    
+    - The table rows can include Database entries, Http external service entries or Service Bus entries as shown below:
+      <div class="table-container">
+          <div class="table-row-auto">
+              <div class="table-cell param-name">Database:</div>
+              <div class="table-cell param-value" ><code>'{{DatabaseUrl}}'</code>, Collection: '<code>{{Table}}</code>'</div>
+          </div>
+          <div class="table-row-auto">
+              <div class="table-cell param-name">Service Bus:</div>
+              <div class="table-cell param-value" ><code>{{ServiceBusBaseUrl}}</code></div>
+          </div>
+          <div class="table-row-auto">
+              <div class="table-cell param-name">Http external service:</div>
+              <div class="table-cell param-value" ><code>{{HttpBaseUrl}}</code></div>
+          </div>
+      </div>
  
 - Type: UserChatMessage
   Value: |
@@ -16,28 +36,5 @@
     {{logInformation.LogContent}}
     ###   
 
-
-- Type: UserChatMessage
-  Value: |
-    The 'Application flow resources' section should report all databases or external services accessed by the application.
-    The table rows may include Database information, Http external service information or Service Bus information as shown below:
-    <div class="table-container">
-        <div class="table-row-auto">
-            <div class="table-cell param-name">Database:</div>
-            <div class="table-cell param-value" ><code>'{{DatabaseUrl}}'</code>, Collection: '<code>{{Table}}</code>'</div>
-        </div>
-        <div class="table-row-auto">
-            <div class="table-cell param-name">Service Bus:</div>
-            <div class="table-cell param-value" ><code>{{ServiceBusBaseUrl}}</code></div>
-        </div>
-        <div class="table-row-auto">
-            <div class="table-cell param-name">Http external service:</div>
-            <div class="table-cell param-value" ><code>{{HttpBaseUrl}}</code></div>
-        </div>
-    </div>
-    . Traces from LandingCallMiddleware should not be considered for this table
-    . Also, consider that the '{{httpInformation.Scheme}}://{{httpInformation.Host}}' is not an external resource and should not be included into this table.
-    . Also, all endpoint with host domain 'applicationinsights.azure.com' should be omitted
-    . Please, make sure that the table doesn't contain duplicated entries.
 
 

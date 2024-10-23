@@ -13,6 +13,9 @@ using DiginsightCopilotApi.Configuration;
 using DiginsightCopilotApi.Models;
 using HtmlAgilityPack;
 using Microsoft.Extensions.Options;
+using Microsoft.SemanticKernel;
+using Microsoft.SemanticKernel.ChatCompletion;
+using Microsoft.SemanticKernel.Connectors.OpenAI;
 using Microsoft.TeamFoundation.Test.WebApi;
 using Newtonsoft.Json;
 using OpenAI;
@@ -26,6 +29,7 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
+using static Org.BouncyCastle.Crypto.Engines.SM2Engine;
 using TokenCredential = Azure.Core.TokenCredential;
 
 namespace DiginsightCopilotApi.Services;
@@ -42,10 +46,12 @@ public class AOAISummaryService : ISummaryService
     private IOptions<BlobStorageOptions> blobStorageOptions;
     private IOptions<PromptOptions> promptOptions;
     private IOptions<AzureAdOptions> azureAdOptions;
+    private IOptions<FeatureFlagOptions> featureFlagOptions;
 
 
     private OpenAIClient openAiClient;
     private AzureOpenAIClient azureOpenAiClient;
+    private Kernel kernel;
 
 
     public AOAISummaryService(
@@ -57,7 +63,8 @@ public class AOAISummaryService : ISummaryService
         IOptions<PromptOptions> promptOptions,
         IOptions<AzureAdOptions> azureAdOptions,
         IOptions<AzureResourcesOptions> azureResourcesOptions,
-        IOptions<PromptOptions> promptConfig
+        IOptions<PromptOptions> promptConfig,
+        IOptions<FeatureFlagOptions> featureFlagOptions
         )
     {
         this.logger = logger;
@@ -70,9 +77,21 @@ public class AOAISummaryService : ISummaryService
         this.promptOptions = promptOptions;
         this.devopsOptions = devopsOptions;
         this.azureResourcesOptions = azureResourcesOptions;
+        this.featureFlagOptions = featureFlagOptions;
 
         var openAiConfig = openAiOptions.Value;
         this.azureOpenAiClient = new AzureOpenAIClient(new Uri(openAiConfig.Endpoint), new ApiKeyCredential(openAiOptions.Value.ApiKey));
+
+        this.kernel = Kernel.CreateBuilder()
+                                .AddOpenAIChatCompletion(
+                                    modelId: "gpt-4o", // -2024-08-06
+                                    apiKey: openAiOptions.Value.ApiKey
+
+                                    )
+                                .Build();
+
+
+
 
     }
     private static async Task<string> GetAccessTokenAsync(TokenCredential credential)
@@ -331,111 +350,122 @@ public class AOAISummaryService : ISummaryService
         var openAiConfig = openAiOptions.Value;
         var client = azureOpenAiClient.GetChatClient(openAiConfig.ChatModel); logger.LogDebug($"var client = azureOpenAiClient.GetChatClient({openAiConfig.ChatModel});");
 
-        //// Initialize kernel.
-        //Kernel kernel = Kernel.CreateBuilder()
-        //    .AddOpenAIChatCompletion(
-        //        modelId: "gpt-4o-2024-08-06",
-        //        apiKey: Environment.GetEnvironmentVariable("OpenAI__ApiKey"))
-        //    .Build();
-
-        //// Specify response format by setting Type object in prompt execution settings.
-        //var executionSettings = new OpenAIPromptExecutionSettings
-        //{
-        //    ResponseFormat = typeof(MovieResult)
-        //};
-
-        //// Send a request and pass prompt execution settings with desired response format.
-        //var result = await kernel.InvokePromptAsync("What are the top 10 movies of all time?", new(executionSettings));
-
-        //// Deserialize string response to a strong type to access type properties.
-        //// At this point, the deserialization logic won't fail, because MovieResult type was specified as desired response format.
-        //// This ensures that response string is a serialized version of MovieResult type.
-        //var movieResult = JsonSerializer.Deserialize<MovieResult>(result.ToString());
-
-
         var timeInformation = placeholders.TryGetValue("timeInformation", out var timeInformationObj) ? (TimeInformation)timeInformationObj : new TimeInformation();
         var nowOffsetUtc = timeInformation.UtcNow;
 
-        List<PromptChatMessage>? messages = null;
         var promptConfig = promptOptions.Value;
         var promptFolder = promptConfig.TemplateFolder;
         var promptName = "01.02 - InferPlaceholders";
-        var promptFileName = string.IsNullOrEmpty(promptFolder) ? $"{promptName}.prompt.yaml" : $"{promptFolder}\\{promptName}.prompt.yaml";
-
-        var promptYamlTemplate = File.ReadAllText(promptFileName);
-        var deserializer = new DeserializerBuilder()
-                           .WithNamingConvention(new PascalCaseNamingConvention())
-                           .Build();
-        var yamlObject = deserializer.Deserialize(new StringReader(promptYamlTemplate)) as IList<object>;
+        var folderNamePrefix = $"{nowOffsetUtc.DateTime:yyyyMMdd HHmm} - ";
+        var logFileName = $"{folderNamePrefix}LogStream";
 
         var blobStorageConfig = this.blobStorageOptions.Value;
         var blobServiceClient = new BlobServiceClient(blobStorageConfig.BlobStorageConnectionString);
         var containerClient = blobServiceClient.GetBlobContainerClient("analysis");
         var analysisSasToken = containerClient.GenerateSasUri(BlobContainerSasPermissions.Read, DateTimeOffset.UtcNow.AddHours(1)).Query;
         logger.LogDebug("analysisSasToken: {analysisSasToken}", analysisSasToken);
-
-        string folderNamePrefix = $"{nowOffsetUtc.DateTime:yyyyMMdd HHmm} - ";
-        string logFileName = $"{folderNamePrefix}LogStream";
-        var azureResourcesInformation = this.azureResourcesOptions.Value;
-        var devopsInformation = this.devopsOptions.Value;
-        var httpInformation = this.httpOptions.Value;
-        var azureAdInformation = this.azureAdOptions.Value;
-
         var otherInformation = placeholders.TryGetValue("otherInformation", out var otherInformationObj) ? (Dictionary<string, object?>)otherInformationObj : new Dictionary<string, object?>();
         if (!otherInformation.ContainsKey("analysisSasToken")) { otherInformation.Add("analysisSasToken", analysisSasToken); }
         if (!otherInformation.ContainsKey("folderNamePrefix")) { otherInformation.Add("folderNamePrefix", folderNamePrefix); }
         if (!otherInformation.ContainsKey("logFileName")) { otherInformation.Add("logFileName", logFileName); }
 
-        List<ChatMessage> chatMessages = new();
-        foreach (var messageObject in yamlObject)
-        {
-            var message = messageObject as IDictionary<object, object>;
-            var requestHeaders = httpInformation.Headers;
-            message["Value"] = PromptReplacePlaceholders(message["Value"] as string, placeholders);
+        string itemHtmlResponse = "";
+        Dictionary<string, object?> inferredPlaceholders = null;
 
-            if (message["Type"].Equals("SystemChatMessage")) { chatMessages.Add(new SystemChatMessage(message["Value"] as string)); }
-            else if (message["Type"].Equals("UserChatMessage")) { chatMessages.Add(new UserChatMessage(message["Value"] as string)); }
+        if (featureFlagOptions.Value.UseStructuredOutput == false)
+        {
+            var promptFileName = string.IsNullOrEmpty(promptFolder) ? $"{promptName}.prompt.yaml" : $"{promptFolder}\\{promptName}.prompt.yaml";
+
+            var promptYamlTemplate = File.ReadAllText(promptFileName);
+            var deserializer = new DeserializerBuilder()
+                               .WithNamingConvention(new PascalCaseNamingConvention())
+                               .Build();
+            var yamlObject = deserializer.Deserialize(new StringReader(promptYamlTemplate)) as IList<object>;
+
+            List<PromptChatMessage>? messages = null;
+            List<ChatMessage> chatMessages = new();
+            foreach (var messageObject in yamlObject)
+            {
+                var message = messageObject as IDictionary<object, object>;
+                message["Value"] = PromptReplacePlaceholders(message["Value"] as string, placeholders);
+
+                if (message["Type"].Equals("SystemChatMessage")) { chatMessages.Add(new SystemChatMessage(message["Value"] as string)); }
+                else if (message["Type"].Equals("UserChatMessage")) { chatMessages.Add(new UserChatMessage(message["Value"] as string)); }
+            }
+
+            var isDevelopment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development"; logger.LogDebug("isDevelopment: {isDevelopment}", isDevelopment);
+            if (isDevelopment)
+            {
+                var serializer = new SerializerBuilder()
+                                    .WithNamingConvention(new CamelCaseNamingConvention())
+                                    .Build();
+                var actualPrompt = serializer.Serialize(yamlObject);
+                var userProfilePath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+                var applicationName = AppDomain.CurrentDomain.FriendlyName;
+                var actualPromptFolder = $"{userProfilePath}\\{applicationName}";
+                Directory.CreateDirectory(actualPromptFolder);
+                var actualPromptPath = $"{actualPromptFolder}\\{promptName}.prompt.actual.yaml";
+                logger.LogDebug("actualPromptPath: {actualPromptPath}", actualPromptPath);
+                await File.WriteAllTextAsync(actualPromptPath, actualPrompt); logger.LogDebug($"await File.WriteAllTextAsync({actualPromptPath}, actualPrompt);");
+            }
+
+            logger.LogDebug($"before client.CompleteChatAsync({chatMessages});");
+            var response = await client.CompleteChatAsync(chatMessages);
+            logger.LogDebug($"{response} = await client.CompleteChatAsync({chatMessages});");
+            var ret = response.Value.Content?.FirstOrDefault()?.Text ?? "";
+
+            var markdownContentPattern = "```html(.*)```";
+            var match = Regex.Match(ret, markdownContentPattern, RegexOptions.Singleline);
+            itemHtmlResponse = match.Groups[1].Value?.Trim();
+            if (string.IsNullOrEmpty(itemHtmlResponse)) { itemHtmlResponse = ret; }
+
+            inferredPlaceholders = GetInferredPlaceholders(itemHtmlResponse);
+
+            var inferredInformation = placeholders.TryGetValue("inferredInformation", out var inferredInformationObj) ? (IDictionary<string, object?>)inferredInformationObj : new Dictionary<string, object?>();
+            var userInformation = placeholders.TryGetValue("userInformation", out var userInformationObj) ? (UserInformation)userInformationObj : new UserInformation();
+            foreach (var placeholder in inferredPlaceholders)
+            {
+                if (!inferredInformation.ContainsKey(placeholder.Key)) { inferredInformation.Add(placeholder.Key.Trim(':'), placeholder.Value); }
+                if (placeholder.Key == "userDisplayName:") { userInformation.DisplayName = placeholder.Value?.ToString()!; }
+                if (placeholder.Key == "userEmail:") { userInformation.Email = placeholder.Value?.ToString()!; }
+            }
+
         }
-
-        var isDevelopment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development"; logger.LogDebug("isDevelopment: {isDevelopment}", isDevelopment);
-        if (isDevelopment)
+        else
         {
-            var serializer = new SerializerBuilder()
-                                .WithNamingConvention(new CamelCaseNamingConvention())
-                                .Build();
-            var actualPrompt = serializer.Serialize(yamlObject);
-            var userProfilePath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-            var applicationName = AppDomain.CurrentDomain.FriendlyName;
-            var actualPromptFolder = $"{userProfilePath}\\{applicationName}";
-            Directory.CreateDirectory(actualPromptFolder);
-            var actualPromptPath = $"{actualPromptFolder}\\{promptName}.prompt.actual.yaml";
-            logger.LogDebug("actualPromptPath: {actualPromptPath}", actualPromptPath);
-            await File.WriteAllTextAsync(actualPromptPath, actualPrompt); logger.LogDebug($"await File.WriteAllTextAsync({actualPromptPath}, actualPrompt);");
-        }
+            var executionSettings = new OpenAIPromptExecutionSettings() { ResponseFormat = typeof(Placeholders) };
+            var chatHistory = new ChatHistory();
+            IChatCompletionService chatCompletionService = kernel.GetRequiredService<IChatCompletionService>();
 
-        logger.LogDebug($"before client.CompleteChatAsync({chatMessages});");
-        var response = await client.CompleteChatAsync(chatMessages);
-        logger.LogDebug($"{response} = await client.CompleteChatAsync({chatMessages});");
-        var ret = response.Value.Content?.FirstOrDefault()?.Text ?? "";
+            var promptFileName = string.IsNullOrEmpty(promptFolder) ? $"{promptName}.structured.prompt.yaml" : $"{promptFolder}\\{promptName}.structured.prompt.yaml";
 
-        var markdownContentPattern = "```html(.*)```";
-        var match = Regex.Match(ret, markdownContentPattern, RegexOptions.Singleline);
-        var itemHtmlResponse = match.Groups[1].Value?.Trim();
-        if (string.IsNullOrEmpty(itemHtmlResponse)) { itemHtmlResponse = ret; }
+            var promptYamlTemplate = File.ReadAllText(promptFileName);
+            var deserializer = new DeserializerBuilder()
+                               .WithNamingConvention(new PascalCaseNamingConvention())
+                               .Build();
+            var yamlObject = deserializer.Deserialize(new StringReader(promptYamlTemplate)) as IList<object>;
+            foreach (var messageObject in yamlObject)
+            {
+                var message = messageObject as IDictionary<object, object>;
+                message["Value"] = PromptReplacePlaceholders(message["Value"] as string, placeholders);
 
-        var inferredPlaceholders = GetInferredPlaceholders(itemHtmlResponse);
+                if (message["Type"].Equals("SystemChatMessage")) { chatHistory.AddSystemMessage(message["Value"] as string); }
+                else if (message["Type"].Equals("UserChatMessage")) { chatHistory.AddUserMessage(message["Value"] as string); }
+            }
 
-        var inferredInformation = placeholders.TryGetValue("inferredInformation", out var inferredInformationObj) ? (IDictionary<string, object?>)inferredInformationObj : new Dictionary<string, object?>();
-        var userInformation = placeholders.TryGetValue("userInformation", out var userInformationObj) ? (UserInformation)userInformationObj : new UserInformation();
-        foreach (var placeholder in inferredPlaceholders)
-        {
-            if (!inferredInformation.ContainsKey(placeholder.Key)) { inferredInformation.Add(placeholder.Key.Trim(':'), placeholder.Value); }
-            if (placeholder.Key == "userDisplayName:") { userInformation.DisplayName = placeholder.Value?.ToString()!; }
-            if (placeholder.Key == "userEmail:") { userInformation.DisplayName = placeholder.Value?.ToString()!; }
+            var responseMessage = await chatCompletionService.GetChatMessageContentAsync(chatHistory, executionSettings);
+
+            itemHtmlResponse = responseMessage.ToString();
+            var placeholdersResult = System.Text.Json.JsonSerializer.Deserialize<Placeholders>(itemHtmlResponse);
+
+            inferredPlaceholders = placeholdersResult.Items?.ToDictionary(i => i.Name, i => i.Value);
+            placeholdersResult.Items?.ForEach(item =>
+            {
+                inferredPlaceholders[item.Name] = item.Value;
+            });
         }
 
         string folderName = $"{folderNamePrefix}{title}";
-
         string analysisFileName = $"{promptName}";
         var analysisBlobClient = containerClient.GetBlobClient($"{folderName}/{analysisFileName}.htm");
         using var analysisStream = new MemoryStream(Encoding.UTF8.GetBytes(itemHtmlResponse));
@@ -448,6 +478,7 @@ public class AOAISummaryService : ISummaryService
 
         var analysisFileUrl = $"{containerClient.Uri.AbsoluteUri}/{folderName}/{analysisFileName}.htm{analysisSasToken}";
         var logFileUrl = $"{containerClient.Uri.AbsoluteUri}/{folderName}/{logFileName}.log{analysisSasToken}";
+
 
         var analysis = new Analysis()
         {
@@ -621,7 +652,7 @@ public class AOAISummaryService : ISummaryService
         var analysisBlobClient = containerClient.GetBlobClient($"{folderName}/{analysisFileName}.htm");
         using var analysisStream1 = new MemoryStream(Encoding.UTF8.GetBytes(htmlItemResponse));
         await analysisBlobClient.UploadAsync(analysisStream1, overwrite: true);
-        
+
         if (!otherInformation.ContainsKey(templateName)) { otherInformation.Add(templateName, htmlItemResponse); }
 
         var analysisFileUrl = $"{containerClient.Uri.AbsoluteUri}/{folderName}/{analysisFileName}.htm{analysisSasToken}";
@@ -1321,5 +1352,22 @@ public class AOAISummaryService : ISummaryService
         {
             return new ValueTask<AccessToken>(new AccessToken(_token, DateTimeOffset.MaxValue));
         }
+    }
+
+    public class Placeholders
+    {
+        public List<Placeholder> Items { get; set; }
+    }
+
+    public class Placeholder
+    {
+        public string Name { get; set; }
+
+        public object? Value { get; set; }
+    }
+
+    public class FeatureFlagOptions
+    {
+        public bool UseStructuredOutput { get; set; }
     }
 }

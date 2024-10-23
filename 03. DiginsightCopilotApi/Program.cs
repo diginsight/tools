@@ -6,6 +6,7 @@ using DiginsightCopilotApi.Configuration;
 using DiginsightCopilotApi.Models;
 using DiginsightCopilotApi.Services;
 using Microsoft.Extensions.Hosting;
+using static DiginsightCopilotApi.Services.AOAISummaryService;
 
 
 
@@ -51,6 +52,7 @@ public class Program
         builder.Services.Configure<AzureDevopsOptions>(builder.Configuration.GetSection("Devops"));
         builder.Services.Configure<HttpContextOptions>(builder.Configuration.GetSection("HttpContext"));
         builder.Services.Configure<AzureResourcesOptions>(builder.Configuration.GetSection("AzureResources"));
+        builder.Services.Configure<FeatureFlagOptions>(builder.Configuration.GetSection("AppSettings"));
 
         builder.Services.AddSingleton<IAzureDevopsService, AzureDevopsService>();
         builder.Services.AddSingleton<ISummaryService, AOAISummaryService>();
