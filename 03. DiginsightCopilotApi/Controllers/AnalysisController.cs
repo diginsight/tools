@@ -72,28 +72,30 @@ namespace DiginsightCopilotApi.Controllers
             var logContent = await reader.ReadToEndAsync();
 
             var placeholders = await GeneratePlaceholders(logContent);
-
             var analysisTitle = await this.openAiService.GenerateTitle(logContent, placeholders);
-            var analysisPlaceholders = await this.openAiService.GeneratePlaceholders(logContent, analysisTitle.Title, placeholders);
+            var analysisPlaceholders = await this.openAiService.InferPlaceholders(logContent, analysisTitle.Title, placeholders);
             var applicationFlowInformation = await this.openAiService.GenerateApplicationFlowInformation(logContent, analysisTitle.Title, placeholders);
             var analysisSummary = await this.openAiService.GenerateSummary(logContent, analysisTitle.Title, placeholders);
             var analysisResources = await this.openAiService.GenerateResources(logContent, analysisTitle.Title, placeholders);
+            var analysisReference = await this.openAiService.GenerateReference(logContent, analysisTitle.Title, placeholders);
             var analysisFooter = await this.openAiService.GenerateFooter(logContent, analysisTitle.Title, placeholders);
+
+            var fullAnalysis = await this.openAiService.ComposeAnalysis(logContent, analysisTitle.Title, placeholders);
 
 
             //var analysisDetails = await this.openAiService.GenerateDetails(logContent, timeInformation, analysisTitle.Title, workItemParams, changeParams, assemblyMetadata);
             //var analysisPerformance = await this.openAiService.GeneratePerformanceAnalysis(logContent, timeInformation, analysisTitle.Title, workItemParams, changeParams, assemblyMetadata);
 
-            var analysis = await this.openAiService.GenerateFullAnalysis(logContent, analysisTitle.Title, placeholders);
+            //var analysis = await this.openAiService.GenerateFullAnalysis(logContent, analysisTitle.Title, placeholders);
 
             // Add response header
-            Response.Headers.Add("analysis-url", analysis.Url);
-            Response.Headers.Add("log-url", analysis.LogUrl);
+            Response.Headers.Add("analysis-url", fullAnalysis.Url);
+            Response.Headers.Add("log-url", fullAnalysis.LogUrl);
 
             // Process the log content as needed
             logger.LogDebug("logContent:\r\n{logContent}");
 
-            return analysis.Details; // Ok()
+            return fullAnalysis.Details; // Ok()
         }
 
         private async Task<IDictionary<string, object?>> GeneratePlaceholders(string logContent)
@@ -116,6 +118,10 @@ namespace DiginsightCopilotApi.Controllers
 
             var otherInformation = new Dictionary<string, object?>();
             dicPlaceholders.Add("otherInformation", otherInformation);
+
+            var userInformation = new UserInformation();
+            dicPlaceholders.Add("userInformation", userInformation);
+
 
             var incomingRequestPattern = @"Incoming Request: (.*) (http.*)";
             var incomingRequestMatch = Regex.Match(logContent, incomingRequestPattern);

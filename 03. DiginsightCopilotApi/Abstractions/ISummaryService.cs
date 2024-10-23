@@ -5,13 +5,16 @@ namespace DiginsightCopilotApi.Abstractions;
 public interface ISummaryService
 {
     Task<Analysis> GenerateTitle(string logContent, IDictionary<string, object> placeholders);
-    Task<Analysis> GeneratePlaceholders(string logContent, string title, IDictionary<string, object> placeholders);
+    Task<Analysis> InferPlaceholders(string logContent, string title, IDictionary<string, object> placeholders);
     Task<Analysis> GenerateApplicationFlowInformation(string logContent, string title, IDictionary<string, object> placeholders);
     Task<Analysis> GenerateFullAnalysis(string logContent, string title, IDictionary<string, object> placeholders);
     Task<Analysis> GenerateSummary(string logContent, string title, IDictionary<string, object> placeholders);
     Task<Analysis> GenerateResources(string logContent, string title, IDictionary<string, object> placeholders);
+    Task<Analysis> GenerateReference(string logContent, string title, IDictionary<string, object> placeholders);
     Task<Analysis> GenerateFooter(string logContent, string title, IDictionary<string, object> placeholders);
     Task<Analysis> GenerateDetails(string logContent, string title, IDictionary<string, object> placeholders);
     Task<Analysis> GeneratePerformanceAnalysis(string logContent, string title, IDictionary<string, object> placeholders);
+    Task<Analysis> ComposeAnalysis(string logContent, string title, IDictionary<string, object> placeholders);
+    
 
 }

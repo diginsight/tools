@@ -47,6 +47,9 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <None Update="Resources\02.04 - Resources.prompt.yaml">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
 	  <None Update="Resources\02.02 - ApplicationFlowInformationTemplate.html">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </None>

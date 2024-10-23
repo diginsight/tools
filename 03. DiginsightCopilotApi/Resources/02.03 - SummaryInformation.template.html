@@ -1,39 +1,16 @@
 <h3>Summary</h3>
 {{summaryAnalysisContent}}
-<div class="table-container">
-    <div class="table-row">
-        <div class="table-cell param-name">Date:</div>
-        <div class="table-cell param-value" colspan="3">{{timeInformation.UtcNow}}</div>
-    </div>
-    <div class="table-row">
-        <div class="table-cell param-name">User:</div>
-        <div class="table-cell param-value" colspan="3">{{userInformation.DisplayName}} ({{userInformation.Email}})</div>
-    </div>
-    <div class="table-row">
-        <div class="table-cell param-name">Environment:</div>
-        <div class="table-cell param-value">{{devopsInformation.Environment}}</div>
-        <div class="table-cell param-name">Site:</div>
-        <div class="table-cell param-value">{{httpInformation.RefererHost}}</div>
-    </div>
-    <div class="table-row">
-        <div class="table-cell param-name">Appinsight:</div>
-        <div class="table-cell param-value" colspan="3"><a href="https://portal.azure.com/#@{{azureAdInformation.Domain}}/resource/subscriptions/{{azureResourcesInformation.SubscriptionId}}/resourceGroups/{{azureResourcesInformation.ApplicationInsightResourceGroup}}/providers/microsoft.insights/components/{{azureResourcesInformation.ApplicationInsightName}}/searchV1">{{azureResourcesInformation.ApplicationInsightTraceId}}</a></div>
-    </div>
-    <div class="table-row">
-        <div class="table-cell param-name">Log stream:</div>
-        <div class="table-cell param-value" colspan="3"><a href="https://nhbackofficetest.blob.core.windows.net/analysis/{{folderNamePrefix}}{{Title}}/{{logFileName}}.log{{analysisSasToken}}" >{{logFileName}}.log</a></div>
-    </div>
-</div>
 <div class="container">
     <div class="table-container">
-        <div class="table-row">
-            <div class="table-cell-noborder param-name-flex">CURL to reproduce the call:</div>
+        <div class="row-container">
+            <div class="left-aligned">Exception Stack trace:</div>
+            <div class="right-aligned"><a href="link_to_failing_code">Link to failing code</a></div>
         </div>
         <div class="table-row">
-            <div class="code-container" id="curlCommand" ><pre><code>{{httpInformation.Curl}}</code></pre></div>
+            <div class="code-container" id="exceptionCommand" ><pre><code>{{exception}}</code></pre></div>
         </div>
         <div class="copy-button-container">
-            <button class="copy-button" onclick="copyToClipboard('curlCommand')">Copy</button>
+            <button class="copy-button" onclick="copyToClipboard('exceptionCommand')">Copy</button>
         </div>
     </div>
 </div>
