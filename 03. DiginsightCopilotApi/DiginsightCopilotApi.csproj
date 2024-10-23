@@ -47,22 +47,43 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <None Update="02.05 - GeneratePerformanceAnalysis.prompt.yaml">
+	  <None Update="Resources\02.02 - ApplicationFlowInformationTemplate.html">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </None>
-	  <None Update="02.04 - GenerateCallDetails.prompt.yaml">
+	  <None Update="Resources\02.03 - SummaryInformation.template.html">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </None>
-	  <None Update="Resources\01.03 - SummaryInformation.prompt.yaml">
+	  <None Update="Resources\02.04 - Resources.template.html">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </None>
-	  <None Update="02.02 - InferPlaceholders.prompt.yaml">
+	  <None Update="Resources\02.05 - Reference.template.html">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </None>
-	  <None Update="02.01 - GenerateTitle.prompt.yaml">
+	  <None Update="Resources\02.06 - ApplicationFlowDetails.template.html">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
+	  <None Update="Resources\02.07 - PerformanceAnalysis.prompt.yaml">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
+	  <None Update="Resources\02.06 - ApplicationFlowDetails.prompt.yaml">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
+	  <None Update="Resources\02.03 - SummaryInformation.prompt.yaml">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
+	  <None Update="Resources\01.02 - InferPlaceholders.prompt.yaml">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
+	  <None Update="Resources\01.01 - GenerateTitle.prompt.yaml">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </None>
 	  <None Update="01.00 - GenerateFullAnalysis.prompt.yaml">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
+	  <None Update="Resources\02.07 - PerformanceAnalysis.template.html">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
+	  <None Update="Resources\02.08 - Footer.template.html">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </None>
 	</ItemGroup>

@@ -74,16 +74,13 @@ namespace DiginsightCopilotApi.Controllers
             var placeholders = await GeneratePlaceholders(logContent);
 
             var analysisTitle = await this.openAiService.GenerateTitle(logContent, placeholders);
-            var analysisPlaceholders = await this.openAiService.InferPlaceholders(logContent, analysisTitle.Title, placeholders);
+            var analysisPlaceholders = await this.openAiService.GeneratePlaceholders(logContent, analysisTitle.Title, placeholders);
             var applicationFlowInformation = await this.openAiService.GenerateApplicationFlowInformation(logContent, analysisTitle.Title, placeholders);
-
-            // GenerateCurlTable
-            // GenerateApplicationFlowTable
-            // GenerateExceptionStacktraceTable
-            // GenerateApplicationResourcesTable
-            // GenerateDevopsReferencesTable
-            // GenerateFooter
             var analysisSummary = await this.openAiService.GenerateSummary(logContent, analysisTitle.Title, placeholders);
+            var analysisResources = await this.openAiService.GenerateResources(logContent, analysisTitle.Title, placeholders);
+            var analysisFooter = await this.openAiService.GenerateFooter(logContent, analysisTitle.Title, placeholders);
+
+
             //var analysisDetails = await this.openAiService.GenerateDetails(logContent, timeInformation, analysisTitle.Title, workItemParams, changeParams, assemblyMetadata);
             //var analysisPerformance = await this.openAiService.GeneratePerformanceAnalysis(logContent, timeInformation, analysisTitle.Title, workItemParams, changeParams, assemblyMetadata);
 

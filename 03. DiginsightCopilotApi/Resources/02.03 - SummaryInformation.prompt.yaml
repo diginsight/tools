@@ -5,7 +5,7 @@
     Rules:
     - The output must always be in html with a valid html syntax, according to the following template
       <section>
-          <h3>{{Title}}</h3>
+          <h3>Summary</h3>
           Summary content
       </section>
 
