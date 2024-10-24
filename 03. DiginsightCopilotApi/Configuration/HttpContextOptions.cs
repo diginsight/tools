@@ -1,8 +1,9 @@
-﻿using System.Net;
+﻿using Diginsight.Options;
+using System.Net;
 
 namespace DiginsightCopilotApi.Models;
 
-public class HttpContextOptions
+public class HttpContextOptions : IDynamicallyConfigurable, IVolatilelyConfigurable
 {
     public string Method { get; set; }
     public string Url { get; set; }

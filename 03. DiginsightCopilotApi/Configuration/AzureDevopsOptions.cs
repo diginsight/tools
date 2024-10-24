@@ -1,6 +1,8 @@
-﻿namespace DiginsightCopilotApi.Configuration;
+﻿using Diginsight.Options;
 
-public class AzureDevopsOptions
+namespace DiginsightCopilotApi.Configuration;
+
+public class AzureDevopsOptions : IDynamicallyConfigurable, IVolatilelyConfigurable
 {
     public string OrgName { get; set; }
     public string PAT { get; set; }

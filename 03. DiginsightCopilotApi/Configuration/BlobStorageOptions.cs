@@ -1,6 +1,8 @@
-﻿namespace DiginsightCopilotApi.Configuration;
+﻿using Diginsight.Options;
 
-public class BlobStorageOptions
+namespace DiginsightCopilotApi.Configuration;
+
+public class BlobStorageOptions : IDynamicallyConfigurable, IVolatilelyConfigurable
 {
     public string BlobStorageConnectionString { get; set; }
     public string StorageAccount { get; set; }

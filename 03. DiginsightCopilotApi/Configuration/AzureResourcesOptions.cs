@@ -1,6 +1,8 @@
-﻿namespace DiginsightCopilotApi.Configuration;
+﻿using Diginsight.Options;
 
-public class AzureResourcesOptions
+namespace DiginsightCopilotApi.Configuration;
+
+public class AzureResourcesOptions : IDynamicallyConfigurable, IVolatilelyConfigurable
 {
     public string AzureMonitorConnectionString { get; set; }
     public string InstrumentationKey { get; set; }

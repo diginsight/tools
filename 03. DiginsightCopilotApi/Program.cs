@@ -1,4 +1,5 @@
 using Diginsight;
+using Diginsight.AspNetCore;
 using Diginsight.Diagnostics;
 using DiginsightCopilotApi;
 using DiginsightCopilotApi.Abstractions;
@@ -43,16 +44,24 @@ public class Program
         builder.Services.AddSwaggerGen(); logger.LogDebug($"builder.Services.AddSwaggerGen();");
 
 
-        builder.Services.Configure<AzureAdOptions>(builder.Configuration.GetSection("AzureAd"));
-        builder.Services.Configure<BlobStorageOptions>(builder.Configuration.GetSection("BlobStorage"));
-        builder.Services.Configure<PromptOptions>(builder.Configuration.GetSection("Prompt"));
-        builder.Services.Configure<AzureOpenAiOptions>(builder.Configuration.GetSection("AzureOpenAi"));
-        builder.Services.Configure<EmailOptions>(builder.Configuration.GetSection("Email"));
-        
-        builder.Services.Configure<AzureDevopsOptions>(builder.Configuration.GetSection("Devops"));
-        builder.Services.Configure<HttpContextOptions>(builder.Configuration.GetSection("HttpContext"));
-        builder.Services.Configure<AzureResourcesOptions>(builder.Configuration.GetSection("AzureResources"));
-        builder.Services.Configure<FeatureFlagOptions>(builder.Configuration.GetSection("AppSettings"));
+        builder.Services.Configure<AzureAdOptions>(builder.Configuration.GetSection("AzureAd"))
+                        .DynamicallyConfigureClassAwareFromHttpRequestHeaders<AzureAdOptions>();
+        builder.Services.Configure<BlobStorageOptions>(builder.Configuration.GetSection("BlobStorage"))
+                        .DynamicallyConfigureClassAwareFromHttpRequestHeaders<BlobStorageOptions>();
+        builder.Services.Configure<PromptOptions>(builder.Configuration.GetSection("Prompt"))
+                        .DynamicallyConfigureClassAwareFromHttpRequestHeaders<PromptOptions>();
+        builder.Services.Configure<AzureOpenAiOptions>(builder.Configuration.GetSection("AzureOpenAi"))
+                        .DynamicallyConfigureClassAwareFromHttpRequestHeaders<AzureOpenAiOptions>();
+        builder.Services.Configure<EmailOptions>(builder.Configuration.GetSection("Email"))
+                        .DynamicallyConfigureClassAwareFromHttpRequestHeaders<EmailOptions>();
+        builder.Services.Configure<AzureDevopsOptions>(builder.Configuration.GetSection("Devops"))
+                        .DynamicallyConfigureClassAwareFromHttpRequestHeaders<AzureDevopsOptions>();
+        builder.Services.Configure<HttpContextOptions>(builder.Configuration.GetSection("HttpContext"))
+                        .DynamicallyConfigureClassAwareFromHttpRequestHeaders<HttpContextOptions>();
+        builder.Services.Configure<AzureResourcesOptions>(builder.Configuration.GetSection("AzureResources"))
+                        .DynamicallyConfigureClassAwareFromHttpRequestHeaders<AzureResourcesOptions>();
+        builder.Services.Configure<FeatureFlagOptions>(builder.Configuration.GetSection("AppSettings"))
+                        .DynamicallyConfigureClassAwareFromHttpRequestHeaders<FeatureFlagOptions>();
 
         builder.Services.AddSingleton<IAzureDevopsService, AzureDevopsService>();
         builder.Services.AddSingleton<ISummaryService, AOAISummaryService>();

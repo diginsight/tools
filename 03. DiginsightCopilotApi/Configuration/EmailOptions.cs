@@ -1,8 +1,9 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Diginsight.Options;
+using System.ComponentModel.DataAnnotations;
 
 namespace DiginsightCopilotApi.Configuration;
 
-public class EmailOptions
+public class EmailOptions : IDynamicallyConfigurable, IVolatilelyConfigurable
 {
     [Required]
     public string Server { get; set; }

@@ -1,6 +1,8 @@
-﻿namespace DiginsightCopilotApi.Configuration;
+﻿using Diginsight.Options;
 
-public class AzureAdOptions
+namespace DiginsightCopilotApi.Configuration;
+
+public class AzureAdOptions : IDynamicallyConfigurable, IVolatilelyConfigurable
 {
     public string Instance { get; set; }
     public string Domain { get; set; }
