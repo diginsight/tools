@@ -1,0 +1,6 @@
+@SmartAnalyzerApi_HostAddress = http://localhost:5143
+
+GET {{SmartAnalyzerApi_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

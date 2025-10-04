@@ -1,0 +1,37 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.12.35527.113 d17.12
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MipDocumentInspectorFull", "MipDocumentInspectorFull\MipDocumentInspectorFull.csproj", "{BE35789C-24BB-4A3F-89B6-CE62AC380D08}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MipDocumentInspectorCore", "MipDocumentInspectorCore\MipDocumentInspectorCore.csproj", "{C6FDE08E-AFBF-462A-9375-D7A82C9B7C48}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "01. MIP", "01. MIP", "{FFB1AD20-3CB3-46C8-B62D-9F01EE48C530}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{BE35789C-24BB-4A3F-89B6-CE62AC380D08}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BE35789C-24BB-4A3F-89B6-CE62AC380D08}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BE35789C-24BB-4A3F-89B6-CE62AC380D08}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BE35789C-24BB-4A3F-89B6-CE62AC380D08}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C6FDE08E-AFBF-462A-9375-D7A82C9B7C48}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C6FDE08E-AFBF-462A-9375-D7A82C9B7C48}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C6FDE08E-AFBF-462A-9375-D7A82C9B7C48}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C6FDE08E-AFBF-462A-9375-D7A82C9B7C48}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{BE35789C-24BB-4A3F-89B6-CE62AC380D08} = {FFB1AD20-3CB3-46C8-B62D-9F01EE48C530}
+		{C6FDE08E-AFBF-462A-9375-D7A82C9B7C48} = {FFB1AD20-3CB3-46C8-B62D-9F01EE48C530}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {371EB3FB-78CE-4AB1-9825-E86D39A5AC7C}
+	EndGlobalSection
+EndGlobal

@@ -1,0 +1,12 @@
+<Project>
+  
+  <ItemGroup>
+    <None Remove="**\*.DotSettings" />
+  </ItemGroup>
+  
+  <ItemGroup Condition="Exists('$(MSBuildProjectDirectory)\packages.lock.json')">
+    <Content Remove="packages.lock.json" />
+    <None Remove="packages.lock.json" />
+  </ItemGroup>
+  
+</Project>

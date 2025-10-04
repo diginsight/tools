@@ -1,0 +1,84 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.13.35828.75
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
+	ProjectSection(SolutionItems) = preProject
+		Directory.Build.props = Directory.Build.props
+		Directory.Build.targets = Directory.Build.targets
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "01.00 Console", "01.00 Console", "{EE9B0881-5B0C-43A7-BE01-B9AC77489EA6}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "20.00 Api", "20.00 Api", "{26295826-E48A-4F98-8A7F-E129FDB5F9B9}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "10.00 Client", "10.00 Client", "{515C00AE-E393-4A45-A5FE-B05E201543CA}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CosmosdbConsole", "01.00 Console\CosmosdbConsole\CosmosdbConsole.csproj", "{AC4AE6C5-B9AF-7AAF-8310-EC16D9564BEC}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SmartMonitorApi", "20.00 Api\SmartMonitorApi\SmartMonitorApi.csproj", "{8E295EA3-2D86-43AD-8689-4244013F2915}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SmartAnalyzerApi", "20.00 Api\SmartAnalyzerApi\SmartAnalyzerApi.csproj", "{F211AD03-93C5-4A8D-96E0-CC2B94E044F5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SmartOptimizerApi", "20.00 Api\SmartOptimizerApi\SmartOptimizerApi.csproj", "{7E368DEB-188F-43FE-95B2-4A92E356B762}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SmartTestApi", "20.00 Api\SmartTestApi\SmartTestApi.csproj", "{BF40C402-5921-41B8-AE78-E5B4174AD457}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SmartDocsApi", "20.00 Api\SmartDocsApi\SmartDocsApi.csproj", "{0F563C75-45E3-4D3D-B578-4C6F0199E645}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "30.00 Job", "30.00 Job", "{8668BF06-93AE-4A18-9D27-BC446B0BFC92}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Diginsight.Tools.FeedMonitor", "30.00 Job\Diginsight.Tools.FeedMonitor\Diginsight.Tools.FeedMonitor.csproj", "{01D43176-929E-472C-9515-9B5E520A1922}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{AC4AE6C5-B9AF-7AAF-8310-EC16D9564BEC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AC4AE6C5-B9AF-7AAF-8310-EC16D9564BEC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AC4AE6C5-B9AF-7AAF-8310-EC16D9564BEC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AC4AE6C5-B9AF-7AAF-8310-EC16D9564BEC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8E295EA3-2D86-43AD-8689-4244013F2915}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8E295EA3-2D86-43AD-8689-4244013F2915}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8E295EA3-2D86-43AD-8689-4244013F2915}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8E295EA3-2D86-43AD-8689-4244013F2915}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F211AD03-93C5-4A8D-96E0-CC2B94E044F5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F211AD03-93C5-4A8D-96E0-CC2B94E044F5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F211AD03-93C5-4A8D-96E0-CC2B94E044F5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F211AD03-93C5-4A8D-96E0-CC2B94E044F5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7E368DEB-188F-43FE-95B2-4A92E356B762}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7E368DEB-188F-43FE-95B2-4A92E356B762}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7E368DEB-188F-43FE-95B2-4A92E356B762}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7E368DEB-188F-43FE-95B2-4A92E356B762}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BF40C402-5921-41B8-AE78-E5B4174AD457}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BF40C402-5921-41B8-AE78-E5B4174AD457}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BF40C402-5921-41B8-AE78-E5B4174AD457}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BF40C402-5921-41B8-AE78-E5B4174AD457}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0F563C75-45E3-4D3D-B578-4C6F0199E645}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0F563C75-45E3-4D3D-B578-4C6F0199E645}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0F563C75-45E3-4D3D-B578-4C6F0199E645}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0F563C75-45E3-4D3D-B578-4C6F0199E645}.Release|Any CPU.Build.0 = Release|Any CPU
+		{01D43176-929E-472C-9515-9B5E520A1922}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{01D43176-929E-472C-9515-9B5E520A1922}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{01D43176-929E-472C-9515-9B5E520A1922}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{01D43176-929E-472C-9515-9B5E520A1922}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{AC4AE6C5-B9AF-7AAF-8310-EC16D9564BEC} = {EE9B0881-5B0C-43A7-BE01-B9AC77489EA6}
+		{8E295EA3-2D86-43AD-8689-4244013F2915} = {26295826-E48A-4F98-8A7F-E129FDB5F9B9}
+		{F211AD03-93C5-4A8D-96E0-CC2B94E044F5} = {26295826-E48A-4F98-8A7F-E129FDB5F9B9}
+		{7E368DEB-188F-43FE-95B2-4A92E356B762} = {26295826-E48A-4F98-8A7F-E129FDB5F9B9}
+		{BF40C402-5921-41B8-AE78-E5B4174AD457} = {26295826-E48A-4F98-8A7F-E129FDB5F9B9}
+		{0F563C75-45E3-4D3D-B578-4C6F0199E645} = {26295826-E48A-4F98-8A7F-E129FDB5F9B9}
+		{01D43176-929E-472C-9515-9B5E520A1922} = {8668BF06-93AE-4A18-9D27-BC446B0BFC92}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {0D240141-781C-46C8-B410-B688C91006D5}
+	EndGlobalSection
+EndGlobal

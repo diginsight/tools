@@ -1,0 +1,55 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30320.27
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MIPDocumentInspector", "MIPDocumentInspector.csproj", "{E59F98A4-96CD-4A6A-905B-1413A83318F6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MipDocumentInspectorFull", "..\MipDocumentInspectorFull\MipDocumentInspectorFull.csproj", "{BE35789C-24BB-4A3F-89B6-CE62AC380D08}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MipDocumentInspectorCore", "..\MipDocumentInspectorCore\MipDocumentInspectorCore.csproj", "{4482CCD8-4983-4CAA-B002-4932D67D82E0}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Common.Authentication", "..\..\00. Common\Common.Authentication\Common.Authentication.csproj", "{1D6B58A2-C714-438C-8742-34BD083CF61A}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Common.PresentationBase", "..\..\00. Common\Common.Presentation\Common.Presentation.csproj", "{AF56A02E-E833-4AA6-B8BC-D1C4638C5C1F}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Common.EntityBase", "..\..\00. Common\Common.EntityBase\Common.EntityBase.csproj", "{8BBA67D0-4373-4AAB-801F-CD557950B291}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{E59F98A4-96CD-4A6A-905B-1413A83318F6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E59F98A4-96CD-4A6A-905B-1413A83318F6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E59F98A4-96CD-4A6A-905B-1413A83318F6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E59F98A4-96CD-4A6A-905B-1413A83318F6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BE35789C-24BB-4A3F-89B6-CE62AC380D08}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BE35789C-24BB-4A3F-89B6-CE62AC380D08}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BE35789C-24BB-4A3F-89B6-CE62AC380D08}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BE35789C-24BB-4A3F-89B6-CE62AC380D08}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4482CCD8-4983-4CAA-B002-4932D67D82E0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4482CCD8-4983-4CAA-B002-4932D67D82E0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4482CCD8-4983-4CAA-B002-4932D67D82E0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4482CCD8-4983-4CAA-B002-4932D67D82E0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1D6B58A2-C714-438C-8742-34BD083CF61A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1D6B58A2-C714-438C-8742-34BD083CF61A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1D6B58A2-C714-438C-8742-34BD083CF61A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1D6B58A2-C714-438C-8742-34BD083CF61A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AF56A02E-E833-4AA6-B8BC-D1C4638C5C1F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AF56A02E-E833-4AA6-B8BC-D1C4638C5C1F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AF56A02E-E833-4AA6-B8BC-D1C4638C5C1F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AF56A02E-E833-4AA6-B8BC-D1C4638C5C1F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8BBA67D0-4373-4AAB-801F-CD557950B291}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8BBA67D0-4373-4AAB-801F-CD557950B291}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8BBA67D0-4373-4AAB-801F-CD557950B291}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8BBA67D0-4373-4AAB-801F-CD557950B291}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {F678318B-B229-4644-9755-5BF7C69869F8}
+	EndGlobalSection
+EndGlobal

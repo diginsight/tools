@@ -1,0 +1,425 @@
+﻿<common:WindowBase x:Class="MipDocumentInspector.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:MipDocumentInspector"
+        xmlns:common="clr-namespace:Common;assembly=Common.PresentationBase"
+        mc:Ignorable="d" Initialized="MainWindow_Initialized" DragMode="Full" 
+        Name="mainWindow" Title="MIP Document Inspector" Height="450" Width="950" Drop="mainWindow_Drop" >
+    <common:WindowBase.WindowChrome>
+        <WindowChrome CaptionHeight="0" CornerRadius="0" GlassFrameThickness="0"
+                      NonClientFrameEdges="None" ResizeBorderThickness="5" UseAeroCaptionButtons="False" />
+    </common:WindowBase.WindowChrome>
+    <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Common.PresentationBase;component/Resources/DefaultSkin.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+
+            <common:EventConverter x:Key="getLabelChildren" ConvertEvent="getLabelChildren_ConvertEvent" />
+            <common:EventConverter x:Key="getDocumentName" ConvertEvent="getDocumentName_ConvertEvent" />
+
+            <common:EventConverter x:Key="getLabelName" ConvertEvent="getLabelName_ConvertEvent" />
+            <common:EventConverter x:Key="getLabelDescription" ConvertEvent="getLabelDescription_ConvertEvent" />
+
+            <common:EventConverter x:Key="getLabelTooltip" ConvertEvent="getLabelTooltip_ConvertEvent" />
+            <common:EventConverter x:Key="getIdentityDescription" ConvertEvent="getIdentityDescription_ConvertEvent" />
+            <common:EventConverter x:Key="getMenuItemBackground" ConvertEvent2="getMenuItemBackground_ConvertEvent" />
+            <common:EventConverter x:Key="isDocumentLabel" ConvertEvent2="isDocumentLabel_ConvertEvent" />
+        </ResourceDictionary>
+    </Window.Resources>
+    <Window.CommandBindings>
+        <CommandBinding Command="{x:Static common:Commands.LoginToggle}" CanExecute="LoginToggleCanExecute" Executed="LoginToggleExecuted" />
+        <CommandBinding Command="{x:Static common:Commands.Login}" CanExecute="LoginCanExecute" Executed="LoginExecuted" />
+        <CommandBinding Command="{x:Static common:Commands.Logout}" CanExecute="LogoutCanExecute" Executed="LogoutExecuted" />
+        <CommandBinding Command="{x:Static common:Commands.ToggleMenu}" CanExecute="ToggleMenuCanExecute" Executed="ToggleMenuExecuted" />
+        <CommandBinding Command="{x:Static common:Commands.SelectLabel}" CanExecute="SelectLabelCanExecute" Executed="SelectLabelExecuted" />
+
+        <CommandBinding Command="{x:Static common:Commands.GetDescriptor}" CanExecute="GetDescriptorCanExecute" Executed="GetDescriptorExecuted" />
+        <CommandBinding Command="{x:Static common:Commands.ApplyLabel}" CanExecute="ApplyLabelCanExecute" Executed="ApplyLabelExecuted" />
+    </Window.CommandBindings>
+    <Grid Grid.IsSharedSizeScope="True" 
+          DataContext="{Binding ElementName=mainWindow, Mode=OneWay}" >
+        <Grid.ColumnDefinitions>
+            <!--<ColumnDefinition Width="auto" />
+            <ColumnDefinition Width="auto" />-->
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="auto" />
+            <RowDefinition Height="auto" />
+            <RowDefinition Height="auto" />
+            <RowDefinition Height="auto" />
+            <RowDefinition Height="auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="auto" />
+        </Grid.RowDefinitions>
+
+        <Grid Grid.Row="0" Background="{StaticResource Grey240}" Height="30" >
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition SharedSizeGroup="labels"  Width="auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="auto" />
+                <ColumnDefinition Width="auto" />
+                <ColumnDefinition Width="auto" />
+                <ColumnDefinition Width="auto" />
+                <ColumnDefinition Width="auto" />
+            </Grid.ColumnDefinitions>
+
+            <TextBlock Grid.Column="1" Margin="10,4,10,8" FontWeight="Bold" 
+                       VerticalAlignment="Top" HorizontalAlignment="Center"
+                       
+                       Text="{Binding ElementName=mainWindow, Path=Title, Mode=OneWay}" ></TextBlock>
+
+
+            <Button Focusable="False" Grid.Column="3" Style="{StaticResource IconsButtonTemplate}"
+                    Margin="0,0,10,0" Height="32" 
+                    HorizontalAlignment="Center"
+                    Background="Transparent" Foreground="{StaticResource Grey90}"
+                    Command="{x:Static common:Commands.LoginToggle}" >
+                <StackPanel Orientation="Horizontal" >
+                    <Label Grid.Column="0" VerticalAlignment="Center" VerticalContentAlignment="Center" 
+                                               FontSize="12" 
+                                               Foreground="{StaticResource Grey90}"
+                                               Margin="0,0,5,0"
+                                               Padding="5,0,0,0" Content="{Binding Path=Identity, Mode=OneWay, Converter={StaticResource getIdentityDescription}, FallbackValue=Login}"/>
+                    <Rectangle Margin="0" Height="20" Width="20" >
+                        <Rectangle.Fill>
+                            <VisualBrush Visual="{StaticResource userCanvas}" Stretch="Uniform" />
+                        </Rectangle.Fill>
+                    </Rectangle>
+                </StackPanel>
+            </Button>
+
+            <Button Margin="20,4,10,8" Grid.Column="4" x:Name="minimizeButton" Style="{StaticResource WindowButtonStyle}" Content="0" 
+                                       Command="{x:Static common:Commands.Minimize}" />
+            <Button Margin="10,4,10,8" Grid.Column="5" x:Name="restoreButton" Style="{StaticResource WindowButtonStyle}" Content="1" 
+                                       Command="{x:Static common:Commands.ToggleWindowState}" />
+            <Button Margin="10,4,10,8" Grid.Column="6" x:Name="closeButton" Style="{StaticResource WindowButtonStyle}" Content="r" 
+                                       Command="{x:Static common:Commands.Close}" />
+        </Grid>
+
+        <Grid Grid.Row="1" Background="{StaticResource Grey240}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition SharedSizeGroup="labels"  Width="auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="auto" />
+                <ColumnDefinition Width="auto" />
+            </Grid.ColumnDefinitions>
+
+            <Label   x:Uid="lbInputDocument" Grid.Column="0" Height="30" >Document</Label>
+            <TextBox x:Uid="txtInputDocumentString" Name="txtInputDocumentString" 
+                     Grid.Column="1" HorizontalAlignment="Stretch" VerticalAlignment="Center" VerticalContentAlignment="Center"
+                     Height="30" BorderThickness="0"  Margin="5,2,3,2" 
+                     Text="{Binding Path=DocumentPath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                     />
+
+            <Button x:Name="btnGetDescriptor" x:Uid="btnGetDescriptor" 
+                    Grid.Column="2"  
+                    Height="30" BorderThickness="0"  Margin="3,2" 
+                    Width="200" HorizontalAlignment="Right" 
+                    Command="{x:Static common:Commands.GetDescriptor}"
+                    >Get Descriptor</Button>
+        </Grid>
+
+        <Grid Grid.Row="2" Background="{StaticResource Grey240}" >
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition SharedSizeGroup="labels" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="auto" />
+                <ColumnDefinition Width="auto" />
+            </Grid.ColumnDefinitions>
+        </Grid>
+
+        <Grid Grid.Row="3" Background="{StaticResource Grey240}" >
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition SharedSizeGroup="labels"  />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="auto" />
+                <ColumnDefinition Width="auto" />
+                <ColumnDefinition Width="auto" />
+            </Grid.ColumnDefinitions>
+
+            <Label   x:Uid="lbOutput" Grid.Column="0" Height="30" >Labels</Label>
+
+            <StackPanel Orientation="Horizontal" Grid.Column="1" Grid.ColumnSpan="2" Margin="0" >
+                <Menu  Name="rotAnimMenu"  Grid.Row="2" Margin="3,0"  Background="Transparent"
+                       HorizontalAlignment="Left" 
+                       VerticalAlignment="Center" VerticalContentAlignment="Center"
+                       ItemsSource="{Binding Path=Labels, Mode=OneWay}" >
+                    <Menu.ItemContainerStyle>
+                        <Style TargetType="{x:Type MenuItem}" >
+                            <Setter Property="Margin" Value="2"></Setter>
+                            <Setter Property="Height" Value="30"></Setter>
+                            <Setter Property="MinWidth" Value="140"></Setter>
+                            <Setter Property="Padding" Value="0"></Setter>
+                            <Setter Property="HorizontalAlignment" Value="Stretch"></Setter>
+                            <Setter Property="HorizontalContentAlignment" Value="Stretch"></Setter>
+                            <Setter Property="VerticalAlignment" Value="Center"></Setter>
+                            <Setter Property="VerticalContentAlignment" Value="Center"></Setter>
+                            <Setter Property="Command" Value="{x:Static common:Commands.SelectLabel}"></Setter>
+                            <Setter Property="CommandParameter" Value="{Binding Path=., Mode=OneWay}"></Setter>
+                            <Setter Property="CommandTarget" Value="{Binding ElementName=mainWindow, Path=., Mode=OneWay}"></Setter>
+                            <Setter Property="ToolTip" Value="{Binding Path=., Mode=OneWay, Converter={StaticResource getLabelTooltip}}"></Setter>
+                            <Setter Property="Background" >
+                                <Setter.Value>
+                                    <MultiBinding Converter="{StaticResource getMenuItemBackground}" >
+                                        <Binding Path="." Mode="OneWay" />
+                                        <Binding ElementName="mainWindow" Path="DocumentLabel" Mode="OneWay" />
+                                        <Binding ElementName="mainWindow" Path="SelectedLabel" Mode="OneWay" />
+                                    </MultiBinding>
+                                </Setter.Value>
+                            </Setter>
+                            <Setter Property="IsChecked" >
+                                <Setter.Value>
+                                    <MultiBinding Converter="{StaticResource isDocumentLabel}" >
+                                        <Binding Path="." Mode="OneWay" />
+                                        <Binding ElementName="mainWindow" Path="DocumentLabel" Mode="OneWay" />
+                                        <Binding ElementName="mainWindow" Path="SelectedLabel" Mode="OneWay" />
+                                    </MultiBinding>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </Menu.ItemContainerStyle>
+                    <Menu.ItemTemplate>
+                        <HierarchicalDataTemplate ItemsSource="{Binding Path=., Converter={StaticResource getLabelChildren}}" >
+                            <TextBlock  Text="{Binding RelativeSource={RelativeSource Self}, Path=(common:AttachedProperties.String0), Converter={StaticResource localize}}"  
+                                        common:AttachedProperties.String0="{Binding Path=., Converter={StaticResource getLabelName}}" 
+                                        VerticalAlignment="Center" Margin="5,0"  FontSize="12" />
+                            <HierarchicalDataTemplate.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding RelativeSource={RelativeSource Self}, Path=(common:AttachedProperties.String0), Converter={StaticResource localize}}"  
+                                               common:AttachedProperties.String0="{Binding Path=., Converter={StaticResource getLabelName}}"
+                                               Margin="5,0"  FontSize="12" VerticalAlignment="Center" />
+                                </DataTemplate>
+                            </HierarchicalDataTemplate.ItemTemplate>
+                        </HierarchicalDataTemplate>
+                    </Menu.ItemTemplate>
+
+                </Menu>
+
+                <!--<common:DropDownToggleButton Margin="0,0,0,0" Padding="5,0,5,0" Width="160" BorderThickness="0" Background="White" 
+                                             Command="{x:Static local:LocalCommands.SelectLabel}"
+                                             Content="Pubblica" >
+                    <common:DropDownToggleButton.Menu>
+                        <ContextMenu Placement="Bottom" PlacementTarget="{Binding ElementName=btnDown, Path=., Mode=OneWay}" >
+                            <ContextMenu.ItemContainerStyle>
+                                <Style TargetType="{x:Type MenuItem}" >
+                                    <Setter Property="Margin" Value="2"></Setter>
+                                    <Setter Property="Background" Value="White"></Setter>
+                                    <Setter Property="Height" Value="30"></Setter>
+                                    <Setter Property="MinWidth" Value="140"></Setter>
+                                    <Setter Property="Padding" Value="0"></Setter>
+                                    <Setter Property="HorizontalAlignment" Value="Stretch"></Setter>
+                                    <Setter Property="HorizontalContentAlignment" Value="Stretch"></Setter>
+                                    <Setter Property="VerticalAlignment" Value="Center"></Setter>
+                                    <Setter Property="VerticalContentAlignment" Value="Center"></Setter>
+                                </Style>
+                            </ContextMenu.ItemContainerStyle>
+                            <MenuItem Command="{Binding AddCommand}"
+                                              CommandParameter="{Binding}"
+                                              Header="Senza protezione, senza footer" />
+                            <MenuItem Command="{Binding DeleteCommand}"
+                                              CommandParameter="{Binding}"
+                                              Header="Senza protezione, con footer" />
+                            <MenuItem Command="{Binding MoveCommand}"
+                                              CommandParameter="{Binding}"
+                                              Header="Con protezione, con footer" />
+                        </ContextMenu>
+                    </common:DropDownToggleButton.Menu>
+                </common:DropDownToggleButton>
+                <common:DropDownToggleButton Margin="5,0,0,0" Padding="5,0,5,0" Width="160" BorderThickness="0" Background="White" 
+                                             Command="{x:Static local:LocalCommands.SelectLabel}"
+                                             Content="Ad uso interno" >
+                    <common:DropDownToggleButton.Menu>
+                        <ContextMenu Placement="Bottom" PlacementTarget="{Binding ElementName=btnDown, Path=., Mode=OneWay}" >
+                            <ContextMenu.ItemContainerStyle>
+                                <Style TargetType="{x:Type MenuItem}" >
+                                    <Setter Property="Margin" Value="2"></Setter>
+                                    <Setter Property="Background" Value="White"></Setter>
+                                    <Setter Property="Height" Value="30"></Setter>
+                                    <Setter Property="MinWidth" Value="140"></Setter>
+                                    <Setter Property="Padding" Value="0"></Setter>
+                                    <Setter Property="HorizontalAlignment" Value="Stretch"></Setter>
+                                    <Setter Property="HorizontalContentAlignment" Value="Stretch"></Setter>
+                                    <Setter Property="VerticalAlignment" Value="Center"></Setter>
+                                    <Setter Property="VerticalContentAlignment" Value="Center"></Setter>
+                                </Style>
+                            </ContextMenu.ItemContainerStyle>
+                            <MenuItem Command="{Binding AddCommand}"
+                                              CommandParameter="{Binding}"
+                                              Header="Senza protezione, senza footer" />
+                            <MenuItem Command="{Binding DeleteCommand}"
+                                              CommandParameter="{Binding}"
+                                              Header="Senza protezione, con footer" />
+                            <MenuItem Command="{Binding MoveCommand}"
+                                              CommandParameter="{Binding}"
+                                              Header="Con protezione, con footer" />
+                        </ContextMenu>
+                    </common:DropDownToggleButton.Menu>
+                </common:DropDownToggleButton>
+                <common:DropDownToggleButton Margin="5,0,0,0" Width="160" BorderThickness="0" Background="White" 
+                                             VerticalContentAlignment="Stretch" HorizontalContentAlignment="Stretch"
+                                             Command="{x:Static local:LocalCommands.SelectLabel}"
+                                             Content="Confidenziale" >
+                    <common:DropDownToggleButton.Menu>
+                        <ContextMenu Placement="Bottom" PlacementTarget="{Binding ElementName=btnDown, Path=., Mode=OneWay}" >
+                            <ContextMenu.ItemContainerStyle>
+                                <Style TargetType="{x:Type MenuItem}" >
+                                    <Setter Property="Margin" Value="2"></Setter>
+                                    <Setter Property="Background" Value="White"></Setter>
+                                    <Setter Property="Height" Value="30"></Setter>
+                                    <Setter Property="MinWidth" Value="140"></Setter>
+                                    <Setter Property="Padding" Value="0"></Setter>
+                                    <Setter Property="HorizontalAlignment" Value="Stretch"></Setter>
+                                    <Setter Property="HorizontalContentAlignment" Value="Stretch"></Setter>
+                                    <Setter Property="VerticalAlignment" Value="Center"></Setter>
+                                    <Setter Property="VerticalContentAlignment" Value="Center"></Setter>
+                                </Style>
+                            </ContextMenu.ItemContainerStyle>
+                            <MenuItem Command="{Binding AddCommand}"
+                                              CommandParameter="{Binding}"
+                                              Header="Senza protezione, senza footer" />
+                            <MenuItem Command="{Binding DeleteCommand}"
+                                              CommandParameter="{Binding}"
+                                              Header="Senza protezione, con footer" />
+                            <MenuItem Command="{Binding MoveCommand}"
+                                              CommandParameter="{Binding}"
+                                              Header="Con protezione, con footer" />
+                        </ContextMenu>
+                    </common:DropDownToggleButton.Menu>
+                </common:DropDownToggleButton>
+                <ToggleButton Margin="5,0,0,0" Width="160" BorderThickness="0" Background="White" 
+                              VerticalContentAlignment="Stretch" HorizontalContentAlignment="Stretch"
+                              Command="{x:Static local:LocalCommands.SelectLabel}"
+                              >
+                    -->
+                <!--Padding="5,0,5,0"-->
+                <!--
+                    <Grid VerticalAlignment="Stretch" HorizontalAlignment="Stretch" >
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="auto" />
+                        </Grid.ColumnDefinitions>
+                        <Grid Margin="0,0,0,0" Grid.Column="0" >
+                            <TextBlock VerticalAlignment="Center" >
+                            Strettamente confidenziale</TextBlock>
+                        </Grid>
+                        <Button x:Name="btnDown" Grid.Column="1" BorderThickness="0" HorizontalAlignment="Right" 
+                                Margin="3,0,0,0" Background="Transparent"
+                                Command="{x:Static common:Commands.ToggleMenu}"
+                                >
+                            <Button.ContextMenu>
+                                <ContextMenu Placement="Bottom" PlacementTarget="{Binding ElementName=btnDown, Path=., Mode=OneWay}" >
+                                    <MenuItem Command="{Binding AddCommand}"
+                                              CommandParameter="{Binding}"
+                                              Header="Add" />
+                                    <MenuItem Command="{Binding DeleteCommand}"
+                                              CommandParameter="{Binding}"
+                                              Header="Delete" />
+                                    <MenuItem Command="{Binding MoveCommand}"
+                                              CommandParameter="{Binding}"
+                                              Header="Move" />
+                                </ContextMenu>
+                            </Button.ContextMenu>
+                            <Rectangle Height="10" Width="10" Margin="2,0" >
+                                <Rectangle.Fill>
+                                    <VisualBrush Visual="{StaticResource playDownArrow}" Stretch="Uniform" />
+                                </Rectangle.Fill>
+                            </Rectangle>
+                        </Button>
+                    </Grid>
+                </ToggleButton>            -->
+            </StackPanel>
+
+            <Button x:Name="btnApplyLabel" x:Uid="btnApplyLabel" 
+                    Grid.Column="3" 
+                    Height="30" BorderThickness="0"  Margin="3,2" 
+                    Command="{x:Static common:Commands.ApplyLabel}"
+                    Width="200" HorizontalAlignment="Right" >Apply label</Button>
+        </Grid>
+
+        <Grid Grid.Row="4" Background="{StaticResource Grey240}" >
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition SharedSizeGroup="labels"  />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="auto" />
+                <ColumnDefinition Width="auto" />
+            </Grid.ColumnDefinitions>
+
+            <Label   x:Uid="lbSelectedLabel" Grid.Column="0" Height="30" VerticalAlignment="Center" >Selected label</Label>
+
+            <TextBlock Grid.Column="1" FontSize="12" Margin="5,0" Padding="0" VerticalAlignment="Center"
+                       Text="{Binding Path=SelectedLabel, Converter={StaticResource getLabelDescription}, Mode=OneWay}" 
+                       TextDecorations="Underline" Foreground="{DynamicResource {x:Static SystemColors.HotTrackBrushKey}}" 
+                       
+                       Visibility="{Binding RelativeSource={RelativeSource Self}, Path=(common:AttachedProperties.IsVisible0), Mode=OneWay, Converter={StaticResource booleanToVisibility}}"
+                       common:AttachedProperties.IsVisible0="{Binding Path=DocumentPath, Mode=OneWay, Converter={StaticResource isNotNullOrEmpty}, FallbackValue=true}"
+                       ></TextBlock>
+            <!--<ComboBox x:Uid="lbOutput" Grid.Column="2" 
+                      MinWidth="200" IsSynchronizedWithCurrentItem="true" VerticalContentAlignment="Center"
+                      ItemsSource="{Binding Path=Labels, Mode=OneWay}"
+                      SelectedItem="{Binding Path=SelectedLabel, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                      >
+                <ComboBox.ItemTemplate>
+                    <DataTemplate>
+                        <TextBlock VerticalAlignment="Center" 
+                            Text="{Binding Path=Name, Mode=OneWay}" ></TextBlock>
+                    </DataTemplate>
+                </ComboBox.ItemTemplate>
+            </ComboBox>-->
+        </Grid>
+
+        <Grid Grid.Row="5" >
+
+            <TextBox VerticalAlignment="Stretch" Margin="0" 
+                     Text="{Binding Path=Output, Mode=TwoWay}" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
+                <TextBox.Background>
+                    <SolidColorBrush Color="LightYellow" />
+                </TextBox.Background>
+
+            </TextBox>
+        </Grid>
+
+        <Grid Grid.Row="6" >
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="auto" />
+                <ColumnDefinition Width="auto" />
+                <ColumnDefinition Width="auto" />
+            </Grid.ColumnDefinitions>
+
+            <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center"
+                        MinHeight="24" Margin="10,0" >
+
+                <TextBlock FontSize="12" Margin="0" Padding="0" Text="Document label:" VerticalAlignment="Center"
+                           
+                           Visibility="{Binding RelativeSource={RelativeSource Self}, Path=(common:AttachedProperties.IsVisible0), Mode=OneWay, Converter={StaticResource booleanToVisibility}}"
+                           common:AttachedProperties.IsVisible0="{Binding Path=DocumentPath, Mode=OneWay, Converter={StaticResource isNotNullOrEmpty}, FallbackValue=true}"
+                           />
+
+                <TextBlock FontSize="12" Margin="5,0" Padding="0" VerticalAlignment="Center"
+                           Text="{Binding Path=DocumentLabel, Converter={StaticResource getLabelDescription}, Mode=OneWay}" 
+                           TextDecorations="Underline" Foreground="{DynamicResource {x:Static SystemColors.HotTrackBrushKey}}" 
+                              
+                           Visibility="{Binding RelativeSource={RelativeSource Self}, Path=(common:AttachedProperties.IsVisible0), Mode=OneWay, Converter={StaticResource booleanToVisibility}}"
+                           common:AttachedProperties.IsVisible0="{Binding Path=DocumentPath, Mode=OneWay, Converter={StaticResource isNotNullOrEmpty}, FallbackValue=true}"
+                           >
+                    
+                    
+                </TextBlock>
+
+                <TextBlock FontSize="12" Margin="0" Padding="0" Text=""  VerticalAlignment="Center"
+                                   common:Localization.Uid="{common:Localize NoDocumentIsSelected, Property={x:Static TextBlock.TextProperty}, FallbackValue=No document is selected}"
+
+                                   Visibility="{Binding RelativeSource={RelativeSource Self}, Path=(common:AttachedProperties.IsVisible0), Mode=OneWay, Converter={StaticResource booleanToVisibility}}"
+                                   common:AttachedProperties.IsVisible0="{Binding Path=DocumentPath, Mode=OneWay, Converter={StaticResource isNullOrEmpty}, FallbackValue=true}"
+                                   />
+            </StackPanel>
+
+        </Grid>
+
+    </Grid>
+</common:WindowBase>

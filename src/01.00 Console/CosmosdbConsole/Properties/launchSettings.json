@@ -1,0 +1,11 @@
+{
+  "profiles": {
+    "SampleCoconaApp": {
+      "commandName": "Project",
+      // "commandLineArgs": "-c \"AccountEndpoint=https://samplecosmos.documents.azure.com:443/;AccountKey=xxxxxxx==;\" -d elcommon -t userplant -q \"SELECT  * FROM c where c.Type = 'Country'\" -f sample.json --top 10000"
+      "environmentVariables": {
+        "DOTNET_ENVIRONMENT": "Development"
+      }
+    }
+  }
+}

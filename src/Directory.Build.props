@@ -1,0 +1,96 @@
+<Project>
+
+  <PropertyGroup>
+    <!--<LangVersion>11</LangVersion>-->
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+  </PropertyGroup>
+
+  <!-- TODO Address all INTEGRATIONFEATURES conditional compilation sections, then remove this -->
+  <PropertyGroup Condition="'$(AGENT_ID)' == '' Or '$(BUILD_SOURCEBRANCH)' == 'refs/heads/IntegrationFeatures'">
+    <DefineConstants>$(DefineConstants)</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(AGENT_ID)' != ''">
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute" Condition="'$(BUILD_BUILDNUMBER)' != ''">
+      <_Parameter1>AzurePipelines/Build.BuildNumber</_Parameter1>
+      <_Parameter2>$(BUILD_BUILDNUMBER)</_Parameter2>
+    </AssemblyAttribute>
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute" Condition="'$(BUILD_BUILDURI)' != ''">
+      <_Parameter1>AzurePipelines/Build.BuildUri</_Parameter1>
+      <_Parameter2>$(BUILD_BUILDURI)</_Parameter2>
+    </AssemblyAttribute>
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute" Condition="'$(BUILD_DEFINITIONNAME)' != ''">
+      <_Parameter1>AzurePipelines/Build.DefinitionName</_Parameter1>
+      <_Parameter2>$(BUILD_DEFINITIONNAME)</_Parameter2>
+    </AssemblyAttribute>
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute" Condition="'$(BUILD_REPOSITORY_NAME)' != ''">
+      <_Parameter1>AzurePipelines/Build.Repository.Name</_Parameter1>
+      <_Parameter2>$(BUILD_REPOSITORY_NAME)</_Parameter2>
+    </AssemblyAttribute>
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute" Condition="'$(BUILD_REPOSITORY_URI)' != ''">
+      <_Parameter1>AzurePipelines/Build.Repository.Uri</_Parameter1>
+      <_Parameter2>$(BUILD_REPOSITORY_URI)</_Parameter2>
+    </AssemblyAttribute>
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute" Condition="'$(BUILD_SOURCEBRANCH)' != ''">
+      <_Parameter1>AzurePipelines/Build.SourceBranch</_Parameter1>
+      <_Parameter2>$(BUILD_SOURCEBRANCH)</_Parameter2>
+    </AssemblyAttribute>
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute" Condition="'$(BUILD_SOURCEVERSION)' != ''">
+      <_Parameter1>AzurePipelines/Build.SourceVersion</_Parameter1>
+      <_Parameter2>$(BUILD_SOURCEVERSION)</_Parameter2>
+    </AssemblyAttribute>
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute" Condition="'$(SYSTEM_COLLECTIONURI)' != ''">
+      <_Parameter1>AzurePipelines/System.CollectionUri</_Parameter1>
+      <_Parameter2>$(SYSTEM_COLLECTIONURI)</_Parameter2>
+    </AssemblyAttribute>
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute" Condition="'$(SYSTEM_DEFINITIONID)' != ''">
+      <_Parameter1>AzurePipelines/System.DefinitionId</_Parameter1>
+      <_Parameter2>$(SYSTEM_DEFINITIONID)</_Parameter2>
+    </AssemblyAttribute>
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute" Condition="'$(SYSTEM_TEAMPROJECT)' != ''">
+      <_Parameter1>AzurePipelines/System.TeamProject</_Parameter1>
+      <_Parameter2>$(SYSTEM_TEAMPROJECT)</_Parameter2>
+    </AssemblyAttribute>
+  </ItemGroup>
+
+  <PropertyGroup>
+    <DiginsightDiagnosticsVersion>2.0.0.23</DiginsightDiagnosticsVersion>
+    <DiginsightCoreVersion>3.4.*</DiginsightCoreVersion>
+    <DiginsightSmartCacheVersion>3.3.*</DiginsightSmartCacheVersion>
+    <PackageTags>diginsight;telemetry</PackageTags>
+  </PropertyGroup>
+
+  <Import Project="$(MSBuildThisFileDirectory)Directory.build.props.user" Condition="Exists('$(MSBuildThisFileDirectory)Directory.build.props.user')" />
+
+  <PropertyGroup Condition="'$(DiginsightCoreSolutionDirectory)' == ''">
+    <DiginsightCoreDirectImport>false</DiginsightCoreDirectImport>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(DiginsightCoreSolutionDirectory)' != ''">
+    <DiginsightCoreSolutionDirectory>$([MSBuild]::EnsureTrailingSlash('$(DiginsightCoreSolutionDirectory)'))</DiginsightCoreSolutionDirectory>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(DiginsightCoreDirectImport)' == ''">
+    <DiginsightCoreDirectImport>false</DiginsightCoreDirectImport>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(DiginsightComponentsSolutionDirectory)' == ''">
+    <DiginsightComponentsDirectImport>false</DiginsightComponentsDirectImport>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(DiginsightComponentsSolutionDirectory)' != ''">
+    <DiginsightComponentsSolutionDirectory>$([MSBuild]::EnsureTrailingSlash('$(DiginsightComponentsSolutionDirectory)'))</DiginsightComponentsSolutionDirectory>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(DiginsightComponentsDirectImport)' == ''">
+    <DiginsightComponentsDirectImport>false</DiginsightComponentsDirectImport>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(DiginsightSmartCacheSolutionDirectory)' == ''">
+    <DiginsightSmartCacheDirectImport>false</DiginsightSmartCacheDirectImport>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(DiginsightSmartCacheSolutionDirectory)' != ''">
+    <DiginsightSmartCacheSolutionDirectory>$([MSBuild]::EnsureTrailingSlash('$(DiginsightSmartCacheSolutionDirectory)'))</DiginsightSmartCacheSolutionDirectory>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(DiginsightSmartCacheDirectImport)' == ''">
+    <DiginsightSmartCacheDirectImport>false</DiginsightSmartCacheDirectImport>
+  </PropertyGroup>
+</Project>

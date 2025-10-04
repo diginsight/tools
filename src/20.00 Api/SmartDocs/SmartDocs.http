@@ -1,0 +1,6 @@
+@SmartDocs_HostAddress = http://localhost:5136
+
+GET {{SmartDocs_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
