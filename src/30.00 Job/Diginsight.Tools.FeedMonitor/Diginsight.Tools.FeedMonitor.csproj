@@ -7,4 +7,93 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+
+    <ItemGroup>
+        <None Remove="appsettings.json" />
+        <None Remove="appsettings.local.json" />
+        <None Remove="appsettings.Stage.json" />
+        <None Remove="appsettings.Stage.local.json" />
+        <None Remove="appsettings.TestINT.local.json" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Content Include="appsettings.json">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+        <Content Include="appsettings.local.json">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+            <DependentUpon>appsettings.json</DependentUpon>
+        </Content>
+        <Content Include="appsettings.Production.json">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+        <Content Include="appsettings.Production.local.json">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+            <DependentUpon>appsettings.Production.json</DependentUpon>
+        </Content>
+        <Content Include="appsettings.Stage.json">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+        <Content Include="appsettings.Stage.local.json">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+            <DependentUpon>appsettings.Stage.json</DependentUpon>
+        </Content>
+        <Content Include="appsettings.Test.json">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+        <Content Include="appsettings.Test.local.json">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+            <DependentUpon>appsettings.Test.json</DependentUpon>
+        </Content>
+    </ItemGroup>
+
+
+  <ItemGroup>
+    <ProjectReference Include="$(DiginsightCoreSolutionDirectory)Diginsight.Core\Diginsight.Core.csproj" Condition="'$(DiginsightCoreDirectImport)' == 'true'" />
+    <ProjectReference Include="$(DiginsightCoreSolutionDirectory)Diginsight.Diagnostics.Log4Net\Diginsight.Diagnostics.Log4Net.csproj" Condition="'$(DiginsightCoreDirectImport)' == 'true'" />
+    <ProjectReference Include="$(DiginsightCoreSolutionDirectory)Diginsight.Diagnostics\Diginsight.Diagnostics.csproj" Condition="'$(DiginsightCoreDirectImport)' == 'true'" />
+    <ProjectReference Include="$(DiginsightCoreSolutionDirectory)Diginsight.Diagnostics.AspNetCore.OpenTelemetry\Diginsight.Diagnostics.AspNetCore.OpenTelemetry.csproj" Condition="'$(DiginsightCoreDirectImport)' == 'true'" />
+    <PackageReference Include="Diginsight.Core" Version="$(DiginsightCoreVersion)" Condition="'$(DiginsightCoreDirectImport)' != 'true'" />
+    <PackageReference Include="Diginsight.Diagnostics" Version="$(DiginsightCoreVersion)" Condition="'$(DiginsightCoreDirectImport)' != 'true'" />
+    <PackageReference Include="Diginsight.Diagnostics.AspNetCore.OpenTelemetry" Version="$(DiginsightCoreVersion)" Condition="'$(DiginsightCoreDirectImport)' != 'true'" />
+    <PackageReference Include="Diginsight.Diagnostics.Log4Net" Version="$(DiginsightCoreVersion)" Condition="'$(DiginsightCoreDirectImport)' != 'true'" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="$(DiginsightComponentsSolutionDirectory)Diginsight.Components\Diginsight.Components.csproj" Condition="'$(DiginsightComponentsDirectImport)' == 'true'" />
+    <ProjectReference Include="$(DiginsightComponentsSolutionDirectory)Diginsight.Components.Configuration\Diginsight.Components.Configuration.csproj" Condition="'$(DiginsightComponentsDirectImport)' == 'true'" />
+    <ProjectReference Include="$(DiginsightComponentsSolutionDirectory)Diginsight.Components.Azure\Diginsight.Components.Azure.csproj" Condition="'$(DiginsightComponentsDirectImport)' == 'true'" />
+    <PackageReference Include="Diginsight.Components" Version="$(DiginsightComponentsVersion)" Condition="'$(DiginsightComponentsDirectImport)' != 'true'" />
+    <PackageReference Include="Diginsight.Components.Configuration" Version="$(DiginsightComponentsVersion)" Condition="'$(DiginsightComponentsDirectImport)' != 'true'" />
+    <PackageReference Include="Diginsight.Components.Azure" Version="$(DiginsightComponentsVersion)" Condition="'$(DiginsightComponentsDirectImport)' != 'true'" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Azure.Messaging.EventHubs" Version="5.*" />
+    <PackageReference Include="Azure.Messaging.ServiceBus" Version="7.*" />
+    <PackageReference Include="Azure.Monitor.OpenTelemetry.Exporter" Version="1.*" />
+    <PackageReference Include="Azure.Monitor.Query" Version="1.*" />
+    <PackageReference Include="Azure.Storage.Queues" Version="12.*" />
+    <PackageReference Include="Microsoft.Azure.WebJobs" Version="3.*" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.*" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="9.*" />
+    <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.*" />
+    <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.*" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.Http" Version="1.*" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.Runtime" Version="1.*" />
+    <PackageReference Include="Scrutor" Version="6.*" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Settings.job">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Models\" />
+    <Folder Include="Test\" />
+    <Folder Include="Services\" />
+  </ItemGroup>
+  
 </Project>

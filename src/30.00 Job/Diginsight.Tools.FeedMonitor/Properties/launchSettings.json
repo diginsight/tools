@@ -1,0 +1,26 @@
+{
+  "profiles": {
+    "FeedMonitor - Testlive": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "DOTNET_ENVIRONMENT": "Development",
+        "AppsettingsEnvironmentName": "Testlive",
+        "ExternalConfigurationFolder": "..\\..\\..\\..\\..\\..\\..\\tools.internal"
+      }
+    },
+    "FeedMonitor - Stage": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "DOTNET_ENVIRONMENT": "Development",
+        "AppsettingsEnvironmentName": "Stage"
+      }
+    },
+    "FeedMonitor - Production": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "DOTNET_ENVIRONMENT": "Development",
+        "AppsettingsEnvironmentName": "Prod"
+      }
+    }
+  }
+}
