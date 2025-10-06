@@ -5,7 +5,17 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <UserSecretsId>884ba96f-31d1-49fa-ad3f-bda779ca9c64</UserSecretsId>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Services\**" />
+    <Compile Remove="Test\**" />
+    <EmbeddedResource Remove="Services\**" />
+    <EmbeddedResource Remove="Test\**" />
+    <None Remove="Services\**" />
+    <None Remove="Test\**" />
+  </ItemGroup>
 
 
     <ItemGroup>
@@ -92,8 +102,6 @@
 
   <ItemGroup>
     <Folder Include="Models\" />
-    <Folder Include="Test\" />
-    <Folder Include="Services\" />
   </ItemGroup>
   
 </Project>

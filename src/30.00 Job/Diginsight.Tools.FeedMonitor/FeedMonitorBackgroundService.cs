@@ -8,6 +8,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using System.Xml.Linq;
 
 
 namespace Diginsight.Tools.FeedMonitor;
@@ -96,6 +97,28 @@ public class FeedMonitorBackgroundService : BackgroundService
                 logger.LogInformation("Querying feed: {feedUri} at: {utcNow}", feedUri, utcNow);
 
                 // var feedData = await feedConfig.FetchFeedAsync(logger, cancellationToken);
+                using var httpClient = new HttpClient();
+                httpClient.DefaultRequestHeaders.Add("User-Agent",
+                    "PodcastFeedParser/1.0 (Compatible RSS Reader)");
+
+                var xmlContent = await httpClient.GetStringAsync(feedUri);
+                var doc = XDocument.Parse(xmlContent);
+
+                // Auto-detect feed format
+                bool isRss = doc.Root.Name.LocalName.Equals("rss", StringComparison.OrdinalIgnoreCase);
+                bool isAtom = doc.Root.Name.LocalName.Equals("feed", StringComparison.OrdinalIgnoreCase);
+
+                if (!isRss && !isAtom)
+                {
+                    throw new InvalidOperationException("Unknown feed format. Expected RSS or Atom.");
+                }
+
+                var items = isRss
+                    ? doc.Descendants("item")
+                    : doc.Descendants(doc.Root.GetDefaultNamespace() + "entry");
+
+                //await WriteCsvOutput(csvFile, items, isRss, doc.Root.GetDefaultNamespace());
+
 
 
 
