@@ -117,7 +117,8 @@ public class FeedMonitorBackgroundService : BackgroundService
                     ? doc.Descendants("item")
                     : doc.Descendants(doc.Root.GetDefaultNamespace() + "entry");
 
-                //await WriteCsvOutput(csvFile, items, isRss, doc.Root.GetDefaultNamespace());
+                // read from FeedMonitor:Storage:BlobStorageConnectionString
+
 
 
 
