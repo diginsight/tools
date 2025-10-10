@@ -1,4 +1,3 @@
-using ABB.EL.Common.WebJobs.ResourceMonitor.Configuration;
 using Azure.Monitor.Query;
 using Azure.Monitor.Query.Models;
 using Diginsight.Components;
@@ -15,7 +14,12 @@ namespace Diginsight.Tools.FeedMonitor;
 
 public class FeedMonitorBackgroundService : BackgroundService
 {
-    private readonly IOptionsMonitor<FeedMonitorOptions> resourceMonitorOptions;
+    private readonly IOptionsMonitor<FeedMonitorOptions> feedMonitorOptions;
+    private readonly IOptionsMonitor<CosmosDBOptions> cosmosDBOptions;
+    private readonly IOptionsMonitor<BlobStorageOptions> blobStorageOptions;
+    private readonly IOptionsMonitor<TableStorageOptions> tableStorageOptions;
+    private readonly IOptionsMonitor<FileStorageOptions> fileStorageOptions;
+    private readonly IOptionsMonitor<QueueStorageOptions> queueStorageOptions;
     private readonly ILogger<FeedMonitorBackgroundService> logger;
     private readonly IConfiguration congiguration;
     private readonly IHostEnvironment environment;
@@ -26,18 +30,28 @@ public class FeedMonitorBackgroundService : BackgroundService
 
     public FeedMonitorBackgroundService(
             ILogger<FeedMonitorBackgroundService> logger,
+            IOptionsMonitor<FeedMonitorOptions> feedMonitorOptions,
+            IOptionsMonitor<CosmosDBOptions> cosmosDBOptions,
+            IOptionsMonitor<BlobStorageOptions> blobStorageOptions,
+            IOptionsMonitor<TableStorageOptions> tableStorageOptions,
+            IOptionsMonitor<FileStorageOptions> fileStorageOptions,
+            IOptionsMonitor<QueueStorageOptions> queueStorageOptions,
             IHostEnvironment environment,
             IConfiguration configuration,
-            IOptionsMonitor<FeedMonitorOptions> resourceMonitorOptions,
             IParallelService parallelService,
             TimeProvider timeProvider,
-            //IMonitoringRepository monitoringRepository,
             IHostApplicationLifetime applicationLifetime)
     {
         this.logger = logger;
+        this.feedMonitorOptions = feedMonitorOptions;
+        this.cosmosDBOptions = cosmosDBOptions;
+        this.blobStorageOptions = blobStorageOptions;
+        this.tableStorageOptions = tableStorageOptions;
+        this.fileStorageOptions = fileStorageOptions;
+        this.queueStorageOptions = queueStorageOptions;
+
         this.congiguration = configuration;
         this.environment = environment;
-        this.resourceMonitorOptions = resourceMonitorOptions;
         this.parallelService = parallelService;
         this.timeProvider = timeProvider;
         //this.monitoringRepository = monitoringRepository;
@@ -78,7 +92,7 @@ public class FeedMonitorBackgroundService : BackgroundService
         {
             logger.LogInformation("Starting one-time plant license activation processing");
 
-            var optionsValues = resourceMonitorOptions.CurrentValue;
+            var optionsValues = feedMonitorOptions.CurrentValue;
 
             var credentialProvider = new DefaultCredentialProvider(environment);
             var credential = credentialProvider.Get(congiguration.GetSection("ResourceMonitor"));

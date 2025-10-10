@@ -2,61 +2,60 @@ using Azure.Monitor.Query.Models;
 using Diginsight.Options;
 using System.Text.Json.Serialization;
 
-namespace ABB.EL.Common.WebJobs.ResourceMonitor.Configuration
+namespace Diginsight.Tools.FeedMonitor;
+
+public class FeedMonitorOptions : IDynamicallyConfigurable, IVolatilelyConfigurable
 {
-    public class FeedMonitorOptions : IDynamicallyConfigurable, IVolatilelyConfigurable
-    {
-
-        /// <summary>
-        /// Azure AD Tenant ID for authentication
-        /// </summary>
-        public string? TenantId { get; set; }
-
-        /// <summary>
-        /// Azure AD Client ID for authentication
-        /// </summary>
-        public string? ClientId { get; set; }
-
-        /// <summary>
-        /// Azure AD Client Secret for authentication
-        /// </summary>
-        public string? ClientSecret { get; set; }
-
-        /// <summary>
-        /// Determines whether to load existing metrics data
-        /// </summary>
-        public bool LoadExistingMetrics { get; set; } = true;
-
-        /// <summary>
-        /// Minimum interval in minutes for loading existing metrics
-        /// </summary>
-        public int LoadExistingMetricsIntervalMinimumInMinutes { get; set; } = 15;
-
-        /// <summary>
-        /// Scheduling interval in minutes for runs
-        /// </summary>
-        public int RunsSchedulingInMinutes { get; set; } = 5;
-
-        /// <summary>
-        /// Time To Live for MetricValue entries, within CosmosDB, in seconds (default: 86400 seconds = 1 day)
-        /// </summary>
-        public int TimeToLive { get; set; } = 86400;
-
-        /// <summary>
-        /// Collection of Azure resources to monitor with their respective metrics
-        /// </summary>
-        public FeedItem[] Feeds { get; set; } = [];
-    }
 
     /// <summary>
-    /// Configuration for a specific Azure resource to monitor
+    /// Azure AD Tenant ID for authentication
     /// </summary>
-    public class FeedItem
-    {
-        /// <summary>
-        /// The Azure resource ID to monitor
-        /// </summary>
-        public string Uri { get; set; } = string.Empty;
+    public string? TenantId { get; set; }
 
-    }
+    /// <summary>
+    /// Azure AD Client ID for authentication
+    /// </summary>
+    public string? ClientId { get; set; }
+
+    /// <summary>
+    /// Azure AD Client Secret for authentication
+    /// </summary>
+    public string? ClientSecret { get; set; }
+
+    /// <summary>
+    /// Determines whether to load existing metrics data
+    /// </summary>
+    public bool LoadExistingMetrics { get; set; } = true;
+
+    /// <summary>
+    /// Minimum interval in minutes for loading existing metrics
+    /// </summary>
+    public int LoadExistingMetricsIntervalMinimumInMinutes { get; set; } = 15;
+
+    /// <summary>
+    /// Scheduling interval in minutes for runs
+    /// </summary>
+    public int RunsSchedulingInMinutes { get; set; } = 5;
+
+    /// <summary>
+    /// Time To Live for MetricValue entries, within CosmosDB, in seconds (default: 86400 seconds = 1 day)
+    /// </summary>
+    public int TimeToLive { get; set; } = 86400;
+
+    /// <summary>
+    /// Collection of Azure resources to monitor with their respective metrics
+    /// </summary>
+    public FeedItem[] Feeds { get; set; } = [];
+}
+
+/// <summary>
+/// Configuration for a specific Azure resource to monitor
+/// </summary>
+public class FeedItem
+{
+    /// <summary>
+    /// The Azure resource ID to monitor
+    /// </summary>
+    public string Uri { get; set; } = string.Empty;
+
 }

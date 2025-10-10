@@ -1,4 +1,3 @@
-using ABB.EL.Common.WebJobs.ResourceMonitor.Configuration;
 using Diginsight.Components;
 using Diginsight.Components.Configuration;
 using Diginsight.Diagnostics;
@@ -45,18 +44,34 @@ internal class Program
                 .DynamicallyConfigure<FeedMonitorOptions>()
                 .VolatilelyConfigure<FeedMonitorOptions>();
 
-        //services.Configure<CosmosDBConfiguration>("MonitoringRepoConfig", opt =>
-        //{
-        //    opt.AuthKey = configuration.GetValue<string>("Monitoring:CosmosDB:AuthKey")!;
-        //    opt.Collection = configuration.GetValue<string>("Monitoring:CosmosDB:Collection")!;
-        //    opt.Database = configuration.GetValue<string>("Monitoring:CosmosDB:Database")!;
-        //    opt.EndpointUri = configuration.GetValue<Uri>("Monitoring:CosmosDB:EndpointUri")!;
-        //    opt.LogMetrics = configuration.GetValue<bool>("Monitoring:CosmosDB:LogMetrics");
-        //    opt.MaxRequestsPerTcpConnection = configuration.GetValue<int>("Monitoring:CosmosDB:MaxRequestsPerTcpConnection");
-        //    opt.MaxRetryAttemptsOnThrottledRequests = configuration.GetValue<int>("Monitoring:CosmosDB:MaxRetryAttemptsOnThrottledRequests");
-        //    opt.MaxRetryWaitTimeInSeconds = configuration.GetValue<int>("Monitoring:CosmosDB:MaxRetryWaitTimeInSeconds");
-        //    opt.RequestTimeout = configuration.GetValue<TimeSpan>("Monitoring:CosmosDB:RequestTimeout");
-        //});
+        services.Configure<CosmosDBOptions>("FeedMonitorCosmosDBOptions", opt =>
+        {
+            opt.ConnectionString = configuration.GetValue<string>("FeedMonitor:CosmosDB:ConnectionString")!;
+            opt.EndpointUri = configuration.GetValue<Uri>("FeedMonitor:CosmosDB:EndpointUri")!;
+            opt.AuthKey = configuration.GetValue<string>("FeedMonitor:CosmosDB:AuthKey")!;
+            opt.Collection = configuration.GetValue<string>("FeedMonitor:CosmosDB:Collection")!;
+            opt.Database = configuration.GetValue<string>("FeedMonitor:CosmosDB:Database")!;
+        });
+
+        services.Configure<BlobStorageOptions>("FeedMonitorBlobStorageOptions", opt =>
+        {
+            opt.ConnectionString = configuration.GetValue<string>("FeedMonitor:BlobStorage:ConnectionString")!;
+        });
+
+        services.Configure<TableStorageOptions>("FeedMonitorTableStorageOptions", opt =>
+        {
+            opt.ConnectionString = configuration.GetValue<string>("FeedMonitor:TableStorage:ConnectionString")!;
+        });
+
+        services.Configure<FileStorageOptions>("FeedMonitorFileStorageOptions", opt =>
+        {
+            opt.ConnectionString = configuration.GetValue<string>("FeedMonitor:FileStorage:ConnectionString")!;
+        });
+
+        services.Configure<QueueStorageOptions>("FeedMonitorQueueStorageOptions", opt =>
+        {
+            opt.ConnectionString = configuration.GetValue<string>("FeedMonitor:QueueStorage:ConnectionString")!;
+        });
 
         services.TryAddSingleton(TimeProvider.System);
 
