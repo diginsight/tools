@@ -14,6 +14,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Newtonsoft.Json.Linq;
 using System.ComponentModel;
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
@@ -170,13 +171,17 @@ public class FeedMonitorBackgroundService : BackgroundService
 
                 if (feedChannel.Items != null && feedChannel.Items.Any())
                 {
+                    // if CosmosEnabled
                     var cosmosDBOptions = cosmosDBOptionsMonitor.Get("FeedMonitorCosmosDBOptions");
                     if (cosmosDBOptions.Enabled)
                         processedCount = await UpsertItems2CosmosDBAsync(feedUri, feedChannel, utcNow, cancellationToken);
 
+                    // if TableStorageEnabled
                     var tableStorageOptions = tableStorageOptionsMonitor.Get("FeedMonitorTableStorageOptions");
                     if (tableStorageOptions.Enabled)
                         processedCount = await UpdateItems2TableStorage(feedUri, feedChannel, utcNow, cancellationToken);
+                    
+                    // if BlobStorageEnabled
                 }
             });
         }
@@ -204,8 +209,6 @@ public class FeedMonitorBackgroundService : BackgroundService
 
         var minPublicationDate = TimeSpanParser.GetExpressionOccurrence(utcNow, loadExistingFeedsInterval, -1);
 
-        var itemsByPartition = feedChannel.Items.GroupBy(item => item.PartitionKey).ToList();
-
         bool hasNoPublicationDateItems = false;
         foreach (var item in feedChannel.Items)
         {
@@ -217,6 +220,7 @@ public class FeedMonitorBackgroundService : BackgroundService
             item.PartitionKey = year > 0 ? $"{link}-{year}" : $"{link}";
             if (itemDate != null && minPublicationDate > itemDate.Value) { minPublicationDate = itemDate.Value; }
         }
+        var itemsByPartition = feedChannel.Items.GroupBy(item => item.PartitionKey).ToList();
 
         var currentYear = utcNow.Year;
         var minYear = minPublicationDate.Year;
@@ -234,9 +238,9 @@ public class FeedMonitorBackgroundService : BackgroundService
         foreach (var partitionKeyValue in partitionKeysToQuery)
         {
             var partitionKey = new PartitionKey(partitionKeyValue);
-            var existingFeedItemsList = new List<FeedItemBase>();
+            var existingGuids = new HashSet<string>();
 
-            if (partitionKeyValue.Equals(link))
+            if (partitionKeyValue.Equals(link, StringComparison.InvariantCultureIgnoreCase))
             {
                 // Get GUIDs from current feed items for this partition
                 var currentItemGuids = feedChannel.Items.Where(item => item.PartitionKey == partitionKeyValue)
@@ -244,8 +248,8 @@ public class FeedMonitorBackgroundService : BackgroundService
 
                 if (currentItemGuids.Any())
                 {
-                    var feedIterator = container.GetItemQueryIteratorObservable<FeedItemBase>(
-                        queryDefinition: new QueryDefinition("SELECT c.id, c.Guid FROM c " +
+                    var feedIterator = container.GetItemQueryIterator<JObject>(
+                        queryDefinition: new QueryDefinition("SELECT c.Guid FROM c " +
                                                              "WHERE c.FeedId = @feedId " +
                                                              "AND ARRAY_CONTAINS(@guids, c.Guid)")
                                     .WithParameter("@feedId", feedChannel.Id)
@@ -255,15 +259,22 @@ public class FeedMonitorBackgroundService : BackgroundService
 
                     while (feedIterator.HasMoreResults)
                     {
-                        var response = await feedIterator.ReadNextObservableAsync(cancellationToken);
-                        existingFeedItemsList.AddRange(response);
+                        var response = await feedIterator.ReadNextAsync(cancellationToken);
+                        foreach (var item in response)
+                        {
+                            string guid = item["Guid"]?.Value<string>();
+                            if (guid != null)
+                            {
+                                existingGuids.Add(guid);
+                            }
+                        }
                     }
                 }
             }
             else
             {
-                var feedIterator = container.GetItemQueryIteratorObservable<FeedItemBase>(
-                    queryDefinition: new QueryDefinition("SELECT c.id, c.Guid FROM c " +
+                var feedIterator = container.GetItemQueryIterator<JObject>(
+                    queryDefinition: new QueryDefinition("SELECT c.Guid FROM c " +
                                                          "WHERE c.FeedId = @feedId " +
                                                          "AND c.PublicationDate >= @minPublicationDate")
                                 .WithParameter("@feedId", feedChannel.Id)
@@ -273,18 +284,25 @@ public class FeedMonitorBackgroundService : BackgroundService
 
                 while (feedIterator.HasMoreResults)
                 {
-                    var response = await feedIterator.ReadNextObservableAsync(cancellationToken);
-                    existingFeedItemsList.AddRange(response);
+                    var response = await feedIterator.ReadNextAsync(cancellationToken);
+                    foreach (var item in response)
+                    {
+                        string guid = item["Guid"]?.Value<string>();
+                        if (guid != null)
+                        {
+                            existingGuids.Add(guid);
+                        }
+                    }
                 }
             }
-            if (existingFeedItemsList.Any())
+            if (existingGuids.Any())
             {
-                var existingGuids = existingFeedItemsList.Select(x => x.Guid).ToHashSet();
                 allExistingItems[partitionKeyValue] = existingGuids;
 
                 logger.LogDebug("{feedUri}: existingFeedItemsListCount={ExistingCount}, partitionKey={PartitionKey}", feedUri, existingGuids.Count, partitionKeyValue);
             }
         }
+
         logger.LogDebug("{feedUri}: Queried {PartitionCount} partition(s) for years {MinYear}-{CurrentYear}", feedUri, partitionKeysToQuery.Count, minYear, currentYear);
 
         foreach (var partitionGroup in itemsByPartition)
@@ -328,8 +346,6 @@ public class FeedMonitorBackgroundService : BackgroundService
 
         var minPublicationDate = TimeSpanParser.GetExpressionOccurrence(utcNow, loadExistingFeedsInterval, -1);
 
-        var itemsByPartition = feedChannel.Items.GroupBy(item => item.PartitionKey).ToList();
-
         bool hasNoPublicationDateItems = false;
         foreach (var item in feedChannel.Items)
         {
@@ -341,6 +357,7 @@ public class FeedMonitorBackgroundService : BackgroundService
             item.PartitionKey = year > 0 ? $"{link}-{year}" : $"{link}";
             if (itemDate != null && minPublicationDate > itemDate.Value) { minPublicationDate = itemDate.Value; }
         }
+        var itemsByPartition = feedChannel.Items.GroupBy(item => item.PartitionKey).ToList();
 
         var currentYear = utcNow.Year;
         var minYear = minPublicationDate.Year;
