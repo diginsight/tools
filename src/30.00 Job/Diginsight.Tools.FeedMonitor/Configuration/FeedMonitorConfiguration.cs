@@ -4,7 +4,7 @@ using System.Text.Json.Serialization;
 
 namespace Diginsight.Tools.FeedMonitor;
 
-public class FeedMonitorOptions : IDynamicallyConfigurable, IVolatilelyConfigurable
+public class FeedMonitorConfiguration : IDynamicallyConfigurable, IVolatilelyConfigurable
 {
 
     /// <summary>
@@ -23,14 +23,14 @@ public class FeedMonitorOptions : IDynamicallyConfigurable, IVolatilelyConfigura
     public string? ClientSecret { get; set; }
 
     /// <summary>
-    /// Determines whether to load existing metrics data
+    /// Determines whether to load existing feeds data
     /// </summary>
-    public bool LoadExistingMetrics { get; set; } = true;
+    public bool LoadExistingFeeds { get; set; } = true;
 
     /// <summary>
-    /// Minimum interval in minutes for loading existing metrics
+    /// Minimum interval in minutes for loading existing feeds
     /// </summary>
-    public int LoadExistingMetricsIntervalMinimumInMinutes { get; set; } = 15;
+    public string LoadExistingFeedsInterval { get; set; } = "1M";
 
     /// <summary>
     /// Scheduling interval in minutes for runs

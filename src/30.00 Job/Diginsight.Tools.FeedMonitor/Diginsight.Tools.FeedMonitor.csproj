@@ -79,6 +79,14 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Azure.Data.Tables" Version="12.*" />
+    <PackageReference Include="Azure.Storage.Blobs" Version="12.*" />
+
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.*" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="9.*" />
+    <PackageReference Include="Azure.Identity" Version="1.*" />
+    <PackageReference Include="Azure.Storage.DataMovement.Blobs" Version="12.*" />
+    
     <PackageReference Include="Azure.Messaging.EventHubs" Version="5.*" />
     <PackageReference Include="Azure.Messaging.ServiceBus" Version="7.*" />
     <PackageReference Include="Azure.Monitor.OpenTelemetry.Exporter" Version="1.*" />
@@ -101,7 +109,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Models\" />
+    <Folder Include="Examples\" />
   </ItemGroup>
   
 </Project>

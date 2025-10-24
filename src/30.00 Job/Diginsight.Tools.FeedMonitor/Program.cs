@@ -1,6 +1,7 @@
 using Diginsight.Components;
 using Diginsight.Components.Configuration;
 using Diginsight.Diagnostics;
+using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -14,8 +15,8 @@ internal class Program
 {
     private static async Task Main()
     {
-        Console.OutputEncoding = System.Text.Encoding.UTF8;
-        Console.InputEncoding = System.Text.Encoding.UTF8;
+        //Console.OutputEncoding = System.Text.Encoding.UTF8;
+        //Console.InputEncoding = System.Text.Encoding.UTF8;
         AppContext.SetSwitch("Azure.Experimental.EnableActivitySource", true);
 
         using var observabilityManager = new ObservabilityManager();
@@ -40,40 +41,45 @@ internal class Program
         services.AddHttpClient(Microsoft.Extensions.Options.Options.DefaultName)
                 .AddBodyLoggingHandler();
 
-        services.ConfigureClassAware<FeedMonitorOptions>(configuration.GetSection("FeedMonitor"))
-                .DynamicallyConfigure<FeedMonitorOptions>()
-                .VolatilelyConfigure<FeedMonitorOptions>();
+        services.ConfigureClassAware<FeedMonitorConfiguration>(configuration.GetSection("FeedMonitor"))
+                .DynamicallyConfigure<FeedMonitorConfiguration>()
+                .VolatilelyConfigure<FeedMonitorConfiguration>();
 
-        services.Configure<CosmosDBOptions>("FeedMonitorCosmosDBOptions", opt =>
+        services.Configure<CosmosDBClientConfiguration>("FeedMonitorCosmosDBOptions", opt =>
         {
+            opt.Enabled = configuration.GetValue<bool>("FeedMonitor:CosmosDB:Enabled")!;
             opt.ConnectionString = configuration.GetValue<string>("FeedMonitor:CosmosDB:ConnectionString")!;
             opt.EndpointUri = configuration.GetValue<Uri>("FeedMonitor:CosmosDB:EndpointUri")!;
             opt.AuthKey = configuration.GetValue<string>("FeedMonitor:CosmosDB:AuthKey")!;
             opt.Collection = configuration.GetValue<string>("FeedMonitor:CosmosDB:Collection")!;
             opt.Database = configuration.GetValue<string>("FeedMonitor:CosmosDB:Database")!;
+            var connectionModeValue = configuration.GetValue<string>("FeedMonitor:CosmosDB:ConnectionMode");
+            if (Enum.TryParse<ConnectionMode>(connectionModeValue, true, out var connectionMode))
+            {
+                opt.ConnectionMode = connectionMode;
+            }
         });
 
-        services.Configure<BlobStorageOptions>("FeedMonitorBlobStorageOptions", opt =>
-        {
-            opt.ConnectionString = configuration.GetValue<string>("FeedMonitor:BlobStorage:ConnectionString")!;
-        });
+        services.Configure<BlobClientConfiguration>("FeedMonitorBlobStorageOptions", 
+            configuration.GetSection("FeedMonitor:BlobStorage"));
 
-        services.Configure<TableStorageOptions>("FeedMonitorTableStorageOptions", opt =>
-        {
-            opt.ConnectionString = configuration.GetValue<string>("FeedMonitor:TableStorage:ConnectionString")!;
-        });
+        services.Configure<TableClientConfiguration>("FeedMonitorTableStorageOptions", 
+            configuration.GetSection("FeedMonitor:TableStorage"));
 
-        services.Configure<FileStorageOptions>("FeedMonitorFileStorageOptions", opt =>
+        services.Configure<FileStorageClientConfiguration>("FeedMonitorFileStorageOptions", opt =>
         {
             opt.ConnectionString = configuration.GetValue<string>("FeedMonitor:FileStorage:ConnectionString")!;
         });
 
-        services.Configure<QueueStorageOptions>("FeedMonitorQueueStorageOptions", opt =>
+        services.Configure<QueueStorageClientConfiguration>("FeedMonitorQueueStorageOptions", opt =>
         {
             opt.ConnectionString = configuration.GetValue<string>("FeedMonitor:QueueStorage:ConnectionString")!;
         });
 
         services.TryAddSingleton(TimeProvider.System);
+
+        // Register feed parsing services
+        services.AddFeedParsing();
 
         services.AddHostedService<FeedMonitorBackgroundService>();
 

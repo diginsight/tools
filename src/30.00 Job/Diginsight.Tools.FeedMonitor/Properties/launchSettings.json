@@ -8,6 +8,14 @@
         "ExternalConfigurationFolder": "..\\..\\..\\..\\..\\..\\..\\tools.internal"
       }
     },
+    "FeedMonitor - Testmc": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "DOTNET_ENVIRONMENT": "Development",
+        "AppsettingsEnvironmentName": "Testmc",
+        "ExternalConfigurationFolder": "..\\..\\..\\..\\..\\..\\..\\tools.internal"
+      }
+    },
     "FeedMonitor - Stage": {
       "commandName": "Project",
       "environmentVariables": {
