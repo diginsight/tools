@@ -49,6 +49,10 @@ public class RSSFeedParser : FeedParserBase
 
         var itunesNs = XNamespace.Get("http://www.itunes.com/dtds/podcast-1.0.dtd");
         var atomNs = XNamespace.Get("http://www.w3.org/2005/Atom");
+        var dcNs = XNamespace.Get("http://purl.org/dc/elements/1.1/");
+        var contentNs = XNamespace.Get("http://purl.org/rss/1.0/modules/content/");
+        var wfwNs = XNamespace.Get("http://wellformedweb.org/CommentAPI/");
+        var slashNs = XNamespace.Get("http://purl.org/rss/1.0/modules/slash/");
 
         var rssFeed = new RSSFeedChannel
         {
@@ -95,20 +99,26 @@ public class RSSFeedParser : FeedParserBase
         // Parse items
         foreach (var item in channel.Elements("item"))
         {
-            rssFeed.Items.Add(ParseRSSItem(item, itunesNs));
+            rssFeed.Items.Add(ParseRSSItem(item, itunesNs, dcNs, contentNs, wfwNs, slashNs));
         }
 
         activity?.SetOutput(rssFeed);
         return rssFeed;
     }
 
-    private static RSSFeedItem ParseRSSItem(XElement item, XNamespace itunesNs)
+    private static RSSFeedItem ParseRSSItem(XElement item, XNamespace itunesNs, XNamespace dcNs, XNamespace contentNs, XNamespace wfwNs, XNamespace slashNs)
     {
-        var logger = Observability.LoggerFactory?.CreateLogger<RSSFeedParser>() ?? NullLogger<RSSFeedParser>.Instance;
-        using var activity = Observability.ActivitySource.StartMethodActivity(logger, () => new { }, logLevel: LogLevel.Trace);
-
-        var guidValue = item.Element("guid")?.Value;
+        var guidValue = item?.Element("guid")?.Value;
         
+        var logger = Observability.LoggerFactory?.CreateLogger<RSSFeedParser>() ?? NullLogger<RSSFeedParser>.Instance;
+        using var activity = Observability.ActivitySource.StartMethodActivity(logger, () => new { guidValue, itunesNs }, logLevel: LogLevel.Trace);
+
+        var author = item.Element("author")?.Value;
+        var dcCreator = item.Element(dcNs + "creator")?.Value;
+
+        // Parse item-level image element (non-standard but common)
+        var imageElement = item.Element("image");
+
         var rssItem = new RSSFeedItem
         {
             Guid = guidValue,
@@ -116,7 +126,8 @@ public class RSSFeedParser : FeedParserBase
             Title = item.Element("title")?.Value!,
             Description = item.Element("description")?.Value!,
             Link = item.Element("link")?.Value!,
-            Author = item.Element("author")?.Value!,
+            // Use dc:creator as fallback if author is empty
+            Author = !string.IsNullOrWhiteSpace(author) ? author : dcCreator,
             Comments = item.Element("comments")?.Value!,
 
             // GUID metadata
@@ -124,6 +135,16 @@ public class RSSFeedParser : FeedParserBase
 
             // Dates
             PublicationDate = ParseRFC822Date(item.Element("pubDate")?.Value),
+
+            // Extended RSS namespace elements
+            DcCreator = dcCreator,
+            ContentEncoded = item.Element(contentNs + "encoded")?.Value!,
+            CommentRssUrl = item.Element(wfwNs + "commentRss")?.Value!,
+            CommentCount = int.TryParse(item.Element(slashNs + "comments")?.Value, out int commentCount) ? commentCount : (int?)null,
+
+            // Item-level image (non-standard)
+            ImageUrl = imageElement?.Attribute("url")?.Value!,
+            ImageType = imageElement?.Attribute("type")?.Value!,
 
             // iTunes extensions
             ItunesAuthor = item.Element(itunesNs + "author")?.Value!,

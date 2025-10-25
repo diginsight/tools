@@ -42,14 +42,6 @@ public class BlobClientConfiguration : ClientConfiguration
     /// </summary>
     public string? AccountKey { get; set; }
 
-    // Method 5: Azure AD / Managed Identity (TokenCredential)
-    /// <summary>
-    /// Indicates whether to use DefaultAzureCredential for authentication.
-    /// When true, uses Azure AD authentication (managed identity, Azure CLI, etc.)
-    /// Requires EndpointUri to be set.
-    /// </summary>
-    public bool UseDefaultAzureCredential { get; set; }
-
     // Blob-specific options
     public char PathDelimiter { get; set; } = '/';
     public bool EnableSoftDeletion { get; set; }

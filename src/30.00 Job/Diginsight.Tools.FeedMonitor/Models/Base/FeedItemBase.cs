@@ -69,6 +69,11 @@ public abstract class FeedItemBase: EntityBase
     public string FeedId { get; set; }
 
     /// <summary>
+    /// Feed channel IDs where this item was discovered
+    /// </summary>
+    public List<string> FeedChannels { get; set; } = new List<string>();
+
+    /// <summary>
     /// Partition key for CosmosDB (format: "feedSource-YYYY")
     /// </summary>
     [JsonProperty(PropertyName = "partitionKey", Required = Required.Always)]

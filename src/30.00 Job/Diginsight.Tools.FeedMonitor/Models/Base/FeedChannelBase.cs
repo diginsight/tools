@@ -1,4 +1,6 @@
-﻿namespace Diginsight.Tools.FeedMonitor;
+﻿using Newtonsoft.Json;
+
+namespace Diginsight.Tools.FeedMonitor;
 
 /// <summary>
 /// Enumeration of supported feed types
@@ -12,12 +14,12 @@ public enum FeedType
 /// <summary>
 /// Abstract base class for feed-level metadata (channel/feed)
 /// </summary>
-public abstract class FeedChannelBase
+public abstract class FeedChannelBase : EntityBase
 {
     /// <summary>
-    /// Unique identifier for the feed
+    /// Feed URI (unique identifier for the source)
     /// </summary>
-    public string Id { get; set; }
+    public string Uri { get; set; }
 
     /// <summary>
     /// Human-readable feed title
@@ -70,12 +72,39 @@ public abstract class FeedChannelBase
     public string Generator { get; set; }
 
     /// <summary>
-    /// Collection of feed items/entries
+    /// Collection of feed items/entries (not persisted - used only during parsing)
     /// </summary>
+    [JsonIgnore]
     public List<FeedItemBase> Items { get; set; } = new List<FeedItemBase>();
 
     /// <summary>
     /// Feed format type
     /// </summary>
     public abstract FeedType FeedType { get; }
+
+    /// <summary>
+    /// Type discriminator for CosmosDB queries
+    /// </summary>
+    public string Type => this.GetType().Name;
+
+    /// <summary>
+    /// Category path for hierarchical feeds (e.g., "announcements", "updates/security")
+    /// </summary>
+    public string CategoryPath { get; set; }
+
+    /// <summary>
+    /// When this feed was first discovered/monitored
+    /// </summary>
+    public DateTimeOffset FirstDiscovered { get; set; }
+
+    /// <summary>
+    /// When this feed was last successfully fetched
+    /// </summary>
+    public DateTimeOffset LastSeen { get; set; }
+
+    /// <summary>
+    /// Partition key for CosmosDB (format: "feedDomain")
+    /// </summary>
+    [JsonProperty(PropertyName = "partitionKey", Required = Required.Always)]
+    public string PartitionKey { get; set; }
 }

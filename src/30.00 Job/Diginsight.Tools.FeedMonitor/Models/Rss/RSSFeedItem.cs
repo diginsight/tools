@@ -20,6 +20,38 @@ public class RSSFeedItem : FeedItemBase
     /// </summary>
     public RSSSource Source { get; set; }
 
+    // Extended RSS Elements (Dublin Core, Content, etc.)
+    /// <summary>
+    /// Dublin Core creator/author (dc:creator)
+    /// </summary>
+    public string DcCreator { get; set; }
+
+    /// <summary>
+    /// Full HTML content (content:encoded)
+    /// </summary>
+    public string ContentEncoded { get; set; }
+
+    /// <summary>
+    /// Comment RSS feed URL (wfw:commentRss)
+    /// </summary>
+    public string CommentRssUrl { get; set; }
+
+    /// <summary>
+    /// Number of comments (slash:comments)
+    /// </summary>
+    public int? CommentCount { get; set; }
+
+    // Item-level image (non-standard but widely used)
+    /// <summary>
+    /// Item-level image URL (non-standard extension)
+    /// </summary>
+    public string ImageUrl { get; set; }
+
+    /// <summary>
+    /// Item-level image MIME type (non-standard extension)
+    /// </summary>
+    public string ImageType { get; set; }
+
     // iTunes Episode Extensions
     /// <summary>
     /// iTunes episode author

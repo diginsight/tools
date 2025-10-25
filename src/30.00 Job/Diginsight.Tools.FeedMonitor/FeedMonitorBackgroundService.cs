@@ -73,16 +73,25 @@ public class FeedMonitorBackgroundService : BackgroundService
         this.configuration = configuration;
 
         var cosmosDBClientConfiguration = cosmosDBOptionsMonitor.Get("FeedMonitorCosmosDBOptions");
-        cosmosClient = GetCosmosClient(cosmosDBClientConfiguration);
-        container = cosmosClient.GetContainer(cosmosDBClientConfiguration.Database, cosmosDBClientConfiguration.Collection);
+        if (cosmosDBClientConfiguration.Enabled)
+        {
+            cosmosClient = GetCosmosClient(cosmosDBClientConfiguration);
+            container = cosmosClient.GetContainer(cosmosDBClientConfiguration.Database, cosmosDBClientConfiguration.Collection);
+        }
 
         var tableClientConfiguration = tableStorageOptionsMonitor.Get("FeedMonitorTableStorageOptions");
-        tableServiceClient = GetTableServiceClient(tableClientConfiguration);
-        tableClient = tableServiceClient.GetTableClient(tableClientConfiguration.TableName);
+        if (tableClientConfiguration.Enabled)
+        {
+            tableServiceClient = GetTableServiceClient(tableClientConfiguration);
+            tableClient = tableServiceClient.GetTableClient(tableClientConfiguration.TableName);
+        }
 
         var blobClientConfiguration = blobStorageOptionsMonitor.Get("FeedMonitorBlobStorageOptions");
-        this.blobServiceClient = GetBlobServiceClient(blobClientConfiguration);
-        blobContainerClient = blobServiceClient.GetBlobContainerClient(blobClientConfiguration.ContainerName);
+        if (blobClientConfiguration.Enabled)
+        {
+            this.blobServiceClient = GetBlobServiceClient(blobClientConfiguration);
+            blobContainerClient = blobServiceClient.GetBlobContainerClient(blobClientConfiguration.ContainerName);
+        }
 
         this.environment = environment;
         this.parallelService = parallelService;
@@ -152,6 +161,18 @@ public class FeedMonitorBackgroundService : BackgroundService
                 try
                 {
                     feedChannel = feedParserFactory.ParseFeed(xmlContent);
+
+                    // Set feed channel tracking properties
+                    feedChannel.Uri = feedUri;
+                    feedChannel.CategoryPath = feedConfig.CategoryPath;
+
+                    // Set partition key based on domain
+                    var feedDomain = new Uri(feedUri).Host;
+                    feedChannel.PartitionKey = "/";
+
+                    // Use the channel link or URI as the unique ID
+                    feedChannel.Id = feedChannel.Link ?? feedUri;
+
                     logger.LogDebug($"Feed: {feedChannel.Title}, Description: {feedChannel.Description}");
                     logger.LogDebug($"Items: {feedChannel.Items.Count}, Feed Type: {feedChannel.FeedType}");
                     if (feedChannel is RSSFeedChannel rssFeed)
@@ -171,17 +192,25 @@ public class FeedMonitorBackgroundService : BackgroundService
 
                 if (feedChannel.Items != null && feedChannel.Items.Any())
                 {
-                    // if CosmosEnabled
-                    var cosmosDBOptions = cosmosDBOptionsMonitor.Get("FeedMonitorCosmosDBOptions");
-                    if (cosmosDBOptions.Enabled)
-                        processedCount = await UpsertItems2CosmosDBAsync(feedUri, feedChannel, utcNow, cancellationToken);
+                    var cosmosConfiguration = cosmosDBOptionsMonitor.Get("FeedMonitorCosmosDBOptions");
+                    if (cosmosConfiguration.Enabled)
+                    {
+                        // Persist the feed channel first
+                        await UpsertFeedChannel2CosmosDBAsync(feedChannel, utcNow, cancellationToken);
 
-                    // if TableStorageEnabled
-                    var tableStorageOptions = tableStorageOptionsMonitor.Get("FeedMonitorTableStorageOptions");
-                    if (tableStorageOptions.Enabled)
-                        processedCount = await UpdateItems2TableStorage(feedUri, feedChannel, utcNow, cancellationToken);
-                    
-                    // if BlobStorageEnabled
+                        // Then persist the items
+                        processedCount = await UpsertFeedItems2CosmosDBAsync(feedUri, feedChannel, utcNow, cancellationToken);
+                    }
+
+                    var tableStorageConfiguration = tableStorageOptionsMonitor.Get("FeedMonitorTableStorageOptions");
+                    if (tableStorageConfiguration.Enabled)
+                        processedCount = await UpdateFeedItems2TableStorage(feedUri, feedChannel, utcNow, cancellationToken);
+
+                    var blobStorageConfiguration = blobStorageOptionsMonitor.Get("FeedMonitorBlobStorageOptions");
+                    if (blobStorageConfiguration.Enabled)
+                    {
+                        processedCount = await UpdateFeedItems2BlobStorage(feedUri, feedChannel, utcNow, cancellationToken);
+                    }
                 }
             });
         }
@@ -195,7 +224,53 @@ public class FeedMonitorBackgroundService : BackgroundService
         }
     }
 
-    private async Task<int> UpsertItems2CosmosDBAsync(string feedUri, FeedChannelBase feedChannel, DateTimeOffset utcNow, CancellationToken cancellationToken)
+    private async Task UpsertFeedChannel2CosmosDBAsync(FeedChannelBase feedChannel, DateTimeOffset utcNow, CancellationToken cancellationToken)
+    {
+        using var activity = Observability.ActivitySource.StartMethodActivity(logger, () => new { feedChannel, utcNow });
+
+        try
+        {
+            var partitionKey = new PartitionKey(feedChannel.PartitionKey);
+
+            // Check if channel already exists
+            try
+            {
+                var existingResponse = await container.ReadItemObservableAsync<JObject>(
+                    feedChannel.Id,
+                    partitionKey,
+                    cancellationToken: cancellationToken
+                );
+
+                var existingChannel = existingResponse.Resource;
+
+                // Update LastSeen timestamp
+                existingChannel["LastSeen"] = utcNow;
+                existingChannel["LastUpdated"] = feedChannel.LastUpdated;
+                existingChannel["DateModified"] = utcNow;
+
+                await container.UpsertItemObservableAsync(existingChannel, partitionKey, cancellationToken: cancellationToken);
+                logger.LogDebug("Updated existing feed channel {ChannelId}", feedChannel.Id);
+            }
+            catch (CosmosException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                // Channel doesn't exist on DB, create new one
+                feedChannel.FirstDiscovered = utcNow;
+                feedChannel.LastSeen = utcNow;
+                feedChannel.DateCreated = utcNow;
+                feedChannel.DateModified = utcNow;
+
+                await container.UpsertItemAsync(feedChannel, partitionKey, cancellationToken: cancellationToken);
+                logger.LogInformation($"Created new feed channel Id:{feedChannel.Id} at Uri: {feedChannel.Uri}");
+            }
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, $"Failed to upsert feed channel Id:{feedChannel.Id}");
+            throw;
+        }
+    }
+
+    private async Task<int> UpsertFeedItems2CosmosDBAsync(string feedUri, FeedChannelBase feedChannel, DateTimeOffset utcNow, CancellationToken cancellationToken)
     {
         using var activity = Observability.ActivitySource.StartMethodActivity(logger, () => new { feedUri, feedChannel, utcNow });
 
@@ -219,8 +294,14 @@ public class FeedMonitorBackgroundService : BackgroundService
 
             item.PartitionKey = year > 0 ? $"{link}-{year}" : $"{link}";
             if (itemDate != null && minPublicationDate > itemDate.Value) { minPublicationDate = itemDate.Value; }
+
+            // Track feed channel by ID
+            if (!item.FeedChannels.Contains(feedChannel.Id))
+            {
+                item.FeedChannels.Add(feedChannel.Id);
+            }
         }
-        var itemsByPartition = feedChannel.Items.GroupBy(item => item.PartitionKey).ToList();
+        var feedItemsByPartition = feedChannel.Items.GroupBy(item => item.PartitionKey).ToList();
 
         var currentYear = utcNow.Year;
         var minYear = minPublicationDate.Year;
@@ -232,13 +313,13 @@ public class FeedMonitorBackgroundService : BackgroundService
         }
 
         // Query existing items only from relevant partitions
-        var allExistingItems = new Dictionary<string, HashSet<string>>();
+        var allExistingItems = new Dictionary<string, List<FeedItemBase>>();
 
         // read items from cosmosdb current or past partition
         foreach (var partitionKeyValue in partitionKeysToQuery)
         {
             var partitionKey = new PartitionKey(partitionKeyValue);
-            var existingGuids = new HashSet<string>();
+            var existingItems = new List<FeedItemBase>();
 
             if (partitionKeyValue.Equals(link, StringComparison.InvariantCultureIgnoreCase))
             {
@@ -248,92 +329,84 @@ public class FeedMonitorBackgroundService : BackgroundService
 
                 if (currentItemGuids.Any())
                 {
-                    var feedIterator = container.GetItemQueryIterator<JObject>(
-                        queryDefinition: new QueryDefinition("SELECT c.Guid FROM c " +
-                                                             "WHERE c.FeedId = @feedId " +
-                                                             "AND ARRAY_CONTAINS(@guids, c.Guid)")
-                                    .WithParameter("@feedId", feedChannel.Id)
-                                    .WithParameter("@guids", currentItemGuids),
+                    var feedIterator = container.GetItemQueryIteratorObservable<FeedItemBase>(
+                        queryDefinition: new QueryDefinition("SELECT * FROM c WHERE c.FeedId = @feedId AND ARRAY_CONTAINS(@guids, c.Guid)")
+                            .WithParameter("@feedId", feedChannel.Id)
+                            .WithParameter("@guids", currentItemGuids),
                         requestOptions: new QueryRequestOptions { PartitionKey = partitionKey }
-                    );
+                     );
 
                     while (feedIterator.HasMoreResults)
                     {
-                        var response = await feedIterator.ReadNextAsync(cancellationToken);
-                        foreach (var item in response)
-                        {
-                            string guid = item["Guid"]?.Value<string>();
-                            if (guid != null)
-                            {
-                                existingGuids.Add(guid);
-                            }
-                        }
+                        var response = await feedIterator.ReadNextObservableAsync(cancellationToken);
+                        existingItems.AddRange(response);
                     }
                 }
             }
             else
             {
-                var feedIterator = container.GetItemQueryIterator<JObject>(
-                    queryDefinition: new QueryDefinition("SELECT c.Guid FROM c " +
-                                                         "WHERE c.FeedId = @feedId " +
-                                                         "AND c.PublicationDate >= @minPublicationDate")
-                                .WithParameter("@feedId", feedChannel.Id)
-                                .WithParameter("@minPublicationDate", minPublicationDate),
-                    requestOptions: new QueryRequestOptions { PartitionKey = partitionKey }
+                var feedIterator = container.GetItemQueryIteratorObservable<FeedItemBase>(
+                  queryDefinition: new QueryDefinition("SELECT * FROM c WHERE c.FeedId = @feedId AND c.PublicationDate >= @minPublicationDate")
+                    .WithParameter("@feedId", feedChannel.Id)
+                    .WithParameter("@minPublicationDate", minPublicationDate),
+                  requestOptions: new QueryRequestOptions { PartitionKey = partitionKey }
                 );
 
                 while (feedIterator.HasMoreResults)
                 {
-                    var response = await feedIterator.ReadNextAsync(cancellationToken);
-                    foreach (var item in response)
-                    {
-                        string guid = item["Guid"]?.Value<string>();
-                        if (guid != null)
-                        {
-                            existingGuids.Add(guid);
-                        }
-                    }
+                    var response = await feedIterator.ReadNextObservableAsync(cancellationToken);
+                    existingItems.AddRange(response);
                 }
             }
-            if (existingGuids.Any())
-            {
-                allExistingItems[partitionKeyValue] = existingGuids;
 
-                logger.LogDebug("{feedUri}: existingFeedItemsListCount={ExistingCount}, partitionKey={PartitionKey}", feedUri, existingGuids.Count, partitionKeyValue);
+            if (existingItems.Any())
+            {
+                allExistingItems[partitionKeyValue] = existingItems;
+                logger.LogDebug("{feedUri}: existingFeedItemsListCount={ExistingCount}, partitionKey={PartitionKey}", feedUri, existingItems.Count, partitionKeyValue);
             }
         }
-
         logger.LogDebug("{feedUri}: Queried {PartitionCount} partition(s) for years {MinYear}-{CurrentYear}", feedUri, partitionKeysToQuery.Count, minYear, currentYear);
 
-        foreach (var partitionGroup in itemsByPartition)
+        foreach (var feedItemsPartitionGroup in feedItemsByPartition)
         {
-            var partitionKeyValue = partitionGroup.Key;
+            var partitionKeyValue = feedItemsPartitionGroup.Key;
             var partitionKey = new PartitionKey(partitionKeyValue);
 
-            var existingItemIds = allExistingItems.GetValueOrDefault(partitionKeyValue, new HashSet<string>());
-            var newFeedItems = partitionGroup.Where(item => !existingItemIds.Contains(item.Guid)).ToList();
-            logger.LogInformation($"{feedUri}: newFeedItemsCount:{newFeedItems.Count}, totalFeedItemsCount={partitionGroup.Count()}, existingCount={existingItemIds.Count}, PartitionKey {partitionKeyValue}");
+            var existingItems = allExistingItems.GetValueOrDefault(partitionKeyValue, new List<FeedItemBase>());
 
-            if (newFeedItems != null && newFeedItems.Count > 0)
+            // feedItemsToUpdate => partitionGroupItem not in existingItems || existingItem.FeedChannels doesn't contain feedChannel.Id
+            var feedItemsToUpsert = new List<FeedItemBase>();
+            var newFeedItems = feedItemsPartitionGroup.Where(item => !existingItems.Any(existingItem => existingItem.Guid == item.Guid)).ToList();
+            feedItemsToUpsert.AddRange(newFeedItems);
+            var feedItemsToUpdate = feedItemsPartitionGroup.Where(item => existingItems.Any(existingItem => existingItem.Guid == item.Guid && !existingItem.FeedChannels.Contains(feedChannel.Id))).ToList();
+            foreach (var item in feedItemsToUpdate)
+            {
+                var existingItem = existingItems.First(ei => ei.Guid == item.Guid);
+                existingItem.FeedChannels.Add(feedChannel.Id);
+                feedItemsToUpsert.Add(existingItem);
+            }
+            var existingFeedItems = feedItemsPartitionGroup.Where(item => feedItemsToUpsert.Any(existingItem => existingItem.Guid == item.Guid)).ToList();
+
+            logger.LogInformation($"{feedUri}: feedItemsToUpsert:{feedItemsToUpsert.Count}, existingFeedItemsCount:{existingFeedItems.Count}, totalFeedItemsCount={feedItemsPartitionGroup.Count()}, existingCount={existingFeedItems.Count}, PartitionKey {partitionKeyValue}");
+
+            // Handle new items
+            if (feedItemsToUpsert != null && feedItemsToUpsert.Count > 0)
             {
                 var transactionBatch = container.CreateTransactionalBatchObservable(partitionKey);
-                foreach (var newItem in newFeedItems)
+                foreach (var newItem in feedItemsToUpsert)
                 {
                     transactionBatch.UpsertItem(newItem);
                     processedCount++;
                 }
                 var upsertResponse = await transactionBatch.ExecuteObservableAsync(cancellationToken).ConfigureAwait(false);
             }
-            else
-            {
-                logger.LogDebug("No new feed items to upsert for partition {PartitionKey}", partitionKeyValue);
-            }
+
         }
 
         return processedCount;
     }
 
-    private async Task<int> UpdateItems2TableStorage(string feedUri, FeedChannelBase feedChannel, DateTimeOffset urcNow, CancellationToken cancellationToken)
+    private async Task<int> UpdateFeedItems2TableStorage(string feedUri, FeedChannelBase feedChannel, DateTimeOffset urcNow, CancellationToken cancellationToken)
     {
         using var activity = Observability.ActivitySource.StartMethodActivity(logger, () => new { feedUri, feedChannel });
 
@@ -356,6 +429,12 @@ public class FeedMonitorBackgroundService : BackgroundService
 
             item.PartitionKey = year > 0 ? $"{link}-{year}" : $"{link}";
             if (itemDate != null && minPublicationDate > itemDate.Value) { minPublicationDate = itemDate.Value; }
+
+            // Track feed channel by ID
+            if (!item.FeedChannels.Contains(feedChannel.Id))
+            {
+                item.FeedChannels.Add(feedChannel.Id);
+            }
         }
         var itemsByPartition = feedChannel.Items.GroupBy(item => item.PartitionKey).ToList();
 
@@ -380,8 +459,8 @@ public class FeedMonitorBackgroundService : BackgroundService
                 // Get GUIDs from current feed items for this partition
                 var currentItemGuids = feedChannel.Items
                     .Where(item => item.PartitionKey == partitionKeyValue)
-                    .Select(item => item.Guid)
-                    .ToHashSet();
+                 .Select(item => item.Guid)
+                   .ToHashSet();
 
                 if (currentItemGuids.Any())
                 {
@@ -437,6 +516,7 @@ public class FeedMonitorBackgroundService : BackgroundService
                         { "PublicationDate", newItem.PublicationDate },
                         { "LastUpdated", newItem.LastUpdated },
                         { "Categories", string.Join(";", newItem.Categories ?? []) },
+                        { "FeedChannelsJson", Newtonsoft.Json.JsonConvert.SerializeObject(newItem.FeedChannels) },
                         { "DateCreated", utcNow }
                     };
                     await tableClient.UpsertEntityAsync(tableEntity, TableUpdateMode.Replace, cancellationToken);
@@ -450,6 +530,192 @@ public class FeedMonitorBackgroundService : BackgroundService
         }
 
         return processedCount;
+    }
+
+    private async Task<int> UpdateFeedItems2BlobStorage(string feedUri, FeedChannelBase feedChannel, DateTimeOffset utcNow, CancellationToken cancellationToken)
+    {
+        using var activity = Observability.ActivitySource.StartMethodActivity(logger, () => new { feedUri, feedChannel, utcNow });
+
+        int processedCount = 0;
+        var link = (feedChannel.Link ?? new Uri(feedUri).GetLeftPart(UriPartial.Authority)).TrimEnd('/');
+        var feedDomain = new Uri(feedUri).Host; // e.g., "devblogs.microsoft.com"
+
+        // Sanitize and limit domain length
+        var sanitizedDomain = SanitizeForBlobPath(feedDomain);
+        if (sanitizedDomain.Length > 100)
+        {
+            sanitizedDomain = sanitizedDomain.Substring(0, 100);
+            logger.LogWarning("Domain name truncated to 100 characters: {OriginalDomain} -> {SanitizedDomain}", feedDomain, sanitizedDomain);
+        }
+
+        foreach (var item in feedChannel.Items)
+        {
+            try
+            {
+                // Track feed channel by ID
+                if (!item.FeedChannels.Contains(feedChannel.Id))
+                {
+                    item.FeedChannels.Add(feedChannel.Id);
+                }
+
+                // Determine publication date (use current date if not available)
+                var pubDate = item.PublicationDate ?? utcNow.DateTime;
+                var year = pubDate.Year;
+                var month = pubDate.Month;
+
+                // Create a sanitized, unique folder name
+                var sanitizedTitle = SanitizeForBlobPath(item.Title ?? item.Guid);
+                var dateTimePrefix = pubDate.ToString("yyyyMMdd HHmmss");
+
+                // Limit title to 40 chars to leave room for other components
+                var titlePart = sanitizedTitle.Length > 43 ? sanitizedTitle.Substring(0, 40) + "..." : sanitizedTitle;
+
+                // Extract and limit the unique identifier from the GUID
+                var guidPart = ExtractUniqueIdentifier(item.Guid, feedDomain);
+
+                // Structure: feeds/{domain}/{year}/{month}/{yyyyMMdd HHmmss} {title} ({guid-id})/
+                var blobPrefix = $"feeds/{sanitizedDomain}/{year:D4}/{month:D2}/{dateTimePrefix} {titlePart} ({guidPart})";
+
+                // Validate total path length (leave buffer under 1024 limit)
+                const int maxPathLength = 1000;
+                if (blobPrefix.Length > maxPathLength)
+                {
+                    // Fallback to minimal path using hash
+                    var hashCode = item.Guid.GetHashCode().ToString("X8");
+                    blobPrefix = $"feeds/{sanitizedDomain}/{year:D4}/{month:D2}/{dateTimePrefix}-{hashCode}";
+                    logger.LogWarning("Blob path too long, using shortened version for item {ItemGuid}: {BlobPrefix}", item.Guid, blobPrefix);
+                }
+
+                // Check if item already exists
+                var metadataPath = $"{blobPrefix}/metadata.json";
+                var metadataBlob = blobContainerClient.GetBlobClient(metadataPath);
+
+                if (await metadataBlob.ExistsAsync(cancellationToken))
+                {
+                    logger.LogDebug("Blob already exists: {BlobPath}", metadataPath);
+                    continue;
+                }
+
+                // Determine content source based on feed type
+                string contentToUpload = null;
+                if (item is RSSFeedItem rssItem && !string.IsNullOrEmpty(rssItem.ContentEncoded))
+                {
+                    // RSS feeds use content:encoded element
+                    contentToUpload = rssItem.ContentEncoded;
+                }
+                else if (item is AtomFeedItem atomItem && atomItem.Content != null && !string.IsNullOrEmpty(atomItem.Content.Text))
+                {
+                    // Atom feeds use content element
+                    contentToUpload = atomItem.Content.Text;
+                }
+
+                // Upload content.md
+                if (!string.IsNullOrEmpty(contentToUpload))
+                {
+                    var contentPath = $"{blobPrefix}/content.md";
+                    await UploadBlobAsync(contentPath, contentToUpload, "text/markdown", cancellationToken);
+                }
+
+                // Upload description.md
+                if (!string.IsNullOrEmpty(item.Description))
+                {
+                    var descriptionPath = $"{blobPrefix}/description.md";
+                    await UploadBlobAsync(descriptionPath, item.Description, "text/markdown", cancellationToken);
+                }
+
+                // Upload metadata.json with full item details
+                var metadata = new
+                {
+                    item.Guid,
+                    item.Title,
+                    item.Link,
+                    item.Author,
+                    item.PublicationDate,
+                    item.LastUpdated,
+                    item.Categories,
+                    FeedId = item.FeedId,
+                    FeedUri = feedUri,
+                    FeedTitle = feedChannel.Title,
+                    FeedChannels = item.FeedChannels,
+                    ProcessedDate = utcNow
+                };
+
+                var metadataJson = Newtonsoft.Json.JsonConvert.SerializeObject(metadata, Newtonsoft.Json.Formatting.Indented);
+                await UploadBlobAsync(metadataPath, metadataJson, "application/json", cancellationToken);
+
+                processedCount++;
+                logger.LogDebug("Uploaded feed item to blob: {BlobPrefix}", blobPrefix);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Failed to upload feed item {ItemGuid} to blob storage", item.Guid);
+            }
+        }
+
+        logger.LogInformation("{FeedUri}: Uploaded {ProcessedCount} new items to blob storage", feedUri, processedCount);
+        return processedCount;
+    }
+
+    private async Task UploadBlobAsync(string blobPath, string content, string contentType, CancellationToken cancellationToken)
+    {
+        var blobClient = blobContainerClient.GetBlobClient(blobPath);
+        using var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(content));
+
+        var uploadOptions = new BlobUploadOptions
+        {
+            HttpHeaders = new BlobHttpHeaders { ContentType = contentType }
+        };
+
+        await blobClient.UploadAsync(stream, uploadOptions, cancellationToken);
+    }
+
+    /// <summary>
+    /// Extracts a unique identifier from the GUID, removing the domain if present
+    /// </summary>
+    /// <param name="guid">The item GUID (e.g., "https://devblogs.microsoft.com/?p=20083")</param>
+    /// <param name="feedDomain">The feed domain to remove (e.g., "devblogs.microsoft.com")</param>
+    /// <returns>Sanitized unique identifier (e.g., "p=20083")</returns>
+    private static string ExtractUniqueIdentifier(string guid, string feedDomain)
+    {
+        if (string.IsNullOrEmpty(guid)) return "unknown";
+
+        try
+        {
+            // Try to parse as URI
+            if (Uri.TryCreate(guid, UriKind.Absolute, out var uri))
+            {
+                // Extract query string or path segments
+                var uniquePart = !string.IsNullOrEmpty(uri.Query)
+      ? uri.Query.TrimStart('?')  // e.g., "p=20083"
+: uri.AbsolutePath.TrimStart('/');  // e.g., "2024/01/post-name"
+
+                // If still contains the domain, try to remove it
+                uniquePart = uniquePart.Replace(feedDomain, "").Trim('/', '-');
+
+                var sanitized = SanitizeForBlobPath(uniquePart);
+
+                // Limit length to 50 characters to ensure total path stays within limits
+                return sanitized.Length > 50 ? sanitized.Substring(0, 50) : sanitized;
+            }
+
+            // If not a valid URI, just sanitize the GUID as-is
+            var result = SanitizeForBlobPath(guid);
+            return result.Length > 50 ? result.Substring(0, 50) : result;
+        }
+        catch
+        {
+            var fallback = SanitizeForBlobPath(guid);
+            return fallback.Length > 50 ? fallback.Substring(0, 50) : fallback;
+        }
+    }
+
+    private static string SanitizeForBlobPath(string input)
+    {
+        var invalid = new char[] { '<', '>', ':', '"', '\\', '|', '?', '*', '\0' };
+        // This removes '/' which is actually VALID and REQUIRED for blob hierarchies
+        var sanitized = new string(input.Select(c => invalid.Contains(c) ? '-' : c).ToArray());
+        sanitized = Regex.Replace(sanitized, "-+", "-").Trim('-', ' ');
+        return string.IsNullOrEmpty(sanitized) ? "untitled" : sanitized;
     }
 
     private static CosmosClientOptions GetCosmosClientOptions(CosmosDBClientConfiguration cosmosDBClientConfiguration)

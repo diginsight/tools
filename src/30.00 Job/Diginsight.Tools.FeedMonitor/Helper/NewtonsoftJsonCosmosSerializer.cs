@@ -27,7 +27,8 @@ public sealed class NewtonsoftJsonCosmosSerializer : CosmosSerializer
             TypeNameHandling = TypeNameHandling.Auto,
             Converters =
             {
-                new FeedItemBaseConverter(), // Add the custom converter
+                new FeedChannelBaseConverter(), // Add the custom converter for FeedChannelBase
+                new FeedItemBaseConverter(), // Add the custom converter for FeedItemBase
                 new StringEnumConverter(),
             },
         };

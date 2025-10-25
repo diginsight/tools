@@ -56,6 +56,21 @@ public class FeedItem
     /// <summary>
     /// The Azure resource ID to monitor
     /// </summary>
-    public string Uri { get; set; } = string.Empty;
+  public string Uri { get; set; } = string.Empty;
 
+    /// <summary>
+    /// Human-readable category path for organizing and filtering feed items.
+    /// Examples: "announcements", "updates/security", "product/azure-ai"
+    /// Used for UI filtering, analytics, and hierarchical navigation.
+    /// If null or empty, the feed has no specific category classification.
+  /// </summary>
+public string? CategoryPath { get; set; }
+
+    /// <summary>
+/// Parent feed URI if this is a child feed in a hierarchy.
+/// If null or empty, this feed is considered the primary/root feed.
+/// Example: For https://azure.microsoft.com/en-us/blog/content-type/announcements/feed
+/// ParentFeedUri would be https://azure.microsoft.com/en-us/blog/feed
+/// </summary>
+    public string? ParentFeedUri { get; set; }
 }
