@@ -1,0 +1,108 @@
+name: Build and Deploy Samples
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  DEPLOY_ENVIRONMENT: Testmc
+  AZURE_WEBAPP_NAME: diginsighttools-jb-testmc-01    # Name of your Azure Web App
+  AZURE_WEBAPP_PACKAGE_PATH: './publish'             # Path to the published output
+  DOTNET_VERSION: '8.0.x'                            # .NET version to use
+
+on:
+  # push:
+  #   branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to run the workflow'
+        required: true
+        default: 'Testmc'
+
+jobs:
+  build:
+    runs-on: self-hosted
+    outputs:
+      webappname: ${{ steps.setvars.outputs.webappname }}
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Checkout 'tools.internal' Repository
+        uses: actions/checkout@v4
+        with:
+          repository: diginsight/tools.internal
+          path: tools.internal
+          token: ${{ secrets.INTERNAL_REPOSITORY_TOKEN }}
+          # If the repo is private, you need a token with access:
+
+      - name: Set up .NET Core
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Display dotnet version
+        run: dotnet --version
+
+      - name: Set up dependency caching for faster builds
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Restore Samples # Step 3: Restore dependencies and build the Samples solution/project
+        run: dotnet restore --interactive src/Diginsight.Tools.sln
+
+      - name: Copy AuthenticationSampleApi appsettings.*.json from tools.internal
+        run: |
+          cp tools.internal/src/Samples/AuthenticationSampleApi/appsettings.*.json src/Samples/AuthenticationSampleApi/
+
+      - name: Copy AuthenticationSampleServerApi appsettings.*.json from tools.internal
+        run: |
+          cp tools.internal/src/Samples/AuthenticationSampleServerApi/appsettings.*.json src/Samples/AuthenticationSampleServerApi/
+
+      - name: Build Samples
+        run: dotnet build src/Diginsight.Tools.sln --configuration Release
+
+      - name: Publish Diginsight.Tools.FeedMonitor
+        run:  dotnet publish src/30.00 Job/Diginsight.Tools.FeedMonitor/Diginsight.Tools.FeedMonitor.csproj --configuration Release --framework net8.0 --output ./publish/Diginsight.Tools.FeedMonitor
+
+      - name: Upload Published Samples # Step 5: Upload the published output as an artifact (if you want to persist the build)
+        uses: actions/upload-artifact@v4
+        with:
+          name: published-samples
+          path: publish
+
+      - name: Set webapp name output
+        id: setvars
+        run: echo "webappname=${env:AZURE_WEBAPP_NAME}" >> $env:GITHUB_OUTPUT      
+
+      - name: Print webappname output
+        run: echo "webappname=${{ steps.setvars.outputs.webappname }}"
+
+  afterBuild:
+    needs: build
+    runs-on: self-hosted
+    steps:
+      # - name: Print workflow_call inputs
+      #   run: |
+      #     echo "inputs.environment=${{ github.event.inputs.environment }}"
+      #     echo "needs.build.outputs.webappname=${{ needs.build.outputs.webappname }}"
+      - name: Print all build outputs
+        run: |
+          echo "All build outputs: ${{ toJson(needs.build.outputs) }}"
+
+  deployDiginsightToolsFeedMonitor:
+    needs: [afterBuild, build]
+    strategy:
+      matrix:
+        environment: [Testmc] # , Test01, Test02
+    uses: ./.github/workflows/21.DeployAppService.yml
+    with:
+      environment: ${{ matrix.environment }}
+      appName: AuthenticationSampleApi
+      webAppName: diginsighttools-jb-${{ matrix.environment }}-01
+

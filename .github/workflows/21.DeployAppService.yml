@@ -1,0 +1,88 @@
+name: Deploy App Service
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        required: true
+        type: string
+      appName:
+        required: true
+        type: string
+      webAppName:
+        required: true
+        type: string
+
+env:
+  DEPLOY_ENVIRONMENT: ${{ inputs.environment }}
+  AZURE_APP_NAME: ${{ inputs.appName }}
+  AZURE_WEBAPP_NAME: ${{ inputs.webAppName }}
+
+jobs:
+  before-deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ inputs.environment }}
+    steps:
+      - run: |
+            echo "Deploying to env: ${{ env.DEPLOY_ENVIRONMENT }}"
+            echo "App name: ${{ env.AZURE_APP_NAME }}"  
+            echo "Web app name: ${{ env.AZURE_WEBAPP_NAME }}"
+
+  deploy:
+    runs-on: self-hosted
+    needs: [before-deploy]
+    environment:
+      name: ${{ inputs.environment }}
+      url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
+    permissions:
+      id-token: write #This is required for requesting the JWT
+      contents: read #This is required for actions/checkout
+
+    steps:
+      - name: Print workflow_call inputs
+        run: |
+          echo "env.DEPLOY_ENVIRONMENT=${{ env.DEPLOY_ENVIRONMENT }}"
+          echo "env.AZURE_WEBAPP_NAME=${{ env.AZURE_WEBAPP_NAME }}"
+
+      - name: Download artifact from build job
+        uses: actions/download-artifact@v4
+        with:
+          name: published-samples
+          path: ./publish
+
+      - name: Dump ENV_CONTEXT
+        env:
+          ENV_CONTEXT: ${{ toJson(env) }}
+        run: |
+          echo "$ENV_CONTEXT"
+          echo "$env:ENV_CONTEXT" >> 07.ENV_CONTEXT.log
+
+      - name: Dump VARS_CONTEXT
+        env:
+          VARS_CONTEXT: ${{ toJson(vars) }}
+        run: |
+          echo "$VARS_CONTEXT"
+          echo "$env:VARS_CONTEXT" >> 08.VARS_CONTEXT.log
+
+      - name: Dump SECRETS_CONTEXT
+        env:
+          SECRETS_CONTEXT: ${{ toJson(secrets) }}
+        run: |
+          echo "$SECRETS_CONTEXT"
+          echo "$env:SECRETS_CONTEXT" >> 10.SECRETS_CONTEXT.log
+
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Deploy to Azure Web App
+        id: deploy-to-webapp
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: '${{ env.AZURE_WEBAPP_NAME }}'
+          slot-name: 'Production'
+          package: ./publish/${{ env.AZURE_APP_NAME }}
