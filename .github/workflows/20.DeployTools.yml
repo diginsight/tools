@@ -63,7 +63,7 @@ jobs:
         run: dotnet build src/Diginsight.Tools.sln --configuration Release
 
       - name: Publish Diginsight.Tools.FeedMonitor
-        run:  dotnet publish src/30.00 Job/Diginsight.Tools.FeedMonitor/Diginsight.Tools.FeedMonitor.csproj --configuration Release --framework net8.0 --output ./publish/Diginsight.Tools.FeedMonitor
+        run:  dotnet publish "src/30.00 Job/Diginsight.Tools.FeedMonitor/Diginsight.Tools.FeedMonitor.csproj" --configuration Release --framework net8.0 --output ./publish/Diginsight.Tools.FeedMonitor
 
       - name: Upload Published Samples # Step 5: Upload the published output as an artifact (if you want to persist the build)
         uses: actions/upload-artifact@v4
