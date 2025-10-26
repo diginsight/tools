@@ -29,13 +29,20 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
+      - name: Git LFS Pull
+        run: git lfs pull
+
       - name: Checkout 'tools.internal' Repository
         uses: actions/checkout@v4
         with:
           repository: diginsight/tools.internal
           path: tools.internal
           token: ${{ secrets.INTERNAL_REPOSITORY_TOKEN }}
-          # If the repo is private, you need a token with access:
+
+      - name: Git LFS Pull for tools.internal
+        run: |
+          cd tools.internal
+          git lfs pull
 
       - name: Set up .NET Core
         uses: actions/setup-dotnet@v4
