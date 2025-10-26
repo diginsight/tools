@@ -1,4 +1,4 @@
-name: Build and Deploy Samples
+name: Build and Deploy Tools
 
 permissions:
   id-token: write
