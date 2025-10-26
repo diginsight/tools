@@ -57,7 +57,7 @@ jobs:
 
       - name: Copy Diginsight.Tools.FeedMonitor appsettings.*.json from tools.internal
         run: |
-          cp tools.internal/src/30.00 Job/Diginsight.Tools.FeedMonitor/appsettings.*.json src/30.00 Job/Diginsight.Tools.FeedMonitor/
+          cp "tools.internal/src/30.00 Job/Diginsight.Tools.FeedMonitor/appsettings.*.json" "src/30.00 Job/Diginsight.Tools.FeedMonitor/"
 
       - name: Build Samples
         run: dotnet build src/Diginsight.Tools.sln --configuration Release
