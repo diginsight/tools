@@ -6,9 +6,9 @@ permissions:
 
 env:
   DEPLOY_ENVIRONMENT: Testmc
-  AZURE_WEBAPP_NAME: diginsighttools-jb-testmc-01    # Name of your Azure Web App
-  AZURE_WEBAPP_PACKAGE_PATH: './publish'             # Path to the published output
-  DOTNET_VERSION: '8.0.x'                            # .NET version to use
+  AZURE_WEBAPP_NAME: diginsighttools-testmc-job-itn-01    # Name of your Azure Web App
+  AZURE_WEBAPP_PACKAGE_PATH: './publish'                  # Path to the published output
+  DOTNET_VERSION: '8.0.x'                                 # .NET version to use
 
 on:
   # push:
