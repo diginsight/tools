@@ -40,6 +40,10 @@ jobs:
       contents: read #This is required for actions/checkout
 
     steps:
+      # - name: Set PowerShell Execution Policy
+      #   shell: pwsh
+      #   run: Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process -Force
+
       - name: Print workflow_call inputs
         run: |
           echo "env.DEPLOY_ENVIRONMENT=${{ env.DEPLOY_ENVIRONMENT }}"

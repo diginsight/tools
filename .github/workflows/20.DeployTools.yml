@@ -1,4 +1,4 @@
-name: Build and Deploy Samples
+name: Build and Deploy Tools
 
 permissions:
   id-token: write
@@ -35,7 +35,6 @@ jobs:
           repository: diginsight/tools.internal
           path: tools.internal
           token: ${{ secrets.INTERNAL_REPOSITORY_TOKEN }}
-          # If the repo is private, you need a token with access:
 
       - name: Set up .NET Core
         uses: actions/setup-dotnet@v4
@@ -56,19 +55,15 @@ jobs:
       - name: Restore Samples # Step 3: Restore dependencies and build the Samples solution/project
         run: dotnet restore --interactive src/Diginsight.Tools.sln
 
-      - name: Copy AuthenticationSampleApi appsettings.*.json from tools.internal
+      - name: Copy Diginsight.Tools.FeedMonitor appsettings.*.json from tools.internal
         run: |
-          cp tools.internal/src/Samples/AuthenticationSampleApi/appsettings.*.json src/Samples/AuthenticationSampleApi/
-
-      - name: Copy AuthenticationSampleServerApi appsettings.*.json from tools.internal
-        run: |
-          cp tools.internal/src/Samples/AuthenticationSampleServerApi/appsettings.*.json src/Samples/AuthenticationSampleServerApi/
+          cp "tools.internal/src/30.00 Job/Diginsight.Tools.FeedMonitor/appsettings.*.json" "src/30.00 Job/Diginsight.Tools.FeedMonitor/"
 
       - name: Build Samples
         run: dotnet build src/Diginsight.Tools.sln --configuration Release
 
       - name: Publish Diginsight.Tools.FeedMonitor
-        run:  dotnet publish src/30.00 Job/Diginsight.Tools.FeedMonitor/Diginsight.Tools.FeedMonitor.csproj --configuration Release --framework net8.0 --output ./publish/Diginsight.Tools.FeedMonitor
+        run:  dotnet publish "src/30.00 Job/Diginsight.Tools.FeedMonitor/Diginsight.Tools.FeedMonitor.csproj" --configuration Release --framework net8.0 --output ./publish/Diginsight.Tools.FeedMonitor
 
       - name: Upload Published Samples # Step 5: Upload the published output as an artifact (if you want to persist the build)
         uses: actions/upload-artifact@v4
@@ -103,6 +98,6 @@ jobs:
     uses: ./.github/workflows/21.DeployAppService.yml
     with:
       environment: ${{ matrix.environment }}
-      appName: AuthenticationSampleApi
+      appName: Diginsight.Tools.FeedMonitor
       webAppName: diginsighttools-jb-${{ matrix.environment }}-01
 
