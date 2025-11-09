@@ -64,6 +64,8 @@ public class FeedMonitorBackgroundService : BackgroundService
             IFeedParserFactory feedParserFactory)
     {
         this.logger = logger;
+        this.environment = environment;
+
         this.feedMonitorOptionsMonitor = feedMonitorOptionsMonitor;
         this.cosmosDBOptionsMonitor = cosmosDBOptionsMonitor;
         this.blobStorageOptionsMonitor = blobStorageOptionsMonitor;
@@ -93,7 +95,6 @@ public class FeedMonitorBackgroundService : BackgroundService
             blobContainerClient = blobServiceClient.GetBlobContainerClient(blobClientConfiguration.ContainerName);
         }
 
-        this.environment = environment;
         this.parallelService = parallelService;
         this.timeProvider = timeProvider;
         this.feedParserFactory = feedParserFactory;
@@ -137,7 +138,7 @@ public class FeedMonitorBackgroundService : BackgroundService
             var feedMonitorOptions = feedMonitorOptionsMonitor.CurrentValue;
 
             var credentialProvider = new DefaultCredentialProvider(environment);
-            var credential = credentialProvider.Get(configuration.GetSection("ResourceMonitor"));
+            var credential = credentialProvider.Get(configuration.GetSection("FeedMonitor"));
 
             var parallelOptions = new ParallelOptions { MaxDegreeOfParallelism = parallelService.MediumConcurrency, CancellationToken = cancellationToken };
             await parallelService.ForEachAsync<FeedItem>(feedMonitorOptions.Feeds, parallelOptions, async (feedConfig) =>
@@ -170,8 +171,9 @@ public class FeedMonitorBackgroundService : BackgroundService
                     var feedDomain = new Uri(feedUri).Host;
                     feedChannel.PartitionKey = "/";
 
-                    // Use the channel link or URI as the unique ID
-                    feedChannel.Id = feedChannel.Link ?? feedUri;
+                    // Use the channel link or URI as the unique ID - sanitize for CosmosDB
+                    var rawId = feedChannel.Link ?? feedUri;
+                    feedChannel.Id = CosmosDbHelper.SanitizeCosmosDbId(rawId);
 
                     logger.LogDebug($"Feed: {feedChannel.Title}, Description: {feedChannel.Description}");
                     logger.LogDebug($"Items: {feedChannel.Items.Count}, Feed Type: {feedChannel.FeedType}");
@@ -709,6 +711,8 @@ public class FeedMonitorBackgroundService : BackgroundService
         }
     }
 
+
+
     private static string SanitizeForBlobPath(string input)
     {
         var invalid = new char[] { '<', '>', ':', '"', '\\', '|', '?', '*', '\0' };
@@ -970,7 +974,10 @@ public class FeedMonitorBackgroundService : BackgroundService
             else
             {
                 // Method 3: Azure AD / Managed Identity (DefaultAzureCredential)
-                cosmosClient = new CosmosClient(cosmosDBClientConfiguration.EndpointUri.ToString(), new DefaultAzureCredential(), cosmosClientOptions);
+                var credentialProvider = new DefaultCredentialProvider(environment);
+                var credential = credentialProvider.Get(configuration.GetSection("FeedMonitor"));
+
+                cosmosClient = new CosmosClient(cosmosDBClientConfiguration.EndpointUri.ToString(), credential, cosmosClientOptions);
             }
         }
         else
