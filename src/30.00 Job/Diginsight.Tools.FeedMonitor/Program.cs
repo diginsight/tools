@@ -33,6 +33,9 @@ internal class Program
         IConfiguration configuration = hostBuilder.Configuration;
         IServiceCollection services = hostBuilder.Services;
 
+        services.AddHttpContextAccessor();
+
+        //services.AddAspNetCoreObservability(configuration, hostEnvironment, out IOpenTelemetryOptions openTelemetryOptions);
         services.AddObservability(configuration, hostEnvironment, out IOpenTelemetryOptions openTelemetryOptions);
         observabilityManager.AttachTo(services);
 
