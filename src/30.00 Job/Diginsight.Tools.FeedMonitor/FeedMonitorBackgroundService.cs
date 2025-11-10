@@ -153,10 +153,19 @@ public class FeedMonitorBackgroundService : BackgroundService
                 logger.LogInformation("Querying feed: {feedUri} at: {utcNow}", feedUri, utcNow);
 
                 var xmlContent = default(string?);
-                using (var httpClient = new HttpClient())
+                try
                 {
-                    httpClient.DefaultRequestHeaders.Add("User-Agent", "PodcastFeedParser/1.0 (Compatible RSS Reader)");
-                    xmlContent = await httpClient.GetStringAsync(feedUri);
+                    using (var httpClient = new HttpClient())
+                    {
+                        httpClient.DefaultRequestHeaders.Add("User-Agent", "PodcastFeedParser/1.0 (Compatible RSS Reader)");
+                        xmlContent = await httpClient.GetStringAsync(feedUri);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    logger.LogWarning($"Exception '{ex.GetType().Name}' processing feed '{feedUri}'");
+                    logger.LogTrace(ex, $"Exception '{ex.GetType().Name}' processing feed '{feedUri}'");
+                    return;
                 }
 
                 FeedChannelBase? feedChannel = null;
