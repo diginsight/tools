@@ -12,11 +12,17 @@ on:
       webAppName:
         required: true
         type: string
+      deploymentType:
+        required: false
+        type: string
+        default: 'webjob'
+        description: 'Deployment type: webapp or webjob'
 
 env:
   DEPLOY_ENVIRONMENT: ${{ inputs.environment }}
   AZURE_APP_NAME: ${{ inputs.appName }}
   AZURE_WEBAPP_NAME: ${{ inputs.webAppName }}
+  DEPLOYMENT_TYPE: ${{ inputs.deploymentType }}
 
 jobs:
   before-deploy:
@@ -48,6 +54,7 @@ jobs:
         run: |
           echo "env.DEPLOY_ENVIRONMENT=${{ env.DEPLOY_ENVIRONMENT }}"
           echo "env.AZURE_WEBAPP_NAME=${{ env.AZURE_WEBAPP_NAME }}"
+          echo "env.DEPLOYMENT_TYPE=${{ env.DEPLOYMENT_TYPE }}"
 
       - name: Download artifact from build job
         uses: actions/download-artifact@v4
@@ -76,6 +83,41 @@ jobs:
           echo "$SECRETS_CONTEXT"
           echo "$env:SECRETS_CONTEXT" >> 10.SECRETS_CONTEXT.log
 
+      # Prepare WebJob deployment structure
+      - name: Prepare WebJob deployment structure
+        if: ${{ env.DEPLOYMENT_TYPE == 'webjob' }}
+        shell: pwsh
+        run: |
+          $appName = "${{ env.AZURE_APP_NAME }}"
+          $publishPath = "./publish/$appName"
+          $webjobPath = "./webjob-package"
+          
+          # Determine job type based on Settings.job content
+          $settingsJobPath = Join-Path $publishPath "Settings.job"
+          $jobType = "continuous"
+          
+          if (Test-Path $settingsJobPath) {
+              $settingsContent = Get-Content $settingsJobPath -Raw
+              if ($settingsContent -match '"schedule"') {
+                  $jobType = "triggered"
+                  Write-Host "Detected triggered WebJob (has schedule)"
+              } else {
+                  Write-Host "Detected continuous WebJob (no schedule)"
+              }
+          } else {
+              Write-Host "No Settings.job found, defaulting to continuous WebJob"
+          }
+          
+          # Create proper WebJob structure
+          $targetPath = "$webjobPath/app_data/jobs/$jobType/$appName"
+          New-Item -ItemType Directory -Force -Path $targetPath
+          
+          # Copy all files to the WebJob location
+          Copy-Item -Path "$publishPath/*" -Destination $targetPath -Recurse -Force
+          
+          Write-Host "WebJob structure created at: $targetPath"
+          Write-Host "Job type: $jobType"
+
       - name: Login to Azure
         uses: azure/login@v2
         with:
@@ -83,10 +125,27 @@ jobs:
           tenant-id: ${{ vars.AZURE_TENANT_ID }}
           subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
 
+      - name: Determine deployment package path
+        id: package-path
+        shell: pwsh
+        run: |
+          $deploymentType = "${{ env.DEPLOYMENT_TYPE }}"
+          $appName = "${{ env.AZURE_APP_NAME }}"
+        
+          if ($deploymentType -eq "webjob") {
+            $packagePath = "./webjob-package"
+            Write-Host "Using WebJob package path: $packagePath"
+          } else {
+            $packagePath = "./publish/$appName"
+            Write-Host "Using Web App package path: $packagePath"
+          }
+ 
+          echo "path=$packagePath" >> $env:GITHUB_OUTPUT
+
       - name: Deploy to Azure Web App
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v3
         with:
           app-name: '${{ env.AZURE_WEBAPP_NAME }}'
           slot-name: 'Production'
-          package: ./publish/${{ env.AZURE_APP_NAME }}
+          package: ${{ steps.package-path.outputs.path }}

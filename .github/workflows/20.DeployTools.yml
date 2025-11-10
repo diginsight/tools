@@ -101,3 +101,4 @@ jobs:
       environment: ${{ matrix.environment }}
       appName: Diginsight.Tools.FeedMonitor
       webAppName: diginsighttools-${{ matrix.environment }}-job-itn-01
+      deploymentType: webjob
