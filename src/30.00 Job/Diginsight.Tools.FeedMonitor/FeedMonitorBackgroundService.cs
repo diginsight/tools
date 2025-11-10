@@ -143,7 +143,8 @@ public class FeedMonitorBackgroundService : BackgroundService
             var parallelOptions = new ParallelOptions { MaxDegreeOfParallelism = parallelService.MediumConcurrency, CancellationToken = cancellationToken };
             await parallelService.ForEachAsync<FeedItem>(feedMonitorOptions.Feeds, parallelOptions, async (feedConfig) =>
             {
-                using var inneractivity = Observability.ActivitySource.StartRichActivity(logger, "ReadAllFeedsAsync", () => new { feedConfig.Uri });
+                using var inneractivity = Observability.ActivitySource.StartRichActivity(logger, "ReadAllFeedsAsync.FeedIteration", () => new { feedConfig.Uri });
+                inneractivity?.SetTag("feed_uri", feedConfig.Uri);
 
                 cancellationToken.ThrowIfCancellationRequested();
 
