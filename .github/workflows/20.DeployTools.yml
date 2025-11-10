@@ -100,5 +100,4 @@ jobs:
     with:
       environment: ${{ matrix.environment }}
       appName: Diginsight.Tools.FeedMonitor
-      webAppName: diginsighttools-jb-${{ matrix.environment }}-01
-
+      webAppName: diginsighttools-${{ matrix.environment }}-job-itn-01
