@@ -1,0 +1,209 @@
+---
+title: "Context window management and token optimization"
+description: "Context rot, failure modes, 5 information flow patterns, 9 token optimization strategies, phase budgets, provider caching comparison"
+version: "2.3.1"
+last_updated: "2026-05-21"
+domain: "prompt-engineering"
+authoritative_sources:
+  - url: "https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching"
+    description: "Anthropic prompt caching — context window management, caching strategies"
+  - url: "https://platform.openai.com/docs/guides/prompt-engineering"
+    description: "OpenAI prompt engineering — context window planning, message formatting"
+goal: "Define the canonical guidance in this file for prompt engineering workflows"
+scope:
+  covers:
+    - "The rules and patterns documented in this file"
+  excludes:
+    - "Implementation details of consuming artifacts"
+boundaries:
+  - "MUST stay consistent with governance and metadata contracts"
+  - "MUST avoid duplicating canonical guidance from peer context files"
+rationales:
+  - "Structured metadata improves deterministic validation and safe change management"
+---
+
+# Context Window Management and Token Optimization
+
+**Purpose**: Defines context rot, failure modes, information flow patterns, and nine actionable optimization strategies for reducing token consumption in multi-agent workflows.
+
+**Referenced by**: All orchestrator prompts, agent files with handoffs, `.github/instructions/pe-prompts.instructions.md`
+
+---
+
+## Context Rot
+
+<mark>Context rot</mark> is the progressive degradation of model accuracy as the context window fills (📖 see [01.05-glossary.md](01.05-glossary.md) for full definition). Key research finding:
+
+- At the accuracy degradation threshold (📖 see [01.06-system-parameters.md](01.06-system-parameters.md)), even capable models lose most of their ability to follow earlier instructions
+- Earlier instructions progressively lose influence as conversation grows
+- Every additional token actively degrades the model's ability to follow earlier instructions
+
+**Mitigations:**
+- Start new chat sessions frequently to reset the context window
+- Clear context between workflow phases rather than carrying forward
+- Transfer only essential information during handoffs
+- Use right-sized models — smaller models hit thresholds faster
+
+## Three Failure Modes
+
+| Failure Mode | Symptom | Root Cause |
+|---|---|---|
+| **Context Loss** | Agent doesn't know about earlier decisions | Handoff didn't transfer critical context |
+| **Context Bloat** | Responses become slow, expensive, or confused | Too much irrelevant context accumulated |
+| **Context Conflict** | Agent receives contradictory instructions | Multiple sources provide conflicting guidance |
+
+**📖 Component roles and injection layers**: [01.02-prompt-assembly-architecture.md](./01.02-prompt-assembly-architecture.md)
+
+## Five Information Flow Patterns
+
+| Strategy | Token Efficiency | Robustness | Complexity | Best For |
+|---|---|---|---|---|
+| **Full Context** (`send: true`) | Low | High | Low | Simple 2–3 phase workflows |
+| **Progressive Summarization** | Medium | Medium-High | Medium | Multi-phase workflows (3–5) |
+| **File-Based Isolation** | High | Medium | Medium | Specialized single-purpose agents |
+| **User-Mediated Handoff** | Maximum | Variable | High (user effort) | Maximum control needed |
+| **Structured Report Passing** | Medium-High | High | Medium | Complex orchestrations |
+
+### Token Impact Comparison
+
+```
+Full Context (send: true):           ~20,500 tokens across all phases
+Progressive Summarization:           ~9,800 tokens (52% reduction)
+File-Based Isolation:                ~3,400 tokens (83% reduction)
+```
+
+### Strategy Selection
+
+| Scenario | Recommended Strategy |
+|---|---|
+| Simple 2–3 phase workflow | Full context (`send: true`) |
+| Multi-phase (3–5 phases) | Progressive summarization |
+| Long workflow (5+ phases) | File-based isolation |
+| Maximum control needed | User-mediated handoff |
+| Complex data contracts | Structured report passing |
+| Mixed requirements | Combine strategies per phase |
+
+## Reliability Checksum Pattern
+
+Before each handoff, validate critical data survives. **📖 Full checklist:** [02.01-handoffs-pattern.md](02.01-handoffs-pattern.md) → "Reliability Checksum" section.
+
+## Phase Budget Guidelines
+
+| Phase | Target Max | Action if Exceeded |
+|---|---|---|
+| Research | 3,000 tokens | Summarize to 1,000 tokens before handoff |
+| Architecture | 2,000 tokens | Split into multiple specs if larger |
+| Build | 4,000 tokens | Use file-based output, reference by path |
+| Validation | 1,500 tokens | Compress to issues-only report |
+
+## Context Window Breakdown (Optimization Targets)
+
+Typical distribution showing where optimization effort SHOULD focus:
+
+| Category | Typical % | Optimization Target |
+|---|---|---|
+| System context | 5–15% | Instruction file pruning, narrow `applyTo`, agent streamlining |
+| User context | 5–20% | Prompt compression, snippet elimination |
+| Tool results | 20–60% | **Primary target**: targeted reads, result limits, deterministic tools |
+| Conversation history | 10–50% | Progressive summarization, file-based isolation |
+
+**Focus on tool results and conversation history first** — they represent 70%+ of typical context.
+
+## MCP Communication Flow
+
+MCP tools add tokens to the context window via tool results, following the same accumulation patterns as built-in tools. Agent-level MCP config uses `mcp-servers:` YAML syntax.
+
+**📖 MCP design patterns:** [03.04-mcp-server-design-patterns.md](./03.04-mcp-server-design-patterns.md)
+
+## Prompt-Snippets vs Instructions
+
+Snippets add tokens only when explicitly referenced via `#file:`. Instructions always add tokens when `applyTo` matches. Use snippets for optional context; instructions for mandatory standards.
+
+**📖 Full comparison:** [01.02-prompt-assembly-architecture.md](./01.02-prompt-assembly-architecture.md) → Prompt-Snippets
+
+## Architectural Boundaries
+
+VS Code tasks (`.vscode/tasks.json`) are NOT accessible to agents/prompts. Use `run_in_terminal` for equivalent outcomes.
+
+---
+
+## Nine Token Optimization Strategies
+
+Without optimization, a 5-phase workflow consumes ~14,300 tokens (9.5× single request).
+
+### Strategy Overview
+
+| # | Strategy | Category | Savings | Effort | Best For |
+|---|---|---|---|---|---|
+| 1 | **Context Reduction** | Input | 30–90% | Low | All workflows |
+| 2 | **Provider Prompt Caching** | Input | 50–90% | Low | High-volume, consistent prompts |
+| 3 | **Semantic Caching** | Input | 50–80% | High | Repeated queries |
+| 4 | **Model Selection** | Processing | 60–80% | Low | Simple tasks, high volume |
+| 5 | **Batch Processing** | Processing | 50% cost | Low | Non-urgent, high volume |
+| 6 | **Request Consolidation** | Processing | 40–60% | Medium | Multi-step pipelines |
+| 7 | **Output Token Reduction** | Output | 30–50% | Low | Verbose outputs |
+| 8 | **Deterministic Tools** | Output | 70–100% | Medium | Cache checks, validation, file ops |
+| 9 | **Streaming/Parallelization** | Output | Latency only | Low–Medium | User-facing, independent tasks |
+
+### Provider Caching Comparison
+
+**Rule:** Place static instructions first, dynamic context last to maximize cache hits.
+
+| Provider | Min Tokens | Cache Duration | Read Discount | Write Cost |
+|---|---|---|---|---|
+| **OpenAI** | 1,024 | 5–60 min (or 24h extended) | 50% | No extra |
+| **Anthropic** | 1,024–4,096 | 5 min–1h | 90% | 25% premium |
+| **Google** | Varies | Context caching available | Reduced | Initial write cost |
+
+**Cache invalidation:** tool definition changes, feature toggles, image changes, any prefix content edit.
+**Anthropic break-even:** savings start at the **3rd reuse** (1.25 + 0.1 + 0.1 = 1.45 vs 3.0 without caching).
+**Batch + Cache discounts stack:** 50% + 90% = **95% combined savings**.
+
+### Deterministic Tools Decision
+
+Use deterministic tools (not AI) for predictable operations (YAML parsing, file existence checks, timestamp comparison, pattern counting). Use AI for code semantics, creative content, and judgment calls.
+
+### Implementation Priority
+
+1. Context reduction (targeted reads) — 30–50% savings, low effort
+2. Provider caching (prompt structure) — 50–90% savings, low effort
+3. Model selection (right-size tasks) — 60–80% savings, low effort
+4. Deterministic tools (cache checks) — 70%+ for cached ops, medium effort
+5. Output reduction (structured output) — 30–50% savings, low effort
+
+**Context rot warning:** At the accuracy degradation threshold (📖 see [01.06-system-parameters.md](01.06-system-parameters.md)), optimization preserves accuracy, not just cost.
+
+## Deterministic Context Tracking
+
+For orchestrations with 5+ phases, track accumulated context deterministically:
+
+1. After each phase: count files read, estimate tokens (`files_read × avg_lines × 6.67`)
+2. Track running total across phases
+3. **≤10,000 tokens** → continue; **>10,000** → MUST summarize prior phases; **>20,000** → MUST use file-based state + new session
+4. For 5+ phase workflows: mandate file-based isolation at midpoint (`.copilot/temp/pe-meta-state/`)
+
+**📖 Thresholds:** [01.06-system-parameters.md](01.06-system-parameters.md) → Meta-Pipeline Context Thresholds
+
+---
+
+## References
+
+- **Internal**: [02.01-handoffs-pattern.md](./02.01-handoffs-pattern.md), [01.04-tool-composition-guide.md](./01.04-tool-composition-guide.md), [01.05-glossary.md](./01.05-glossary.md), [01.06-system-parameters.md](./01.06-system-parameters.md)
+- **Sources** (practical examples):
+  - [12.00-how_to_manage_information_flow_during_prompt_orchestrations.md](../../../03.00-tech/05.02-prompt-engineering/04-howto/12.00-how_to_manage_information_flow_during_prompt_orchestrations.md) — 5 information flow implementation patterns with token comparison, communication strategies matrix
+  - [09.50-how_to_leverage_tools_in_prompt_orchestrations.md](../../../03.00-tech/05.02-prompt-engineering/04-howto/09.50-how_to_leverage_tools_in_prompt_orchestrations.md) — per-tool token cost analysis, expensive vs cheap patterns
+- **External**: Liu et al. (2023) "Lost in the Middle", [OpenAI Prompt Caching](https://platform.openai.com/docs/guides/prompt-caching), [Anthropic Prompt Caching](https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching)
+
+---
+
+## Version History
+
+| Version | Date | Changes | Author |
+|---------|------|---------|--------|
+| 1.0.0 | 2026-02-22 | Initial version — context rot, failure modes, 5 flow patterns, phase budgets (from 08) | System |
+| 1.1.0 | 2026-02-22 | Initial 9 strategies, provider caching, deterministic tools (from 09) | System |
+| 1.2.0 | 2026-02-23 | Added MCP flow, prompt-snippets vs instructions, VS Code tasks boundary | System |
+| 1.3.0 | 2026-03-08 | Deduplication: replaced reliability checksum with ref to 04 | System |
+| 2.0.0 | 2026-03-08 | Phase 5: Merged context-window-and-token-optimization files into single file. Removed duplicated context window breakdown table. Consolidated references. | System |
+| 2.1.0 | 2026-03-15 | Added Deterministic Context Tracking section with between-phase checkpoint heuristic and file-based isolation guidance for 5+ phase workflows | System |
+

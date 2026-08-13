@@ -67,7 +67,7 @@ public static partial class ObservabilityExtensions
                          static _ => log4net.Core.Level.All);
                      }
                  });
-        services.TryAddSingleton<IActivityLoggingSampler, NameBasedActivityLoggingSampler>();
+        services.TryAddSingleton<IActivityLoggingFilter, OptionsBasedActivityLoggingFilter>();
 
         return services;
     }

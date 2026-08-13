@@ -1,0 +1,223 @@
+---
+title: "Orchestrator runtime validation patterns"
+description: "Gate check patterns, goal alignment verification, cumulative progress tracking, and drift detection for multi-phase orchestrator prompts"
+version: "1.0.2"
+last_updated: "2026-05-21"
+domain: "prompt-engineering"
+goal: "Define the canonical guidance in this file for prompt engineering workflows"
+scope:
+  covers:
+    - "The rules and patterns documented in this file"
+  excludes:
+    - "Implementation details of consuming artifacts"
+boundaries:
+  - "MUST stay consistent with governance and metadata contracts"
+  - "MUST avoid duplicating canonical guidance from peer context files"
+rationales:
+  - "Structured metadata improves deterministic validation and safe change management"
+---
+
+# Orchestrator Runtime Validation Patterns
+
+**Purpose**: Defines how orchestrator prompts validate progress during execution — gate checks between phases, goal alignment verification, cumulative progress tracking, and drift detection. Complements [02.03-orchestrator-design-patterns.md](02.03-orchestrator-design-patterns.md) (design-time) and [02.01-handoffs-pattern.md](02.01-handoffs-pattern.md) (handoff mechanics).
+
+**Referenced by**: All orchestrator prompts (`prompt-design`, `agent-design`, `skill-design`, `instruction-file-design`, `pe-meta-update`), `prompt-builder`, `agent-builder`
+
+---
+
+## Three Validation Layers
+
+Every orchestrator prompt MUST implement three validation layers during execution:
+
+```
+Layer 1: Step Completion    — Did the phase produce its expected output?
+Layer 2: Goal Alignment     — Does the output still serve the original user goal?
+Layer 3: Cumulative Progress — Where are we in the overall workflow?
+```
+
+These layers catch different failure modes:
+
+| Failure mode | Caught by | Example |
+|---|---|---|
+| Phase produces no output | Step Completion | Builder creates nothing — gate blocks |
+| Phase output is technically correct but off-target | Goal Alignment | Researcher finds patterns for wrong artifact type |
+| Workflow accumulates drift across multiple phases | Cumulative Progress | By phase 5, the scope has expanded beyond original request |
+| Phase succeeds but breaks a prior phase's output | Goal Alignment | Builder creates file that contradicts researcher's spec |
+
+---
+
+## Layer 1: Step Completion Gates
+
+Every phase transition MUST have a gate check. Gates verify the phase produced its expected output before proceeding.
+
+### Gate Check Template
+
+```markdown
+### Gate [N] Check — [Phase Name]
+
+**Expected output:** [what this phase should produce]
+
+- [ ] [concrete deliverable 1]
+- [ ] [concrete deliverable 2]
+- [ ] [concrete deliverable 3]
+
+**Status:** [✅ Pass — proceed / ❌ Fail — resolve before continuing]
+```
+
+### Gate Check Rules
+
+| Rule | Rationale |
+|---|---|
+| Every phase MUST have a gate | Ungated phases can fail silently |
+| Gate checks MUST be concrete (not vague) | "Requirements gathered" is vague; "3+ use cases generated" is concrete |
+| Failed gates MUST block progression | NEVER proceed past a failed gate |
+| Gate failures MUST produce actionable feedback | "Failed" is useless; "Missing: tool alignment check" is actionable |
+| Maximum 3 retry cycles per gate | Prevents infinite loops — escalate to user after 3 failures |
+
+### Common Gate Types
+
+| Gate type | When to use | Example checks |
+|---|---|---|
+| **Completeness** | After research/requirements | "All required fields populated?" |
+| **Quality** | After building/creating | "Passes pre-save validation?" |
+| **Approval** | Before destructive/high-impact changes | "User approved the plan?" |
+| **Validation** | After specialist validators run | "Zero CRITICAL issues?" |
+| **Dependency** | Before phases that depend on earlier outputs | "Referenced artifacts exist?" |
+
+---
+
+## Layer 2: Goal Alignment Verification
+
+Step completion alone is insufficient — a phase can complete successfully while drifting from the original goal. Every gate MUST include a goal alignment check.
+
+### Goal Alignment Check
+
+Add this to every gate check:
+
+```markdown
+- [ ] **Goal alignment:** Output serves the original requirement: "[original goal — one sentence]"
+```
+
+### When Goal Alignment Fails
+
+If a phase output doesn't serve the original goal:
+
+1. **Identify the drift** — What changed between the goal and the output?
+2. **Classify the cause:**
+   - **Scope expansion** — phase added work beyond the original request → trim to original scope
+   - **Scope narrowing** — phase dropped part of the requirement → revisit with full scope
+   - **Direction change** — phase solved a different problem → re-delegate with clearer instructions
+   - **Legitimate refinement** — researched found the goal needs adjustment → present to user for approval
+3. **For legitimate refinements:** Present to user: "Based on [finding], the original goal should be adjusted to [refined goal]. Approve?"
+4. **For drift:** Re-delegate the phase with explicit goal restatement
+
+### Goal Alignment Anti-Patterns
+
+| Anti-pattern | Problem | Fix |
+|---|---|---|
+| No goal restatement in handoffs | Specialist doesn't know the original goal | Include goal summary in every delegation |
+| Goal checked only at start and end | Drift accumulates undetected across middle phases | Check at every gate |
+| Vague goal statement | "Make it better" can't be verified | Use concrete, verifiable goal: "Create a skill for X that covers workflows Y and Z" |
+| Accepting scope expansion silently | Orchestrator adds "bonus" improvements without user approval | Only deliver what was requested; flag extras as recommendations |
+
+---
+
+## Layer 3: Cumulative Progress Tracking
+
+Long orchestrations (5+ phases) need explicit progress tracking to maintain coherence and give the user visibility.
+
+### Progress Report Template
+
+After each gate check, the orchestrator SHOULD produce a brief progress update:
+
+```markdown
+### Progress: Phase [N] of [total]
+
+**Original goal:** [user's request — one sentence]
+**Completed:**
+- Phase 1: [what was accomplished — one line]
+- Phase 2: [what was accomplished — one line]
+- ...
+**Current phase:** [N] — [what's happening now]
+**Remaining:** [N] phases
+**Drift status:** [✅ On track / ⚠️ Minor adjustment (explain) / ❌ Drifting (explain)]
+```
+
+### When to Use Progress Tracking
+
+| Workflow length | Progress tracking | Rationale |
+|---|---|---|
+| 1–3 phases | Optional | Short enough to track mentally |
+| 4–6 phases | Recommended | Drift becomes possible |
+| 7+ phases | Required | Drift is likely without explicit tracking |
+
+### Drift Detection Heuristics
+
+Check for these signals at each progress update:
+
+| Signal | Indicates | Action |
+|---|---|---|
+| Phase output references artifacts not in original scope | Scope expansion | Trim or confirm with user |
+| Phase output doesn't reference any artifact from original scope | Direction change | Re-delegate with goal restatement |
+| Phase count exceeding original estimate by >50% | Complexity underestimation | Report to user, re-scope |
+| Same phase failing gate 3+ times | Specification or capability issue | Escalate to user |
+| Handoff data growing >3x between phases | Context bloat | Apply progressive summarization |
+
+---
+
+## Applying to Orchestrator Prompts
+
+### Design/Create Orchestrators (prompt-design, agent-design, skill-design, instruction-file-design)
+
+These follow a predictable pattern: Gather → Research → Plan → Build → Validate → Report.
+
+**Gate pattern for each phase:**
+
+| Phase | Gate type | Key checks | Goal alignment focus |
+|---|---|---|---|
+| Requirements | Completeness | Use cases generated, scope defined | "Does scope match what user asked for?" |
+| Research | Completeness | Patterns found, no overlaps detected | "Research covers the right domain?" |
+| Structure | Approval | User approves the plan | "Plan delivers the original goal?" |
+| Build | Quality | Pre-save validation passed, files created | "Built artifact matches the approved plan?" |
+| Validate | Validation | Zero CRITICAL/HIGH issues | "Validated artifact serves original need?" |
+| Report | Completeness | Summary covers all deliverables | "Everything requested was delivered?" |
+
+### Review/Validate Orchestrators (prompt-review, agent-review, skill-review, instruction-file-review)
+
+These follow: Scope → Critical Check → Full Validation → Fix → Report.
+
+**Gate pattern:**
+
+| Phase | Gate type | Key checks | Goal alignment focus |
+|---|---|---|---|
+| Scope | Completeness | Files identified, mode determined | "Reviewing what user asked to review?" |
+| Critical check | Validation | CRITICAL pass/fail determined | "Checking the right critical criteria?" |
+| Full validation | Validation | All checks run, findings categorized | "Comprehensive for the scope?" |
+| Fix loop | Quality + Validation | Fixes applied, re-validated | "Fixes address the findings?" |
+| Report | Completeness | All findings documented | "Report covers what was reviewed?" |
+
+### Meta-Orchestrators (pe-meta-update)
+
+These have mode-dependent phase sequences. Apply gate patterns per-mode:
+
+| Mode | Phases | Key validation gaps to address |
+|---|---|---|
+| `--mode apply` (full pipeline) | 1→2→3→4→5→6→7 | Phase 5 needs per-builder gate (not just "max 3 files between checkpoints") |
+| `--mode plan --skip research` (assessment only) | 4→7 | Phase 4 audit needs severity threshold gate before report |
+| `--mode apply --dim optimize` (optimization) | 4→3→5→6→7 | Phase 5 optimizer needs per-file before/after verification |
+
+---
+
+## References
+
+- **Internal**: [02.03-orchestrator-design-patterns.md](02.03-orchestrator-design-patterns.md) — Design-time patterns (when and how to build orchestrators)
+- **Internal**: [02.01-handoffs-pattern.md](02.01-handoffs-pattern.md) — Handoff mechanics (data flow, validation loops, checkpoints)
+- **Internal**: [04.03-production-readiness-patterns.md](04.03-production-readiness-patterns.md) — Production requirements including embedded test scenarios
+
+---
+
+## Version History
+
+| Version | Date | Changes |
+|---------|------|---------|
+| 1.0.0 | 2026-03-11 | Initial version — three validation layers, gate patterns, goal alignment, progress tracking, drift detection |

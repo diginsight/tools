@@ -1,0 +1,88 @@
+---
+title: "PE practical effectiveness log"
+description: "User-reported outcomes from PE workflow executions — breaks the self-referential validation cycle by grounding rule refinement in practical results"
+version: "1.1.2"
+last_updated: "2026-05-21"
+domain: "prompt-engineering"
+goal: "Define the canonical guidance in this file for prompt engineering workflows"
+scope:
+  covers:
+    - "The rules and patterns documented in this file"
+  excludes:
+    - "Implementation details of consuming artifacts"
+boundaries:
+  - "MUST stay consistent with governance and metadata contracts"
+  - "MUST avoid duplicating canonical guidance from peer context files"
+rationales:
+  - "Structured metadata improves deterministic validation and safe change management"
+---
+
+# PE Practical Effectiveness Log
+
+**Purpose**: Captures user-reported outcomes from PE workflow executions. Provides external evidence for meta-researcher to validate and refine PE rules against practical results — not just structural compliance.
+
+**Referenced by**: `meta-researcher` agent, `pe-meta-scheduled-review` prompt, `meta-validator` agent
+
+---
+
+## How to Use This Log
+
+### Adding entries (after running a PE workflow)
+
+After using any PE workflow (`/pe-gra-prompt-design`, `/pe-gra-agent-review`, `/pe-gra-context-information-create-update`, etc.), add a brief entry:
+
+```markdown
+### YYYY-MM-DD — [workflow name]
+
+- **Goal**: [what you were trying to accomplish]
+- **Outcome**: [worked well / partial / failed]
+- **Friction points**: [what was slow, confusing, or required workarounds — or "None"]
+- **Artifacts affected**: [files created/modified]
+```
+
+### Reading entries (during meta-reviews)
+
+`meta-researcher` MUST read this log during Step 1 to factor real user outcomes into improvement recommendations. Patterns to look for:
+
+- Workflows with repeated "partial" or "failed" outcomes → rules or agent behavior needs refinement
+- Recurring friction points → structural improvement opportunity
+- Workflows with consistent "worked well" → rules are effective, don't change without cause
+
+---
+
+## Effectiveness History
+
+### 2026-03-16 — Phase 3: Documentation agent triad creation
+
+- **Goal**: Create documentation-researcher, documentation-builder, and documentation-validator agents + two orchestrator prompts (documentation-design, documentation-review) to validate the PE creation pipeline with a real domain use case
+- **Outcome**: Worked well — all 5 artifacts created successfully
+- **Friction points**: Creation was done directly rather than via `/pe-gra-agent-design` pipeline — effective for bulk creation but bypassed the orchestrator validation (trade-off: speed vs. pipeline testing). Dependency map update was deferred to a separate step.
+- **Artifacts affected**:
+  - `.github/agents/01.00-article-writing/documentation-researcher.agent.md`
+  - `.github/agents/01.00-article-writing/documentation-builder.agent.md`
+  - `.github/agents/01.00-article-writing/documentation-validator.agent.md`
+  - `.github/prompts/01.00-article-writing/documentation-design.prompt.md`
+  - `.github/prompts/01.00-article-writing/documentation-review.prompt.md`
+- **Observations**:
+  - All 3 agents follow the triad pattern correctly (plan/agent/plan modes)
+  - Domain context tables reference `01.00-article-writing/` and `90.00-learning-hub/` context files properly
+  - Both orchestrators include full production-readiness sections (summarization protocol, error recovery, response management, test scenarios)
+  - `fetch_webpage` correctly included in all 3 agents (Phase 1 fix validated)
+  - Dependency map was NOT auto-updated — manual step required
+
+---
+
+## References
+
+- **📖 Meta-review log**: [05.04-meta-review-log.md](05.04-meta-review-log.md)
+- **📖 Artifact lifecycle**: [05.02-artifact-lifecycle-management.md](05.02-artifact-lifecycle-management.md)
+- **📖 Workflow entry points**: [05.03-pe-workflow-entry-points.md](05.03-pe-workflow-entry-points.md)
+
+---
+
+## Version History
+
+| Version | Date | Changes | Author |
+|---------|------|---------|--------|
+| 1.0.0 | 2026-03-15 | Initial version — effectiveness log structure with entry format and reading guidance | System |
+

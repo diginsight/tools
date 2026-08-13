@@ -1,0 +1,64 @@
+{
+    "$schema": "./pe-self-update.config.schema.json",
+    "version": "1.1.0",
+    "last_updated": "2026-06-04",
+    "_comment": "Source of truth for pe-meta-review orchestrator and pe-meta-researcher agent. Catalogs monitored external/internal sources, per-source state location, default lookback window, and sampling parameters used by --dim adherence.",
+    "_version_scheme_comment": "Each monitored source declares a version_scheme describing its version-identifier shape: 'semver' (e.g. 1.107), 'dated' (ISO-8601 publish date), 'model-version' (vendor model-version string), or 'none' (no stable version token). Dual role: the source ledger uses it to record last_seen_version, and the pe-meta-review Phase 0a parser uses it to recognize and resolve a version-shaped --start/--end token to a timestamp. A source with version_scheme 'none' rejects a version-shaped window bound ('use a date window').",
+    "monitored_sources": {
+        "platform": [
+            {
+                "id": "vscode-release-notes",
+                "kind": "release-notes",
+                "version_scheme": "semver",
+                "url": "https://code.visualstudio.com/updates",
+                "channel": "stable",
+                "description": "Visual Studio Code release notes — capability changes affecting agent/tool surfaces and customization files."
+            },
+            {
+                "id": "github-copilot-changelog",
+                "kind": "changelog",
+                "version_scheme": "dated",
+                "url": "https://github.blog/changelog/label/copilot/",
+                "description": "GitHub Copilot changelog — chat, agent mode, customization files, MCP."
+            }
+        ],
+        "model": [
+            {
+                "id": "anthropic-model-cards",
+                "kind": "model-card",
+                "version_scheme": "model-version",
+                "url": "https://www.anthropic.com/news",
+                "description": "Anthropic model release notes (Claude versions)."
+            },
+            {
+                "id": "openai-model-cards",
+                "kind": "model-card",
+                "version_scheme": "model-version",
+                "url": "https://openai.com/news/",
+                "description": "OpenAI model release notes (GPT versions)."
+            }
+        ],
+        "ecosystem": [
+            {
+                "id": "mcp-spec",
+                "kind": "spec",
+                "version_scheme": "dated",
+                "url": "https://modelcontextprotocol.io",
+                "description": "Model Context Protocol specification updates."
+            }
+        ]
+    },
+    "state": {
+        "namespace": "learn-hub",
+        "path": ".copilot/temp/pe-meta-state",
+        "_comment": "Root for per-source trigger state files at <state.path>/triggers/<source-id>.json and Phase 6 outcome logs at <state.path>/outcomes/<run-id>.jsonl."
+    },
+    "lookback": {
+        "default_days": 30,
+        "_comment": "Default window when caller passes --start without explicit value resolution; researcher uses this as the bounded-delta window when not otherwise specified."
+    },
+    "sampling": {
+        "adherence_consumers_per_file": 5,
+        "_comment": "Number of consumers sampled per guidance file when --dim adherence runs with derived breadth=full. Stratified by artifact-type and layer per pe-meta-adherence sampling rules."
+    }
+}

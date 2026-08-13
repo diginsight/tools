@@ -1,0 +1,272 @@
+---
+title: "Prompt engineering artifact lifecycle management"
+description: "Four-stage lifecycle (create → review → update → deprecate) with triggers, responsible agents, and quality gates per stage"
+version: "1.3.2"
+last_updated: "2026-05-21"
+domain: "prompt-engineering"
+goal: "Define the canonical guidance in this file for prompt engineering workflows"
+scope:
+  covers:
+    - "The rules and patterns documented in this file"
+  excludes:
+    - "Implementation details of consuming artifacts"
+boundaries:
+  - "MUST stay consistent with governance and metadata contracts"
+  - "MUST avoid duplicating canonical guidance from peer context files"
+rationales:
+  - "Structured metadata improves deterministic validation and safe change management"
+---
+
+# Prompt Engineering Artifact Lifecycle Management
+
+**Purpose**: Defines the creation → review → update → deprecation workflow for PE artifacts, with responsibilities, triggers, and quality gates at each stage.
+
+**Referenced by**: Meta-review prompt (`pe-meta-update --mode plan`), `prompt-design`, `agent-design`, all PE agents and prompts (indirectly via semantic search)
+
+Consumption status: Active workflow guidance (not parked). Primary consumers include [pe-meta-update.prompt.md](../../../.github/prompts/00.09-pe-meta/pe-meta-update.prompt.md), [pe-meta-scheduled-review.prompt.md](../../../.github/prompts/00.09-pe-meta/pe-meta-scheduled-review.prompt.md), [pe-meta-release-monitor.prompt.md](../../../.github/prompts/00.09-pe-meta/pe-meta-release-monitor.prompt.md), and [05.03-pe-workflow-entry-points.md](05.03-pe-workflow-entry-points.md).
+
+---
+
+## Lifecycle Overview
+
+Every PE artifact follows a four-stage lifecycle. Each stage has defined triggers, responsible agents/prompts, and quality gates.
+
+```
+┌──────────┐    ┌──────────┐    ┌──────────┐    ┌──────────────┐
+│  CREATE  │───►│  REVIEW  │───►│  UPDATE  │───►│  DEPRECATE   │
+│          │    │          │    │          │    │              │
+│ Research │    │ Validate │    │ Optimize │    │ Migration    │
+│ Build    │    │ Score    │    │ Fix      │    │ Notice       │
+│ Validate │    │ Certify  │    │ Re-valid │    │ Replacement  │
+└──────────┘    └──────────┘    └──────────┘    └──────────────┘
+     │               │               │               │
+     ▼               ▼               ▼               ▼
+  [Quality Gate]  [Quality Gate]  [Quality Gate]  [Quality Gate]
+```
+
+---
+
+## Stage 1: Creation
+
+### Triggers
+
+- New capability needed (user request or gap identified by meta-review)
+- Existing artifact needs decomposition (scope too broad)
+- New VS Code/Copilot feature requires coverage
+
+### Process by Artifact Type
+
+| Artifact Type | Prompt to Use | Agent Workflow | Quality Gate |
+|---|---|---|---|
+| **Context file** | `context-information-create-update` | `context-builder` → `prompt-validator` | Structure + no duplication |
+| **Instruction file** | `instruction-file-create-update` | `instruction-builder` → `prompt-validator` | applyTo conflict check + structure |
+| **Agent file** | `prompt-design` or `agent-create-update` | `agent-researcher` → `agent-builder` → `agent-validator` | Tool alignment + boundaries |
+| **Prompt file** | `prompt-design` or `prompt-create-update` | `prompt-researcher` → `prompt-builder` → `prompt-validator` | Tool alignment + boundaries |
+| **Skill file** | Manual (follow `skills.instructions.md`) | N/A | Progressive disclosure + description quality |
+| **Template file** | Manual (follow naming conventions in `prompts.instructions.md`) | N/A | Structure compliance |
+
+### Creation Quality Gate
+
+An artifact MUST pass ALL checks before entering the "active" state: structure compliance, valid YAML, tool alignment (plan=read-only), tool count 3–7, three-tier boundaries (3/1/2 minimums), no duplication, valid cross-references, token budget compliance, dependency map updated.
+
+**📖 Full checklist details:** [01.07-critical-rules-priority-matrix.md](01.07-critical-rules-priority-matrix.md)
+
+---
+
+## Stage 2: Review
+
+### Triggers
+
+| Trigger | Frequency | Scope |
+|---|---|---|
+| **Scheduled health check** | Biweekly | All PE artifacts |
+| **Post-creation validation** | Immediately | Newly created artifact |
+| **Post-update re-validation** | After every update | Modified artifact + dependents |
+| **Coherence review** | Monthly | Cross-artifact consistency |
+| **VS Code release** | Per release | Artifacts affected by new features |
+
+### Review Process
+
+1. **Use the right prompt**:
+   - Single prompt/agent: `prompt-review` or `agent-review`
+   - System-wide review: `/pe-meta-update --mode plan --skip research` (scope + dimension parameters)
+   - Example: `/pe-meta-update --mode plan --skip research --dim coherence,structure,references`
+
+2. **Review dimensions**: Tool alignment (CRITICAL), structure compliance (HIGH), boundary completeness (HIGH), token budget (CRITICAL), cross-reference validity (MEDIUM), content currency (MEDIUM), redundancy (LOW)
+
+   **📖 Full review checklist:** [01.07-critical-rules-priority-matrix.md](01.07-critical-rules-priority-matrix.md)
+
+3. **Generate review report** with severity scores
+
+### Review Quality Gate
+
+Artifact retains "active" status if: zero CRITICAL issues, ≤2 HIGH issues (with fix plan), quality score ≥ 70%.
+
+---
+
+## Stage 3: Update
+
+### Triggers
+
+| Trigger | Update Type | Process |
+|---|---|---|
+| **Review found issues** | Fix | `prompt-builder` / `agent-builder` → re-validate |
+| **New best practice discovered** | Enhancement | Read → plan → apply → re-validate |
+| **Dependency changed** | Cascade | Check impact via dependency map → update references |
+| **VS Code feature changed** | Adaptation | Research → update affected artifacts → re-validate |
+| **Redundancy identified** | Deduplication | Identify canonical source → replace inline with reference → verify |
+
+### Update Process
+
+1. **Impact analysis** (MUST do first):
+   - Consult [05.01-artifact-dependency-map.md](05.01-artifact-dependency-map.md)
+   - Count dependents
+   - Classify impact level (Low/Medium/High)
+
+2. **Apply changes**:
+   - Use `prompt-builder` for prompts, `agent-builder` for agents
+   - Use `context-builder` for context files, `instruction-builder` for instructions
+   - Categorize each change: CRITICAL / HIGH / MEDIUM / LOW
+
+3. **Re-validate**:
+   - CRITICAL/HIGH changes: Full re-validation of artifact + dependents
+   - MEDIUM changes: Quick validation of artifact
+   - LOW changes: No validation needed
+
+### Update Safety Rules
+
+- MUST read the complete file before modifying
+- MUST verify tool alignment is preserved after changes
+- MUST update version history / metadata timestamps
+- MUST NOT remove capabilities without explicit approval
+- MUST NOT modify high-impact files (6+ dependents) without change plan
+
+### Update Quality Gate
+
+Updated artifact MUST pass the same checks as the Creation Quality Gate, not introduce new CRITICAL/HIGH issues, not break dependents, and have updated version history.
+
+---
+
+## Stage 4: Deprecation
+
+### Triggers
+
+- Artifact replaced by a better alternative
+- Artifact's purpose absorbed by another artifact (consolidation)
+- Underlying capability removed from VS Code / Copilot
+
+### Deprecation Process
+
+1. **Document the replacement**:
+   - What replaces this artifact?
+   - What migration steps are needed for users?
+
+2. **Add deprecation notice** to the artifact:
+
+```markdown
+> ⚠️ **DEPRECATED** (YYYY-MM-DD)
+> This file is deprecated and will be removed after YYYY-MM-DD.
+> **Replacement**: `[path/to/replacement]`
+> **Migration**: [Brief migration steps]
+```
+
+3. **Move to `old/` folder** (prompts only — context files and instructions are deleted after migration):
+   - Add deprecation header with replacement path
+   - Keep file accessible for reference during migration period
+
+4. **Update dependency map**:
+   - Remove deprecated artifact from [05.01-artifact-dependency-map.md](05.01-artifact-dependency-map.md)
+   - Verify no active artifacts still reference the deprecated file
+
+5. **Remove after grace period** (30 days recommended):
+   - Verify zero references remain
+   - Delete the file
+
+### Deprecation Quality Gate
+
+Replacement exists + validated, deprecation notice added, all dependents updated, dependency map updated, grace period defined.
+
+---
+
+## Lifecycle control checks (execution timing)
+
+### Orchestration phase sequencing
+
+Apply this order whenever lifecycle workflows modify multiple artifact families:
+
+1. Context files
+2. Instruction files
+3. Agent files
+4. Template files
+5. Prompt files
+6. Hook and snippet files
+7. Skill files
+
+Do not validate adherence for a consumer layer before its dependency layer is green.
+
+### Handoff failure recovery between lifecycle stages
+
+| Failure point | Required recovery action |
+|---|---|
+| Create → Review handoff missing mandatory evidence | Stop transition, request missing evidence, and re-run review gate |
+| Review → Update handoff has conflicting findings | Escalate conflicts with severity-ranked options; apply only non-conflicting fixes |
+| Update → Re-validation fails | Roll back the change set slice and reopen update with explicit root-cause notes |
+| Any stage exceeds retry budget | Escalate to human decision with attempted steps and residual blockers |
+
+### Dependency-map staleness detection
+
+Before and after Stage 3 (Update), verify `05.01-artifact-dependency-map.md` freshness:
+
+1. Check modified artifacts for added/removed references.
+2. If reference topology changed, update dependency-map entries in the same change set.
+3. If dependency-map update is deferred, mark the update as incomplete and block promotion.
+
+### Exemplary-bar enforcement timing
+
+Apply the exemplary quality bar at two checkpoints:
+
+1. Stage 2 (Review): classify readiness and block promotion on unresolved HIGH/CRITICAL findings.
+2. Stage 3 (Update) post-fix validation: confirm the artifact returns to exemplary quality before closing the lifecycle transition.
+
+---
+
+## Anti-Patterns
+
+### ❌ Creating Without Checking for Existing Coverage
+
+**Wrong**: Creating a new context file without searching for existing files covering the same topic.
+**Right**: Search context files first, consolidate if overlap exists, create only if gap confirmed.
+
+### ❌ Updating Without Impact Analysis
+
+**Wrong**: Modifying `01.04-tool-composition-guide.md` without checking its 6+ dependents.
+**Right**: Consult dependency map, plan re-validation for all affected artifacts.
+
+### ❌ Deprecating Without Migration Path
+
+**Wrong**: Moving a prompt to `old/` without documenting what replaces it.
+**Right**: Add deprecation notice with replacement path, update all dependents first.
+
+### ❌ Skipping Re-Validation After Updates
+
+**Wrong**: Fixing an issue found by the validator without re-running validation.
+**Right**: CRITICAL/HIGH changes ALWAYS trigger re-validation.
+
+---
+
+## References
+
+- **📖 Dependency map**: [05.01-artifact-dependency-map.md](05.01-artifact-dependency-map.md)
+- **📖 Workflow entry points**: [05.03-pe-workflow-entry-points.md](05.03-pe-workflow-entry-points.md)
+- **📖 Critical rules**: [01.07-critical-rules-priority-matrix.md](01.07-critical-rules-priority-matrix.md)
+
+---
+
+## Version History
+
+| Version | Date | Changes |
+|---------|------|--------|
+| 1.0.0 | 2026-03-11 | Initial version |
+| 1.2.0 | 2026-03-19 | Compressed: inlined quality gate checklists, removed responsibility matrix (→05.03), trimmed deprecation gate |
+| 1.3.0 | 2026-05-21 | Added active-consumption declaration, lifecycle control checks (phase sequencing, handoff failure recovery, dependency-map staleness detection, exemplary-bar enforcement timing), and removed duplicate trailing legacy blocks. |
+

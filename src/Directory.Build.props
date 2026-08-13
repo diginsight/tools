@@ -62,8 +62,8 @@
     <!--<DiginsightDiagnosticsVersion>2.0.0.23</DiginsightDiagnosticsVersion>
     <DiginsightCoreVersion>3.4.*</DiginsightCoreVersion>
     <DiginsightSmartCacheVersion>3.3.*</DiginsightSmartCacheVersion>-->
-    <DiginsightCoreVersion>3.5.*</DiginsightCoreVersion>
-    <DiginsightSmartcacheVersion>3.5.*</DiginsightSmartcacheVersion>
+    <DiginsightCoreVersion>3.7.*</DiginsightCoreVersion>
+    <DiginsightSmartcacheVersion>3.7.*</DiginsightSmartcacheVersion>
     <DiginsightComponentsVersion>1.*</DiginsightComponentsVersion>
     <PackageTags>diginsight;telemetry</PackageTags>
   </PropertyGroup>

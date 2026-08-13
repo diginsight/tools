@@ -1,0 +1,198 @@
+---
+title: "Orchestrator design patterns"
+description: "When and how to build multi-agent orchestrations — architecture tiers, 9 design principles, subagent mechanics, four-specialist pattern"
+version: "1.2.1"
+last_updated: "2026-05-21"
+domain: "prompt-engineering"
+authoritative_sources:
+  - url: "https://code.visualstudio.com/docs/copilot/copilot-customization#_custom-agents"
+    description: "VS Code custom agents — multi-agent orchestration, runSubagent, subagent mechanics"
+goal: "Define the canonical guidance in this file for prompt engineering workflows"
+scope:
+  covers:
+    - "The rules and patterns documented in this file"
+  excludes:
+    - "Implementation details of consuming artifacts"
+boundaries:
+  - "MUST stay consistent with governance and metadata contracts"
+  - "MUST avoid duplicating canonical guidance from peer context files"
+rationales:
+  - "Structured metadata improves deterministic validation and safe change management"
+---
+
+# Orchestrator Design Patterns
+
+**Purpose**: Decision framework for when and how to build multi-agent orchestrations, including the 9 design principles and subagent mechanics.
+
+**Referenced by**: Orchestrator agents, multi-agent prompts, `.github/agents/*.agent.md` with `agents` property
+
+---
+
+## Architecture Tier Decision
+
+```
+Is the task multi-phase?
+  NO → Single agent or prompt file
+  YES ↓
+Do phases need different tools?
+  NO → Single agent with phased instructions
+  YES ↓
+Does context fill up within one session?
+  NO → Single agent with clear phase markers
+  YES ↓
+Do you need quality gates between phases?
+  NO → Subagents for context isolation only
+  YES → Full orchestrator with handoffs + subagents
+```
+
+| Tier | Setup | When |
+|------|-------|------|
+| Single prompt | One `.prompt.md` | Simple, focused tasks |
+| Single agent | One `.agent.md` with phases | Multi-step, same tools |
+| Agent + subagents | Main agent spawning subagents | Context isolation, no checkpoints |
+| Full orchestrator | Coordinator + specialists + handoffs | Complex, multi-phase, different tools |
+
+## 9 Design Principles
+
+1. **Start simple, add complexity when observed** — Don't begin with five specialists. Start with one agent. Add orchestration only for observed failures.
+2. **Define roles by tools, not just instructions** — A reviewer with `edit` tools will eventually edit. Remove tools you don't want used.
+3. **Design explicit handoff contracts** — Define **what** passes (structured format), **how much** (summaries, not raw data), **when** (explicit conditions).
+4. **Set iteration limits early** — Three iterations of implement→review is usually sufficient. Unbounded loops are the most common failure.
+5. **Prefer sequential over parallel by default** — Parallel is faster but harder to debug. Start sequential.
+6. **Keep the orchestrator thin** — Coordinate, don't process. If orchestrator instructions exceed specialist instructions, you're doing too much.
+7. **Plan for failure at every transition** — Every handoff can fail. Define: Retry, Escalate, Skip, or Abort.
+8. **Validate before you build** — Use the Use Case Challenge before investing in multi-agent orchestration.
+9. **Delegate goals, not solutions** — Orchestrator describes desired outcome; sub-agent decides how. Address **both sides**: orchestrator says *what* (goals, constraints, acceptance criteria), sub-agent gets counter-instruction: "Question everything you're told. Make your own decisions." Models naturally micromanage; you must explicitly prevent this.
+
+## Four-Specialist Pattern
+
+| Role | Tools | Model | Output |
+|------|-------|-------|--------|
+| **Researcher** | `read`, `search`, `fetch`, `grep` | Standard (strong reasoning) | Structured summary |
+| **Builder** | `edit`, `read`, `search`, `terminal` | Fast/cheap (Haiku, Flash) | Code changes |
+| **Validator** | `read`, `terminal` | Fast/cheap | Pass/fail + details |
+| **Reviewer** | `read`, `search`, `grep` | Standard (strong judgment) | Prioritized findings |
+
+Start with minimum roles. Add specialists only when you observe role confusion.
+
+## Use Case Challenge — 5 Questions
+
+Before building an orchestrator, answer these:
+
+1. **Complexity**: Can a single agent with good instructions handle this? (If yes, stop.)
+2. **Role definition**: Can you describe each specialist’s role in one sentence? (If vague, decomposition is wrong.)
+3. **Handoff clarity**: What exactly passes between phases — and is it structured?
+4. **Failure handling**: What happens when a specialist fails or produces poor results?
+5. **Value verification**: Does multi-agent measurably improve on single-agent?
+
+## Subagent Mechanics
+
+### `runSubagent` Tool
+
+Enable via frontmatter: `tools: ['agent']` — alias for `runSubagent`.
+
+| Aspect | Behavior |
+|--------|----------|
+| Context isolation | Clean context window—no inherited history |
+| Synchronous | Main agent waits for result |
+| Parallel support | Multiple subagents can run concurrently |
+| Tool inheritance | Inherits main session tools by default |
+| Custom override | Custom agent's tools/model/instructions override |
+| Result format | Only final result returns, not intermediate calls |
+
+### Controlling Subagent Access
+
+```yaml
+agents: ['Red', 'Green', 'Refactor']  # Only these allowed
+agents: ['*']                          # All agents (default)
+agents: []                             # No subagents
+```
+
+**Critical**: Listing an agent in `agents` array overrides `disable-model-invocation: true`.
+
+### Visibility Configuration
+
+| `user-invokable` | `disable-model-invocation` | Result |
+|:---:|:---:|---|
+| true | false | Full access — user and agents |
+| true | true | User-only — protected from auto-invocation |
+| false | false | Subagent-only — hidden from user |
+| false | true | Locked — only via explicit `agents` array |
+
+## Execution Flow Control
+
+| Control | Rule |
+|---------|------|
+| Implement → Review cycle | Max 3 iterations |
+| Research → Plan refinement | Max 2 iterations |
+| Overall workflow | Max 5 specialist invocations |
+| Orchestration depth | Max 1 (orchestrator → specialist, never deeper) |
+| Recursion prevention | `agents: []` + `disable-model-invocation: true` on specialists |
+
+**Error handling:**
+
+| Scenario | Strategy |
+|----------|----------|
+| Empty result | Retry once with diagnostic prompt |
+| Contradicts plan | Present both perspectives to user |
+| Tool failure | Log error, try alternative approach |
+| Context exhausted | Summarize progress, start new session |
+
+## Model Selection for Subagents
+
+| Task Type | Model Tier | Why |
+|-----------|-----------|-----|
+| Architecture, planning | High (Sonnet, Opus) | Strong reasoning needed |
+| Code implementation | Medium (Haiku, Flash) | Well-defined, faster |
+| Linting, formatting | Low (fastest) | Mechanical, rule-based |
+| Research, summarization | Medium-High | Comprehension, not creativity |
+
+Specify `model:` array in specialist frontmatter — VS Code tries each in order for graceful fallback.
+
+## Handoffs vs Subagents
+
+| Aspect | Handoffs | Subagents |
+|--------|----------|-----------|
+| Control | User-driven transitions | Agent-initiated |
+| Context | Full conversation carries forward | Isolated, only summary returns |
+| Visibility | New session with history | Collapsed tool call |
+| Best for | Sequential with review gates | Research, analysis, parallel |
+
+## Named Workflow: Plan → Generate → Implement
+
+| Phase | Model | Output | Context |
+|-------|-------|--------|---------|
+| PLAN | Premium (reasoning) | plan.md | Clear after |
+| GENERATE | Premium (reasoning) | implementation.md | Clear after |
+| IMPLEMENT | Free/fast | Incremental commits | Executes verbatim |
+
+Premium models handle reasoning; free models execute. Context clearing between phases prevents rot.
+
+## Common Pitfalls
+
+1. **Passing too much context** — Include sufficient but focused context in task prompts
+2. **Expecting shared state** — Subagents don't share; main agent must relay
+3. **Unbounded depth** — Use `agents: []` and `disable-model-invocation: true` on specialists
+4. **Ignoring failures** — Check results, retry once, then continue with available info
+5. **Subagents for trivial tasks** — Spawning overhead exists; use tools directly for simple lookups
+6. **Unrestricted `agents` array** — Always specify for production orchestrators
+
+---
+
+## References
+
+- **Internal**: [03.03-agent-hooks-reference.md](./03.03-agent-hooks-reference.md), [02.02-context-window-and-token-optimization.md](./02.02-context-window-and-token-optimization.md)
+- **Sources** (practical examples):
+  - [10.00-how_to_design_orchestrator_prompts.md](../../../03.00-tech/05.02-prompt-engineering/04-howto/10.00-how_to_design_orchestrator_prompts.md) — four-specialist pattern, phase-based coordination (linear, iterative, parallel), use case challenge 5-step methodology, execution flow control (iteration limits, recursion prevention, error handling)
+  - [11.00-how_to_design_subagent_orchestrations.md](../../../03.00-tech/05.02-prompt-engineering/04-howto/11.00-how_to_design_subagent_orchestrations.md) — subagent mechanics, runSubagent tool patterns, context isolation examples
+- **External**: [VS Code Multi-Agent](https://code.visualstudio.com/docs/copilot/copilot-customization)
+
+---
+
+## Version History
+
+| Version | Date | Changes | Author |
+|---------|------|---------|--------|
+| 1.0.0 | 2026-02-22 | Initial version — 9 principles, subagent mechanics, architecture tiers | System |
+| 1.1.0 | 2026-02-22 | Added four-specialist pattern, use case challenge, execution flow control, model selection, expanded delegation principle | System |
+

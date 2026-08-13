@@ -16,8 +16,8 @@ internal class Program
     private static async Task Main(string[] args)
     {
         using var observabilityManager = new ObservabilityManager();
+        LoggerFactoryStaticAccessor.LoggerFactory = observabilityManager.LoggerFactory;
         ILogger logger = observabilityManager.LoggerFactory.CreateLogger(typeof(Program));
-        Observability.LoggerFactory = observabilityManager.LoggerFactory;
 
         AppContext.SetSwitch("Azure.Experimental.EnableActivitySource", true);
 
@@ -32,7 +32,7 @@ internal class Program
 
             services.AddObservability(configuration, hostEnvironment);
             observabilityManager.AttachTo(services);
-            services.TryAddSingleton<IActivityLoggingSampler, NameBasedActivityLoggingSampler>();
+            services.TryAddSingleton<IActivityLoggingFilter, OptionsBasedActivityLoggingFilter>();
 
             services.AddSingleton<Executor>();
 

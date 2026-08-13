@@ -1,0 +1,256 @@
+---
+title: "Agent shared patterns"
+description: "Structural patterns shared across all PE agent files — output minimization, Phase 0 handoff validation, Phase 0.2 input quality challenge, response management, test scenario conventions, and boundary section template. For workflow patterns (escalation, domain expertise, complexity gate), see 02.05."
+version: "2.1.1"
+last_updated: "2026-05-21"
+domain: "prompt-engineering"
+goal: "Define the canonical guidance in this file for prompt engineering workflows"
+scope:
+  covers:
+    - "The rules and patterns documented in this file"
+  excludes:
+    - "Implementation details of consuming artifacts"
+boundaries:
+  - "MUST stay consistent with governance and metadata contracts"
+  - "MUST avoid duplicating canonical guidance from peer context files"
+rationales:
+  - "Structured metadata improves deterministic validation and safe change management"
+---
+
+# Agent Shared Patterns
+
+**Purpose**: Centralizes structural patterns that repeat across all PE agent files. Each pattern is defined once here and referenced by agents via `📖`. This eliminates duplication and ensures consistency when patterns evolve. Behavioral workflow patterns are in `02.05-agent-workflow-patterns.md`.
+
+**Referenced by**: All PE agents in `.github/agents/00.01-pe-consolidated/`, `00.02-pe-granular/`, `00.09-pe-meta/`, and `pe-agents.instructions.md`
+
+---
+
+## Builder-Critical Rule Anchors (Canonical)
+
+This section defines canonical anchors for the builder behaviors most often validated by A-04.
+External consumers SHOULD reference these by category (R-S5 Level 1.5) and keep file-level references only when precision is load-bearing.
+
+| Behavior anchor | Canonical source | Category reference (preferred for external consumers) |
+|---|---|---|
+| pre-change guard | `00.03-metadata-contracts.md` | `governance` |
+| post-change reconciliation | `00.03-metadata-contracts.md` | `governance` |
+| construction invariants | `05.06-pe-strategic-review-criteria.md` | `pe-strategic-review` |
+| deterministic-first checks | `01.04-tool-composition-guide.md` | `tool-alignment` |
+
+Normalization rule:
+
+- If the same normative rule appears in multiple context files, keep one canonical rule owner and convert duplicates to short reference pointers.
+
+---
+
+## Output Minimization Rules
+
+Every agent MUST follow these output rules to prevent context bloat in multi-agent workflows:
+
+- **File analysis**: Extract ONLY relevant information — do NOT reproduce full file contents unless quoting specific lines as evidence
+- **Tool output**: Summarize `grep_search`/`list_dir` findings in reports — do NOT reproduce raw tool output
+- **Handoff output**: Follow the handoff data contract defined by the orchestrator — include only required fields, exclude everything listed as excluded
+
+---
+
+## Phase 0: Handoff Validation Protocol
+
+Every agent MUST validate its input before starting work. The protocol is:
+
+1. Check each required field against the table below
+2. If a field is missing: take the action specified (ASK, INFER, or use DEFAULT)
+3. If >2 required fields are missing: report `Incomplete handoff — missing: [list]` and STOP
+
+**Required fields by builder type** — each builder validates ONLY the fields relevant to its artifact type. Use the table matching your builder role:
+
+#### Agent Builder
+
+| Required Field | Action if Missing |
+|---|---|
+| Target file path | ASK — cannot proceed without |
+| Mode (plan/agent) | INFER from type, ASK if unclear |
+| Tools list | INFER from mode + type, ASK if custom |
+| Boundary definitions | ASK — cannot produce compliant file without |
+| Handoff targets | INFER from triad role, ASK if custom |
+
+#### Context Builder
+
+| Required Field | Action if Missing |
+|---|---|
+| Target file path | ASK — cannot proceed without |
+| Domain | INFER from path prefix, ASK if ambiguous |
+| Topic scope | ASK — cannot determine content boundaries without |
+| Referenced-by consumers | INFER via `grep_search`, ASK if new file |
+
+#### Instruction Builder
+
+| Required Field | Action if Missing |
+|---|---|
+| Target file path | ASK — cannot proceed without |
+| `applyTo` pattern | ASK — cannot determine injection scope without |
+| Severity index rules | INFER from domain, ASK if unclear |
+| Context dependencies | INFER from content references, verify via search |
+
+#### Prompt Builder
+
+| Required Field | Action if Missing |
+|---|---|
+| Target file path | ASK — cannot proceed without |
+| Mode (plan/agent) | INFER from workflow type, ASK if unclear |
+| Template path | Use judgment if not specified |
+| Tools list | INFER from mode + type, ASK if custom |
+| Agent assignment | INFER from handoff targets, ASK if orchestrator |
+
+#### Skill Builder
+
+| Required Field | Action if Missing |
+|---|---|
+| Target file path | ASK — cannot proceed without |
+| Skill name | INFER from path, ASK if new |
+| Workflows scope | ASK — cannot determine coverage without |
+| Progressive disclosure plan | INFER from complexity, ASK if >5 workflows |
+
+#### Template Builder
+
+| Required Field | Action if Missing |
+|---|---|
+| Template purpose/content | ASK — cannot proceed without |
+| Category (output/input/guidance/structure/pattern) | INFER from purpose, ASK if ambiguous |
+| Target consumer(s) | INFER from category, ASK if unclear |
+| Target location | INFER from scope, ASK if ambiguous |
+
+#### Hook Builder
+
+| Required Field | Action if Missing |
+|---|---|
+| Target file path | ASK — cannot proceed without |
+| Lifecycle events | ASK — cannot determine automation scope without |
+| Security policy | DEFAULT to restrictive, ASK if permissive needed |
+| Timeout | DEFAULT to 30s, ASK if custom needed |
+
+#### Prompt Snippet Builder
+
+| Required Field | Action if Missing |
+|---|---|
+| Target file path | ASK — cannot proceed without |
+| Fragment scope | ASK — cannot determine content boundaries without |
+| Expected consumers | INFER via naming convention, ASK if unclear |
+
+#### Meta-Optimizer
+
+| Required Field | Action if Missing |
+|---|---|
+| Audit report path | ASK — cannot proceed without |
+| Scope (files list) | INFER from audit report, ASK if partial scope |
+| Optimization targets | DEFAULT to full validation, ASK if selective |
+
+Each builder validates ONLY its own field table. Researchers and validators override with role-specific fields but still follow the same 3-step protocol.
+
+### Phase 0.2: Input Quality Challenge
+
+After field presence validation, challenge input values against known constraints:
+
+| Check | Rule | Action on fail |
+|---|---|---|
+| Tool count | Must be 3-7 (📖 `01.06-system-parameters.md`) | CLARIFY: "You requested [N] tools. The limit is 3-7. Which should be removed/consolidated?" |
+| Mode alignment | plan→read-only, agent→read+write (📖 `01.04-tool-composition-guide.md`) | BLOCK: Explain mismatch and request correction |
+| Scope breadth | Single-responsibility principle (📖 `01.01-context-engineering-principles.md`) | CHALLENGE: "This scope covers [X, Y, Z]. Consider splitting into focused agents." |
+| Contradictions | Requirements vs boundaries vs tools must be consistent | CLARIFY: "Requirement A says [X] but boundary B says [Y]. Which takes priority?" |
+
+**Researcher-specific additions** — before accepting user requirements:
+- Verify requirements are internally consistent
+- Challenge scope breadth against single-responsibility principle
+- Validate technical claims against context file knowledge
+- If user request contradicts PE conventions → explain convention and ask for confirmation
+
+---
+
+## Response Management Pattern
+
+This section operationalizes Requirement 1 (response management) and Requirement 2 (error recovery) from `04.03-production-readiness-patterns.md`.
+
+Every agent MUST include a Response Management section referencing the production readiness patterns:
+
+```markdown
+## Response Management
+
+**📖 Patterns:** [04.03-production-readiness-patterns.md](04.03-production-readiness-patterns.md)
+```
+
+After the reference, list 2–4 agent-specific scenarios with their expected responses. Use the format:
+
+```markdown
+- **[Trigger condition]** → "[Response message or action]"
+```
+
+Use these shared templates when authoring or validating the section:
+
+- **📖 Agent response scaffold:** [agent.template.md](../../../.github/templates/00.00-prompt-engineering/agent.template.md)
+- **📖 Error-recovery workflow template:** [output-guidance-validation-phases.template.md](../../../.github/templates/00.00-prompt-engineering/output-guidance-validation-phases.template.md)
+
+---
+
+## Test Scenario Structure
+
+Every agent MUST include an embedded test scenario section. Use this structure:
+
+```markdown
+## Test Scenarios
+
+| # | Scenario | Expected Behavior |
+|---|---|---|
+| 1 | [Happy path] | [Full workflow → expected outcome] |
+| 2 | [Common variation] | [Adjusted workflow → expected outcome] |
+| 3 | [Error/edge case] | [Error handling → expected outcome] |
+```
+
+Include 3–5 scenarios per agent. Scenarios MUST cover: happy path, a common variation, and at least one error/edge case.
+
+---
+
+## Boundary Section Template
+
+Every agent MUST include three boundary tiers with minimum items (📖 see `01.06-system-parameters.md`):
+
+| Tier | Emoji | Minimum items |
+|---|---|---|
+| Always Do | ✅ | 3 |
+| Ask First | ⚠️ | 1 |
+| Never Do | 🚫 | 2 |
+
+**Structure:**
+```markdown
+## 🚨 CRITICAL BOUNDARIES
+
+### ✅ Always Do
+- [Agent-specific items]
+- **📖 Output minimization rules**: [02.04-agent-shared-patterns.md](02.04-agent-shared-patterns.md) → Output Minimization Rules
+
+### ⚠️ Ask First
+- [Agent-specific items]
+
+### 🚫 Never Do
+- [Agent-specific items]
+```
+
+---
+
+## References
+
+- **📖 Workflow patterns (escalation, domain expertise, complexity gate)**: [02.05-agent-workflow-patterns.md](02.05-agent-workflow-patterns.md)
+- **📖 Production readiness patterns**: [04.03-production-readiness-patterns.md](04.03-production-readiness-patterns.md)
+- **📖 System parameters (boundary minimums)**: [01.06-system-parameters.md](01.06-system-parameters.md)
+- **📖 Agent instructions**: `.github/instructions/pe-agents.instructions.md`
+
+---
+
+## Version History
+
+| Version | Date | Changes |
+|---------|------|---------|
+| 1.0.0 | 2026-03-15 | Initial version — extracted output minimization, Phase 0, response management, test scenario, and boundary patterns from 26 agent files |
+| 1.2.0 | 2026-03-19 | Added Phase 0.2: Input Quality Challenge — structured input validation and constraint checking beyond field presence |
+| 1.4.0 | 2026-03-19 | Added per-builder-type Phase 0 field tables — replacing generic 6-row table with artifact-specific required fields |
+| 2.0.0 | 2026-03-20 | Split: moved Domain Expertise Activation, Internet Research Validation, Standard Escalation Protocol, Scope Control Convention, Output Schema Compliance, Complexity Gate, Tool Call Discipline to `02.05-agent-workflow-patterns.md` for token budget compliance |
+| 2.1.0 | 2026-05-21 | Added canonical builder-critical anchors for pre-change guard, post-change reconciliation, construction invariants, and deterministic-first checks |
+

@@ -20,8 +20,8 @@ internal class Program
         AppContext.SetSwitch("Azure.Experimental.EnableActivitySource", true);
 
         using var observabilityManager = new ObservabilityManager();
+        LoggerFactoryStaticAccessor.LoggerFactory = observabilityManager.LoggerFactory;
         ILogger logger = observabilityManager.LoggerFactory.CreateLogger(typeof(Program));
-        ObservabilityRegistry.RegisterLoggerFactory(observabilityManager.LoggerFactory);
 
         using var activity = Observability.ActivitySource.StartMethodActivity(logger);
 

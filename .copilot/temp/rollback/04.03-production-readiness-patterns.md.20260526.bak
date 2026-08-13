@@ -1,0 +1,193 @@
+---
+title: "Production readiness patterns"
+description: "6 production-readiness requirements for prompt and agent files — response management, error recovery, embedded tests, token budgets, context rot prevention, and template externalization"
+version: "1.1.1"
+last_updated: "2026-05-21"
+domain: "prompt-engineering"
+authoritative_sources:
+  - url: "https://www.linkedin.com/learning/mastering-ai-agents-the-prompt-engineering-masterclass"
+    description: "Mario Fontana — 6 vital rules for production-ready Copilot agents (response management, error recovery, embedded tests)"
+goal: "Define the canonical guidance in this file for prompt engineering workflows"
+scope:
+  covers:
+    - "The rules and patterns documented in this file"
+  excludes:
+    - "Implementation details of consuming artifacts"
+boundaries:
+  - "MUST stay consistent with governance and metadata contracts"
+  - "MUST avoid duplicating canonical guidance from peer context files"
+rationales:
+  - "Structured metadata improves deterministic validation and safe change management"
+---
+
+# Production Readiness Patterns
+
+**Purpose**: Defines the production-readiness requirements that every prompt and agent file MUST implement to ensure reliable, professional behavior in real-world usage. Based on Mario Fontana's ["6 VITAL Rules for Production-Ready Copilot Agents"](https://www.linkedin.com/learning/mastering-ai-agents-the-prompt-engineering-masterclass).
+
+**Referenced by**: `prompts.instructions.md`, `agents.instructions.md`, `prompt-create-update`, `agent-create-update`, `prompt-builder`, `agent-builder`, `prompt-validator`, `agent-validator`
+
+---
+
+## The 6 Production-Readiness Requirements
+
+### 1. Response management (data gaps handling)
+
+Every prompt and agent MUST define professional responses when information is missing. The model MUST NOT hallucinate, guess, or proceed with invented data.
+
+**Required response template:**
+
+```markdown
+## Response Management
+
+### When information is missing
+I couldn't find [specific] in [locations searched].
+I did find [partial context] in [location].
+Recommendation: [escalation path or alternative]
+```
+
+**Required scenarios** (customize per artifact type):
+- Missing context/information
+- Ambiguous requirements (present options, don't guess)
+- Tool failures (fallback behavior)
+
+**Type-specific scenarios:**
+
+| Artifact type | Additional scenarios |
+|---|---|
+| Orchestration prompts | Agent not found, phase validation failure, handoff ambiguity |
+| Implementation prompts | Pattern not found, file access failure, convention unclear |
+| Analysis prompts | No matches found, contradictory sources, insufficient data |
+| Validation prompts | Missing metadata, ambiguous rules, caching issues |
+
+### 2. Error recovery workflows
+
+Every prompt and agent MUST define fallback behavior for critical tools. The model MUST NOT proceed with invented data or half-implemented changes.
+
+**Required pattern:**
+
+```markdown
+### When tool failures occur
+
+- `semantic_search` returns nothing → Try grep_search, then escalate
+- `read_file` fails → Verify path, report error with context
+- `create_file` fails → Check permissions, suggest manual creation
+```
+
+**Golden rule:** NEVER proceed with invented data or half-implemented changes.
+
+**Standard tool-failure recovery protocol** (all agents MUST follow):
+
+| Failure type | Recovery action |
+|---|---|
+| `read_file` / `grep_search` error | Retry once with adjusted parameters (path, pattern). If still failing: report `Tool failure: [tool] on [target] — [error]` and STOP. |
+| `replace_string_in_file` context mismatch | Re-read the file (may have been concurrently edited), retry with fresh context. If still failing: report mismatch details and STOP. |
+| `create_file` failure | Verify path exists, check permissions. Report error with full path and STOP. |
+| Any tool timeout | Retry once. If still timing out: report `Tool timeout: [tool] — manual intervention required` and STOP. |
+
+### 3. Embedded test scenarios
+
+Every prompt and agent MUST include test scenarios to validate behavioral reliability.
+
+**Minimum counts:**
+- Prompts: 3–5 test scenarios
+- Agents: 3 test scenarios (less complex role)
+
+**Required test types:**
+
+| Test type | Purpose | Pass criteria |
+|---|---|---|
+| **Happy path** | Expected success scenario | Produces correct output |
+| **Ambiguous input** | Vague/conflicting requirements | Asks clarifying questions (doesn't guess) |
+| **Missing context (plausible trap)** | Incomplete data that looks plausible | Detects gap, reports what's missing, doesn't hallucinate |
+| **Out of scope** | Request beyond capability boundaries | Professional refusal with redirect |
+
+**Test scenario template:**
+
+```markdown
+### Test N: [scenario name]
+**Input:** [description]
+**Expected:** [behavior]
+**Pass criteria:** [specific outcomes]
+```
+
+### 4. Token budget compliance
+
+Every prompt and agent MUST respect type-specific token limits to prevent context rot.
+
+**Prompt token budgets:**
+
+| Prompt type | Max tokens |
+|---|---|
+| Simple validation | 500 |
+| Multi-step workflow | 1,500 |
+| Multi-agent orchestrator | 2,500 |
+
+**Agent token budgets:**
+
+| Agent type | Max lines | Max tokens (est.) |
+|---|---|---|
+| Builder/Researcher | 150 | ~2,000 |
+| Validator | 200 | ~2,500 |
+| Meta agent | 250 | ~3,000 |
+
+**Optimization techniques:**
+- Reference context files instead of embedding principles
+- Use imperative language (no filler)
+- Place critical instructions in first 30% of the prompt
+- Factor large prompts into multiple smaller, focused prompts
+- Structure with **static content first, dynamic last** to enable provider prompt caching
+
+**📖 Detailed strategies:** [02.02-context-window-and-token-optimization.md](02.02-context-window-and-token-optimization.md)
+
+### 5. Context rot prevention
+
+Long conversations accumulate context that degrades model accuracy. Every multi-phase prompt MUST implement mitigation:
+
+- Start new chat sessions frequently to reset the context window
+- Transfer only essential information during handoffs
+- Use right-sized models — smaller models hit context thresholds faster
+- Progressive summarization for multi-phase workflows (3–5 phases)
+- File-based isolation for long workflows (5+ phases)
+
+**📖 Detailed patterns:** [02.02-context-window-and-token-optimization.md](02.02-context-window-and-token-optimization.md)
+
+### 6. Template externalization
+
+Any inline content block exceeding 10 lines MUST be externalized to a template file. This prevents token bloat and enables reuse across consumers.
+
+**📖 Complete guidance:** [01.01-context-engineering-principles.md](01.01-context-engineering-principles.md) → Principle 8
+
+**📖 Template design patterns:** [03.07-template-authoring-patterns.md](03.07-template-authoring-patterns.md)
+
+---
+
+## Validation Checklist
+
+Validators MUST verify these requirements against every prompt and agent file:
+
+| # | Requirement | Check | Severity |
+|---|---|---|---|
+| 1 | Response management | Section present with data gap scenarios | HIGH |
+| 2 | Error recovery | Fallback defined for critical tools | HIGH |
+| 3 | Embedded tests | Minimum count met (3–5 prompts, 3 agents) | HIGH |
+| 4 | Token budget | Within type-specific limit | CRITICAL |
+| 5 | Context rot prevention | Multi-phase prompts use summarization or isolation | MEDIUM |
+| 6 | Template externalization | No inline blocks >10 lines | MEDIUM |
+
+---
+
+## References
+
+- **External**: [6 VITAL Rules for Production-Ready Copilot Agents](https://www.linkedin.com/learning/mastering-ai-agents-the-prompt-engineering-masterclass) — Mario Fontana
+- **Internal**: [01.01-context-engineering-principles.md](01.01-context-engineering-principles.md) — Principle 8 (template externalization)
+- **Internal**: [02.02-context-window-and-token-optimization.md](02.02-context-window-and-token-optimization.md) — Token strategies, context rot
+
+---
+
+## Version History
+
+| Version | Date | Changes |
+|---------|------|---------|
+| 1.1.0 | 2026-05-01 | Added standard tool-failure recovery protocol table to Section 2 (error recovery) |
+| 1.0.0 | 2026-03-11 | Initial version — 6 requirements extracted from prompts.instructions.md and prompt-create-update as canonical source |
+

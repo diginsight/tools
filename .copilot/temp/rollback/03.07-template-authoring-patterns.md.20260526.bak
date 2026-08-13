@@ -1,0 +1,235 @@
+---
+title: "Template authoring patterns"
+description: "Design patterns for reusable template files — audience-aware design, placeholder conventions, category selection, composition, and anti-patterns"
+version: "1.1.2"
+last_updated: "2026-05-21"
+domain: "prompt-engineering"
+goal: "Define the canonical guidance in this file for prompt engineering workflows"
+scope:
+  covers:
+    - "The rules and patterns documented in this file"
+  excludes:
+    - "Implementation details of consuming artifacts"
+boundaries:
+  - "MUST stay consistent with governance and metadata contracts"
+  - "MUST avoid duplicating canonical guidance from peer context files"
+rationales:
+  - "Structured metadata improves deterministic validation and safe change management"
+---
+
+# Template Authoring Patterns
+
+**Purpose**: Consolidates design patterns, audience-aware guidelines, and composition strategies for creating effective template files. Complements the auto-loaded `templates.instructions.md` which defines structural rules.
+
+**Referenced by**: `templates.instructions.md`, `prompt-builder`, `agent-builder`, `context-builder`, `skill-builder`, template creation workflows
+
+---
+
+## Audience-Aware Design
+
+Templates serve different consumers. The consumer determines the design approach — get this wrong and the template either confuses users or is unparsable by agents.
+
+### Consumer Detection
+
+Before creating a template, identify the primary consumer:
+
+| If the template is used by... | Consumer type | Design priority |
+|---|---|---|
+| An agent generating a report | **Agent** | Parsability — tables, field markers, minimal prose |
+| A user filling in project details | **User** | Readability — descriptions, examples, natural language |
+| An agent following a workflow | **Agent** | Imperativeness — decision points, phase gates, ordered steps |
+| A user and an agent (e.g., input collected by user, processed by agent) | **Both** | Balance — structured fields with inline descriptions |
+
+### Design Rules by Consumer Type
+
+**Agent-consumed templates** (`output-*`, `guidance-*`, `*-structure`):
+- Use tables over prose for structured data
+- Use `[placeholder]` markers with unambiguous field names
+- Keep descriptions minimal — only when the field name is ambiguous
+- Use consistent section ordering that agents can navigate predictively
+- Severity/status markers: `✅`, `⚠️`, `❌` for quick parsing
+
+**User-consumed templates** (`input-*`, `pattern-*`):
+- Use natural language prompts: "Describe the primary goal..."
+- Include examples for every field that isn't self-explanatory
+- Use checkboxes `[ ]` for required/optional field tracking
+- Group related fields under descriptive subheadings
+
+**Dual-audience templates**:
+- Lead each field with a parsable marker: `**Field Name:** [value]`
+- Follow with a brief description in parentheses or on the next line
+- Use HTML comments for agent-only metadata: `<!-- REQUIRED: min 3 items -->`
+
+---
+
+## Placeholder Conventions
+
+### Syntax
+
+| Syntax | Meaning | Example |
+|---|---|---|
+| `[description]` | User-filled or agent-filled content | `[One-sentence purpose statement]` |
+| `{{variable}}` | System-filled metadata (timestamps, filenames) | `{{ISO-8601 timestamp}}` |
+| `{artifact}` | Naming pattern variable in conventions | `output-{artifact}-{purpose}.template.md` |
+
+### Naming Placeholders
+
+Placeholder text MUST describe the expected content, not the field name:
+
+```markdown
+✅ [One-sentence description of what this file provides]
+✅ [List of 3-7 tools from tool-composition-guide]
+❌ [description]
+❌ [tools]
+```
+
+### Optional vs Required
+
+Mark optional sections explicitly:
+
+```markdown
+## Prerequisites
+<!-- OPTIONAL: Include only if the workflow has prerequisites -->
+[List prerequisites, or remove this section if none]
+```
+
+Required sections use:
+
+```markdown
+## Purpose
+<!-- REQUIRED: Every template must include this -->
+[One-sentence description]
+```
+
+---
+
+## Category Selection
+
+Choose the template category based on its function in the workflow:
+
+```
+What does this template define?
+├─ The format of a generated report or output?
+│  → output-* (e.g., output-prompt-validation-phases.template.md)
+├─ Fields to collect from a user or upstream agent?
+│  → input-* (e.g., input-article-requirements.template.md)
+├─ A step-by-step process for an agent to follow?
+│  → guidance-* (e.g., guidance-input-collection.template.md)
+├─ The scaffold/skeleton of a new artifact?
+│  → *-structure (e.g., promptengineering-context-structure.template.md)
+├─ A reusable prose pattern for content creation?
+│  → pattern-* (e.g., pattern-key-takeaways.template.md)
+└─ None of the above?
+   → Reconsider — templates should fit a category
+```
+
+### Category-Specific Constraints
+
+| Category | Max lines | Consumer | Must include |
+|---|---|---|---|
+| `output-*` | 100 | Agent | All fields the downstream consumer needs |
+| `input-*` | 50 | User | Field descriptions, examples, validation hints |
+| `guidance-*` | 80 | Agent | Decision points, phase gates, ordered steps |
+| `*-structure` | 60 | Agent | Required sections, naming patterns, YAML skeleton |
+| `pattern-*` | 40 | User | Before/after examples, voice guidance |
+
+---
+
+## Template Selection Matrix
+
+Templates are in `.github/templates/00.00-prompt-engineering/`. Use this to find the right one:
+
+**Creating new artifacts:**
+
+| Creating... | Template |
+|---|---|
+| Prompt (any type) | `prompt.template.md` (generic) or type-specific: `prompt-simple-validation`, `prompt-implementation`, `prompt-analysis-only`, `prompt-multi-agent-orchestration` |
+| Agent | `agent.template.md` |
+| Skill | `skill.template.md` |
+| Context file (PE) | `promptengineering-context-structure.template.md` |
+| Instruction file (PE) | `promptengineering-instruction-structure.template.md` |
+
+**Generating output:** `output-{artifact}-{purpose}.template.md` (e.g., `output-prompt-validation-phases`)
+
+**Collecting input:** `guidance-input-collection.template.md`, `guidance-domain-examples.template.md`
+
+---
+
+## Composition Patterns
+
+### Single-Purpose Templates
+
+Each template MUST serve exactly one purpose. If a template grows beyond its category budget, decompose:
+
+```
+❌ output-full-review-report.template.md (200 lines)
+
+✅ output-review-summary.template.md (40 lines)
+✅ output-review-findings.template.md (60 lines)
+✅ output-review-recommendations.template.md (40 lines)
+```
+
+### Consumer Chain Awareness
+
+Templates often participate in multi-step workflows where one template's output feeds another's input. When creating a template, verify the chain:
+
+```
+input-requirements.template.md
+    ↓ (agent fills in during research phase)
+guidance-analysis.template.md
+    ↓ (agent produces output using)
+output-analysis-report.template.md
+    ↓ (downstream consumer reads)
+```
+
+**Chain validation rule**: The output template MUST include every field that the downstream consumer expects. Missing fields cause the next phase to hallucinate or fail.
+
+### Template References in Consumers
+
+Templates are referenced via `📖` markers — never embedded inline:
+
+```markdown
+✅ **📖 Output format:** `.github/templates/00.00-prompt-engineering/output-prompt-validation-phases.template.md`
+
+❌ (embedding 50 lines of template content inline in the agent file)
+```
+
+---
+
+## Anti-Patterns
+
+| Anti-pattern | Fix |
+|---|---|
+| **Embedding inline** | Reference via `📖`, load on-demand |
+| **Generic placeholders** (`[value]`) | Use descriptive: `[One-sentence purpose]` |
+| **Missing consumer comment** | Add `<!-- Used by: ... -->` at top |
+| **Over-sized (>100 lines)** | Split into sub-templates |
+| **Root-level placement** | Move to area subfolder |
+| **Prose in agent templates** | Replace with tables, lists, field markers |
+| **Missing chain validation** | Trace consumer chain end-to-end |
+
+---
+
+## Token Impact
+
+Templates load on-demand — cost incurred only when referenced. Split templates >100 lines into sub-templates. If a template has 5+ consumers, every line saved reduces system-wide token consumption.
+
+**📖 Template lifecycle (create/review/update/deprecate):** [05.02-artifact-lifecycle-management.md](05.02-artifact-lifecycle-management.md)
+
+---
+
+## References
+
+- **📖 Structural rules**: `.github/instructions/pe-templates.instructions.md`
+- **📖 Lifecycle framework**: [05.02-artifact-lifecycle-management.md](05.02-artifact-lifecycle-management.md)
+
+---
+
+## Version History
+
+| Version | Date | Changes |
+|---------|------|--------|
+| 1.0.0 | 2026-03-11 | Initial version |
+| 1.1.0 | 2026-03-11 | Added template selection matrix and composition patterns |
+| 1.2.0 | 2026-03-19 | Compressed: removed template lifecycle section (→05.02), token impact table, verbose creation/review/update checklists |
+

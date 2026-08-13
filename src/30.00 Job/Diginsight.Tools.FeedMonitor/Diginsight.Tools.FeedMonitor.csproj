@@ -63,10 +63,12 @@
     <ProjectReference Include="$(DiginsightCoreSolutionDirectory)Diginsight.Diagnostics.Log4Net\Diginsight.Diagnostics.Log4Net.csproj" Condition="'$(DiginsightCoreDirectImport)' == 'true'" />
     <ProjectReference Include="$(DiginsightCoreSolutionDirectory)Diginsight.Diagnostics\Diginsight.Diagnostics.csproj" Condition="'$(DiginsightCoreDirectImport)' == 'true'" />
     <ProjectReference Include="$(DiginsightCoreSolutionDirectory)Diginsight.Diagnostics.AspNetCore.OpenTelemetry\Diginsight.Diagnostics.AspNetCore.OpenTelemetry.csproj" Condition="'$(DiginsightCoreDirectImport)' == 'true'" />
+    <ProjectReference Include="$(DiginsightCoreSolutionDirectory)Diginsight.Stringify\Diginsight.Stringify.csproj" Condition="'$(DiginsightCoreDirectImport)' == 'true'" />
     <PackageReference Include="Diginsight.Core" Version="$(DiginsightCoreVersion)" Condition="'$(DiginsightCoreDirectImport)' != 'true'" />
     <PackageReference Include="Diginsight.Diagnostics" Version="$(DiginsightCoreVersion)" Condition="'$(DiginsightCoreDirectImport)' != 'true'" />
     <PackageReference Include="Diginsight.Diagnostics.AspNetCore.OpenTelemetry" Version="$(DiginsightCoreVersion)" Condition="'$(DiginsightCoreDirectImport)' != 'true'" />
     <PackageReference Include="Diginsight.Diagnostics.Log4Net" Version="$(DiginsightCoreVersion)" Condition="'$(DiginsightCoreDirectImport)' != 'true'" />
+    <PackageReference Include="Diginsight.Stringify" Version="$(DiginsightCoreVersion)" Condition="'$(DiginsightCoreDirectImport)' != 'true'" />
   </ItemGroup>
 
   <ItemGroup>
@@ -82,8 +84,8 @@
     <PackageReference Include="Azure.Data.Tables" Version="12.*" />
     <PackageReference Include="Azure.Storage.Blobs" Version="12.*" />
 
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.*" />
-    <PackageReference Include="Microsoft.Extensions.Configuration" Version="9.*" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.*" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="10.*" />
     <PackageReference Include="Azure.Identity" Version="1.*" />
     <PackageReference Include="Azure.Storage.DataMovement.Blobs" Version="12.*" />
     
@@ -93,13 +95,12 @@
     <PackageReference Include="Azure.Monitor.Query" Version="1.*" />
     <PackageReference Include="Azure.Storage.Queues" Version="12.*" />
     <PackageReference Include="Microsoft.Azure.WebJobs" Version="3.*" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.*" />
-    <PackageReference Include="Microsoft.Extensions.Http" Version="9.*" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="10.*" />
     <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.*" />
     <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.*" />
     <PackageReference Include="OpenTelemetry.Instrumentation.Http" Version="1.*" />
     <PackageReference Include="OpenTelemetry.Instrumentation.Runtime" Version="1.*" />
-    <PackageReference Include="Scrutor" Version="6.*" />
+    <PackageReference Include="Scrutor" Version="7.*" />
   </ItemGroup>
 
   <ItemGroup>

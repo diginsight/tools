@@ -1,0 +1,130 @@
+[
+  {
+    "File": ".github\\templates\\article-generate-techsession-analysis\\input-techsession-analysis.template.md",
+    "Action": "appended-template_metadata"
+  },
+  {
+    "File": ".github\\templates\\article-generate-techsession-analysis\\techsession-analysis.template.md",
+    "Action": "appended-template_metadata"
+  },
+  {
+    "File": ".github\\templates\\article-generate-techsession-summary\\input-techsession-summary.template.md",
+    "Action": "appended-template_metadata"
+  },
+  {
+    "File": ".github\\templates\\article-generate-techsession-summary\\techsession-summary.template.md",
+    "Action": "appended-template_metadata"
+  },
+  {
+    "File": ".github\\templates\\article-review-for-consistency-gaps-and-extensions\\guidance-input-analysis.template.md",
+    "Action": "appended-template_metadata"
+  },
+  {
+    "File": ".github\\templates\\article-review-for-consistency-gaps-and-extensions\\guidance-research-process.template.md",
+    "Action": "appended-template_metadata"
+  },
+  {
+    "File": ".github\\templates\\article-review-series-for-consistency-gaps-and-extensions\\guidance-architecture-validation.template.md",
+    "Action": "appended-template_metadata"
+  },
+  {
+    "File": ".github\\templates\\article-review-series-for-consistency-gaps-and-extensions\\guidance-discovery-and-inventory.template.md",
+    "Action": "appended-template_metadata"
+  },
+  {
+    "File": ".github\\templates\\article-review-series-for-consistency-gaps-and-extensions\\guidance-research-and-extensions.template.md",
+    "Action": "appended-template_metadata"
+  },
+  {
+    "File": ".github\\templates\\article-review-series-for-consistency-gaps-and-extensions\\output-series-review-phases.template.md",
+    "Action": "appended-template_metadata"
+  },
+  {
+    "File": ".github\\templates\\input-techsession-analysis.template.md",
+    "Action": "appended-template_metadata"
+  },
+  {
+    "File": ".github\\templates\\input-techsession-summary.template.md",
+    "Action": "appended-template_metadata"
+  },
+  {
+    "File": ".github\\templates\\pattern-explanation-intro.md",
+    "Action": "appended-template_metadata"
+  },
+  {
+    "File": ".github\\templates\\pattern-howto-intro.md",
+    "Action": "appended-template_metadata"
+  },
+  {
+    "File": ".github\\templates\\pattern-reference-intro.md",
+    "Action": "appended-template_metadata"
+  },
+  {
+    "File": ".github\\templates\\pattern-tutorial-intro.md",
+    "Action": "appended-template_metadata"
+  },
+  {
+    "File": ".github\\templates\\recording-analysis-template.md",
+    "Action": "appended-template_metadata"
+  },
+  {
+    "File": ".github\\templates\\recording-summary-template.md",
+    "Action": "appended-template_metadata"
+  },
+  {
+    "File": ".github\\templates\\techsession-analysis-template.md",
+    "Action": "appended-template_metadata"
+  },
+  {
+    "File": ".github\\templates\\techsession-summary-template.md",
+    "Action": "appended-template_metadata"
+  },
+  {
+    "File": ".github\\prompts\\00.00-pe-simple\\pe-sim-skill-create-update.prompt.md",
+    "Action": "appended-prompt_metadata"
+  },
+  {
+    "File": ".github\\prompts\\00.09-pe-meta\\pe-meta-option-applicability-matrix.md",
+    "Action": "appended-prompt_metadata"
+  },
+  {
+    "File": ".github\\prompts\\00.09-pe-meta\\pe-meta-option-parser-tests.md",
+    "Action": "appended-prompt_metadata"
+  },
+  {
+    "File": ".github\\prompts\\10.00-application-development\\doc-generate or update reference doc for current class.prompt.md",
+    "Action": "appended-prompt_metadata"
+  },
+  {
+    "File": ".github\\prompts\\10.00-application-development\\issue-generate-analysis-from-current-conversation.prompt.md",
+    "Action": "appended-prompt_metadata"
+  },
+  {
+    "File": ".github\\prompts\\10.00-application-development\\log-ensure-class-logging.prompt.md",
+    "Action": "appended-prompt_metadata"
+  },
+  {
+    "File": ".github\\prompts\\90.00-learning-hub\\learninghub-ensure-kebab-notation.prompt.md",
+    "Action": "appended-prompt_metadata"
+  },
+  {
+    "File": ".github\\prompts\\correlated-topics.prompt.md",
+    "Action": "appended-prompt_metadata"
+  },
+  {
+    "File": ".github\\prompts\\gap-analysis.prompt.md",
+    "Action": "appended-prompt_metadata"
+  },
+  {
+    "File": ".github\\prompts\\logic-analysis.prompt.md",
+    "Action": "appended-prompt_metadata"
+  },
+  {
+    "File": ".github\\prompts\\series-validation.prompt.md",
+    "Action": "appended-prompt_metadata"
+  },
+  {
+    "File": ".github\\prompts\\understandability-review.prompt.md",
+    "Action": "appended-prompt_metadata"
+  }
+]

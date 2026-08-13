@@ -1,0 +1,492 @@
+[
+  {
+    "source": "C:\\dev\\darioairoldi\\Learn\\.github\\agents\\00.02-pe-granular\\pe-gra-agent-builder.agent.md",
+    "changelog": "pe-gra-agent-builder.agent.changelog.md",
+    "entries": 1
+  },
+  {
+    "source": "C:\\dev\\darioairoldi\\Learn\\.github\\agents\\00.02-pe-granular\\pe-gra-agent-researcher.agent.md",
+    "changelog": "pe-gra-agent-researcher.agent.changelog.md",
+    "entries": 1
+  },
+  {
+    "source": "C:\\dev\\darioairoldi\\Learn\\.github\\agents\\00.02-pe-granular\\pe-gra-agent-validator.agent.md",
+    "changelog": "pe-gra-agent-validator.agent.changelog.md",
+    "entries": 2
+  },
+  {
+    "source": "C:\\dev\\darioairoldi\\Learn\\.github\\agents\\00.02-pe-granular\\pe-gra-context-builder.agent.md",
+    "changelog": "pe-gra-context-builder.agent.changelog.md",
+    "entries": 1
+  },
+  {
+    "source": "C:\\dev\\darioairoldi\\Learn\\.github\\agents\\00.02-pe-granular\\pe-gra-prompt-builder.agent.md",
+    "changelog": "pe-gra-prompt-builder.agent.changelog.md",
+    "entries": 1
+  },
+  {
+    "source": "C:\\dev\\darioairoldi\\Learn\\.github\\agents\\00.09-pe-meta\\pe-meta-builder.agent.md",
+    "changelog": "pe-meta-builder.agent.changelog.md",
+    "entries": 5
+  },
+  {
+    "source": "C:\\dev\\darioairoldi\\Learn\\.github\\agents\\00.09-pe-meta\\pe-meta-designer.agent.md",
+    "changelog": "pe-meta-designer.agent.changelog.md",
+    "entries": 3
+  },
+  {
+    "source": "C:\\dev\\darioairoldi\\Learn\\.github\\agents\\00.09-pe-meta\\pe-meta-optimizer.agent.md",
+    "changelog": "pe-meta-optimizer.agent.changelog.md",
+    "entries": 4
+  },
+  {
+    "source": "C:\\dev\\darioairoldi\\Learn\\.github\\agents\\00.09-pe-meta\\pe-meta-researcher.agent.md",
+    "changelog": "pe-meta-researcher.agent.changelog.md",
+    "entries": 5
+  },
+  {
+    "source": "C:\\dev\\darioairoldi\\Learn\\.github\\agents\\00.09-pe-meta\\pe-meta-validator.agent.md",
+    "changelog": "pe-meta-validator.agent.changelog.md",
+    "entries": 13
+  },
+  {
+    "source": "C:\\dev\\darioairoldi\\Learn\\.github\\agents\\01.00-article-writing\\documentation-builder.agent.md",
+    "changelog": "documentation-builder.agent.changelog.md",
+    "entries": 2
+  },
+  {
+    "source": "C:\\dev\\darioairoldi\\Learn\\.github\\agents\\01.00-article-writing\\documentation-researcher.agent.md",
+    "changelog": "documentation-researcher.agent.changelog.md",
+    "entries": 2
+  },
+  {
+    "source": "C:\\dev\\darioairoldi\\Learn\\.github\\agents\\01.00-article-writing\\documentation-validator.agent.md",
+    "changelog": "documentation-validator.agent.changelog.md",
+    "entries": 3
+  },
+  {
+    "source": "C:\\dev\\darioairoldi\\Learn\\.github\\agents\\task-planner.agent.md",
+    "changelog": "task-planner.agent.changelog.md",
+    "entries": 2
+  },
+  {
+    "source": "C:\\dev\\darioairoldi\\Learn\\.github\\prompts\\00.00-pe-simple\\pe-sim-prompt-create-update.prompt.md",
+    "changelog": "pe-sim-prompt-create-update.prompt.changelog.md",
+    "entries": 9
+  },
+  {
+    "source": "C:\\dev\\darioairoldi\\Learn\\.github\\prompts\\00.02-pe-granular\\pe-gra-context-information-create-update.prompt.md",
+    "changelog": "pe-gra-context-information-create-update.prompt.changelog.md",
+    "entries": 11
+  },
+  {
+    "source": "C:\\dev\\darioairoldi\\Learn\\.github\\prompts\\00.02-pe-granular\\pe-gra-context-information-design.prompt.md",
+    "changelog": "pe-gra-context-information-design.prompt.changelog.md",
+    "entries": 12
+  },
+  {
+    "source": "C:\\dev\\darioairoldi\\Learn\\.github\\prompts\\00.02-pe-granular\\pe-gra-instruction-file-create-update.prompt.md",
+    "changelog": "pe-gra-instruction-file-create-update.prompt.changelog.md",
+    "entries": 12
+  },
+  {
+    "source": "C:\\dev\\darioairoldi\\Learn\\.github\\prompts\\00.02-pe-granular\\pe-gra-prompt-review.prompt.md",
+    "changelog": "pe-gra-prompt-review.prompt.changelog.md",
+    "entries": 8
+  },
+  {
+    "source": "C:\\dev\\darioairoldi\\Learn\\.github\\prompts\\00.09-pe-meta\\pe-meta-update.prompt.md",
+    "changelog": "pe-meta-update.prompt.changelog.md",
+    "entries": 13
+  },
+  {
+    "source": "C:\\dev\\darioairoldi\\Learn\\.github\\prompts\\01.00-article-writing\\article-design-and-create.prompt.md",
+    "changelog": "article-design-and-create.prompt.changelog.md",
+    "entries": 1
+  },
+  {
+    "source": "C:\\dev\\darioairoldi\\Learn\\.github\\prompts\\01.00-article-writing\\article-generate-techsession-analysis.prompt.md",
+    "changelog": "article-generate-techsession-analysis.prompt.changelog.md",
+    "entries": 17
+  },
+  {
+    "source": "C:\\dev\\darioairoldi\\Learn\\.github\\prompts\\01.00-article-writing\\article-generate-techsession-summary.prompt.md",
+    "changelog": "article-generate-techsession-summary.prompt.changelog.md",
+    "entries": 11
+  },
+  {
+    "source": "C:\\dev\\darioairoldi\\Learn\\.github\\prompts\\01.00-article-writing\\article-review-for-consistency-gaps-and-extensions.prompt.md",
+    "changelog": "article-review-for-consistency-gaps-and-extensions.prompt.changelog.md",
+    "entries": 14
+  },
+  {
+    "source": "C:\\dev\\darioairoldi\\Learn\\.github\\prompts\\01.00-article-writing\\article-review-series-for-consistency-gaps-and-extensions.prompt.md",
+    "changelog": "article-review-series-for-consistency-gaps-and-extensions.prompt.changelog.md",
+    "entries": 19
+  },
+  {
+    "source": "C:\\dev\\darioairoldi\\Learn\\.github\\prompts\\01.00-article-writing\\documentation-design.prompt.md",
+    "changelog": "documentation-design.prompt.changelog.md",
+    "entries": 1
+  },
+  {
+    "source": "C:\\dev\\darioairoldi\\Learn\\.github\\prompts\\01.00-article-writing\\documentation-review.prompt.md",
+    "changelog": "documentation-review.prompt.changelog.md",
+    "entries": 1
+  },
+  {
+    "source": "C:\\dev\\darioairoldi\\Learn\\.github\\prompts\\90.00-learning-hub\\learninghub-createorupdate-quarto-menu.prompt.md",
+    "changelog": "learninghub-createorupdate-quarto-menu.prompt.changelog.md",
+    "entries": 9
+  },
+  {
+    "source": "C:\\dev\\darioairoldi\\Learn\\.copilot\\context\\00.00-prompt-engineering\\04.05-pe-meta-invocation-gates.md",
+    "changelog": "04.05-pe-meta-invocation-gates.changelog.md",
+    "entries": 1
+  },
+  {
+    "source": "C:\\dev\\darioairoldi\\Learn\\.copilot\\context\\00.00-prompt-engineering\\05.07-pe-meta-dimension-catalog.md",
+    "changelog": "05.07-pe-meta-dimension-catalog.changelog.md",
+    "entries": 2
+  },
+  {
+    "source": "C:\\dev\\darioairoldi\\Learn\\.copilot\\context\\00.00-prompt-engineering\\05.08-pe-meta-type-checklists.md",
+    "changelog": "05.08-pe-meta-type-checklists.changelog.md",
+    "entries": 6
+  },
+  {
+    "source": "C:\\dev\\darioairoldi\\Learn\\.github\\templates\\00.00-prompt-engineering\\agent.template.md",
+    "changelog": "agent.template.changelog.md",
+    "entries": 1
+  },
+  {
+    "source": "C:\\dev\\darioairoldi\\Learn\\.github\\templates\\00.00-prompt-engineering\\guidance-agent-examples.template.md",
+    "changelog": "guidance-agent-examples.template.changelog.md",
+    "entries": 1
+  },
+  {
+    "source": "C:\\dev\\darioairoldi\\Learn\\.github\\templates\\00.00-prompt-engineering\\guidance-context-file.template.md",
+    "changelog": "guidance-context-file.template.changelog.md",
+    "entries": 1
+  },
+  {
+    "source": "C:\\dev\\darioairoldi\\Learn\\.github\\templates\\00.00-prompt-engineering\\guidance-domain-examples.template.md",
+    "changelog": "guidance-domain-examples.template.changelog.md",
+    "entries": 1
+  },
+  {
+    "source": "C:\\dev\\darioairoldi\\Learn\\.github\\templates\\00.00-prompt-engineering\\guidance-input-collection.template.md",
+    "changelog": "guidance-input-collection.template.changelog.md",
+    "entries": 1
+  },
+  {
+    "source": "C:\\dev\\darioairoldi\\Learn\\.github\\templates\\00.00-prompt-engineering\\guidance-instruction-file.template.md",
+    "changelog": "guidance-instruction-file.template.changelog.md",
+    "entries": 1
+  },
+  {
+    "source": "C:\\dev\\darioairoldi\\Learn\\.github\\templates\\00.00-prompt-engineering\\instructions.template.md",
+    "changelog": "instructions.template.changelog.md",
+    "entries": 1
+  },
+  {
+    "source": "C:\\dev\\darioairoldi\\Learn\\.github\\templates\\00.00-prompt-engineering\\output-agent-design-phases.template.md",
+    "changelog": "output-agent-design-phases.template.changelog.md",
+    "entries": 1
+  },
+  {
+    "source": "C:\\dev\\darioairoldi\\Learn\\.github\\templates\\00.00-prompt-engineering\\output-agent-validation-phases.template.md",
+    "changelog": "output-agent-validation-phases.template.changelog.md",
+    "entries": 1
+  },
+  {
+    "source": "C:\\dev\\darioairoldi\\Learn\\.github\\templates\\00.00-prompt-engineering\\output-agent-validation-report.template.md",
+    "changelog": "output-agent-validation-report.template.changelog.md",
+    "entries": 1
+  },
+  {
+    "source": "C:\\dev\\darioairoldi\\Learn\\.github\\templates\\00.00-prompt-engineering\\output-architecture-decision.template.md",
+    "changelog": "output-architecture-decision.template.changelog.md",
+    "entries": 1
+  },
+  {
+    "source": "C:\\dev\\darioairoldi\\Learn\\.github\\templates\\00.00-prompt-engineering\\output-builder-handoff.template.md",
+    "changelog": "output-builder-handoff.template.changelog.md",
+    "entries": 1
+  },
+  {
+    "source": "C:\\dev\\darioairoldi\\Learn\\.github\\templates\\00.00-prompt-engineering\\output-guidance-validation-phases.template.md",
+    "changelog": "output-guidance-validation-phases.template.changelog.md",
+    "entries": 1
+  },
+  {
+    "source": "C:\\dev\\darioairoldi\\Learn\\.github\\templates\\00.00-prompt-engineering\\output-meta-researcher-report.template.md",
+    "changelog": "output-meta-researcher-report.template.changelog.md",
+    "entries": 1
+  },
+  {
+    "source": "C:\\dev\\darioairoldi\\Learn\\.github\\templates\\00.00-prompt-engineering\\output-meta-validator-reports.template.md",
+    "changelog": "output-meta-validator-reports.template.changelog.md",
+    "entries": 2
+  },
+  {
+    "source": "C:\\dev\\darioairoldi\\Learn\\.github\\templates\\00.00-prompt-engineering\\output-pe-management-report.template.md",
+    "changelog": "output-pe-management-report.template.changelog.md",
+    "entries": 1
+  },
+  {
+    "source": "C:\\dev\\darioairoldi\\Learn\\.github\\templates\\00.00-prompt-engineering\\output-prompt-review-report.template.md",
+    "changelog": "output-prompt-review-report.template.changelog.md",
+    "entries": 1
+  },
+  {
+    "source": "C:\\dev\\darioairoldi\\Learn\\.github\\templates\\00.00-prompt-engineering\\output-prompt-validation-phases.template.md",
+    "changelog": "output-prompt-validation-phases.template.changelog.md",
+    "entries": 1
+  },
+  {
+    "source": "C:\\dev\\darioairoldi\\Learn\\.github\\templates\\00.00-prompt-engineering\\output-prompt-validator-report.template.md",
+    "changelog": "output-prompt-validator-report.template.changelog.md",
+    "entries": 1
+  },
+  {
+    "source": "C:\\dev\\darioairoldi\\Learn\\.github\\templates\\00.00-prompt-engineering\\output-researcher-report.template.md",
+    "changelog": "output-researcher-report.template.changelog.md",
+    "entries": 1
+  },
+  {
+    "source": "C:\\dev\\darioairoldi\\Learn\\.github\\templates\\00.00-prompt-engineering\\output-validator-fixes.template.md",
+    "changelog": "output-validator-fixes.template.changelog.md",
+    "entries": 1
+  },
+  {
+    "source": "C:\\dev\\darioairoldi\\Learn\\.github\\templates\\00.00-prompt-engineering\\prompt-analysis-only.template.md",
+    "changelog": "prompt-analysis-only.template.changelog.md",
+    "entries": 1
+  },
+  {
+    "source": "C:\\dev\\darioairoldi\\Learn\\.github\\templates\\00.00-prompt-engineering\\prompt-implementation.template.md",
+    "changelog": "prompt-implementation.template.changelog.md",
+    "entries": 1
+  },
+  {
+    "source": "C:\\dev\\darioairoldi\\Learn\\.github\\templates\\00.00-prompt-engineering\\prompt-multi-agent-orchestration.template.md",
+    "changelog": "prompt-multi-agent-orchestration.template.changelog.md",
+    "entries": 1
+  },
+  {
+    "source": "C:\\dev\\darioairoldi\\Learn\\.github\\templates\\00.00-prompt-engineering\\prompt-simple-validation.template.md",
+    "changelog": "prompt-simple-validation.template.changelog.md",
+    "entries": 1
+  },
+  {
+    "source": "C:\\dev\\darioairoldi\\Learn\\.github\\templates\\00.00-prompt-engineering\\prompt.template.md",
+    "changelog": "prompt.template.changelog.md",
+    "entries": 1
+  },
+  {
+    "source": "C:\\dev\\darioairoldi\\Learn\\.github\\templates\\00.00-prompt-engineering\\promptengineering-context-structure.template.md",
+    "changelog": "promptengineering-context-structure.template.changelog.md",
+    "entries": 1
+  },
+  {
+    "source": "C:\\dev\\darioairoldi\\Learn\\.github\\templates\\00.00-prompt-engineering\\promptengineering-instruction-structure.template.md",
+    "changelog": "promptengineering-instruction-structure.template.changelog.md",
+    "entries": 1
+  },
+  {
+    "source": "C:\\dev\\darioairoldi\\Learn\\.github\\templates\\00.00-prompt-engineering\\reference-tool-catalog.template.md",
+    "changelog": "reference-tool-catalog.template.changelog.md",
+    "entries": 1
+  },
+  {
+    "source": "C:\\dev\\darioairoldi\\Learn\\.github\\templates\\00.00-prompt-engineering\\reference-validation-examples.template.md",
+    "changelog": "reference-validation-examples.template.changelog.md",
+    "entries": 1
+  },
+  {
+    "source": "C:\\dev\\darioairoldi\\Learn\\.github\\templates\\00.00-prompt-engineering\\skill.template.md",
+    "changelog": "skill.template.changelog.md",
+    "entries": 1
+  },
+  {
+    "source": "C:\\dev\\darioairoldi\\Learn\\.github\\templates\\00.00-prompt-engineering\\workflow-design-diagrams.template.md",
+    "changelog": "workflow-design-diagrams.template.changelog.md",
+    "entries": 1
+  },
+  {
+    "source": "C:\\dev\\darioairoldi\\Learn\\.github\\templates\\00.00-prompt-engineering\\workflow-review-diagrams.template.md",
+    "changelog": "workflow-review-diagrams.template.changelog.md",
+    "entries": 1
+  },
+  {
+    "source": "C:\\dev\\darioairoldi\\Learn\\.github\\templates\\01.00-article-writing\\article-generate-techsession-analysis\\input-techsession-analysis.template.md",
+    "changelog": "input-techsession-analysis.template.changelog.md",
+    "entries": 1
+  },
+  {
+    "source": "C:\\dev\\darioairoldi\\Learn\\.github\\templates\\01.00-article-writing\\article-generate-techsession-analysis\\techsession-analysis.template.md",
+    "changelog": "techsession-analysis.template.changelog.md",
+    "entries": 1
+  },
+  {
+    "source": "C:\\dev\\darioairoldi\\Learn\\.github\\templates\\01.00-article-writing\\article-generate-techsession-summary\\input-techsession-summary.template.md",
+    "changelog": "input-techsession-summary.template.changelog.md",
+    "entries": 1
+  },
+  {
+    "source": "C:\\dev\\darioairoldi\\Learn\\.github\\templates\\01.00-article-writing\\article-generate-techsession-summary\\techsession-summary.template.md",
+    "changelog": "techsession-summary.template.changelog.md",
+    "entries": 1
+  },
+  {
+    "source": "C:\\dev\\darioairoldi\\Learn\\.github\\templates\\01.00-article-writing\\article-review-for-consistency-gaps-and-extensions\\guidance-input-analysis.template.md",
+    "changelog": "guidance-input-analysis.template.changelog.md",
+    "entries": 1
+  },
+  {
+    "source": "C:\\dev\\darioairoldi\\Learn\\.github\\templates\\01.00-article-writing\\article-review-for-consistency-gaps-and-extensions\\guidance-research-process.template.md",
+    "changelog": "guidance-research-process.template.changelog.md",
+    "entries": 1
+  },
+  {
+    "source": "C:\\dev\\darioairoldi\\Learn\\.github\\templates\\01.00-article-writing\\article-review-for-consistency-gaps-and-extensions\\output-article-review-phases.template.md",
+    "changelog": "output-article-review-phases.template.changelog.md",
+    "entries": 2
+  },
+  {
+    "source": "C:\\dev\\darioairoldi\\Learn\\.github\\templates\\01.00-article-writing\\article-review-series-for-consistency-gaps-and-extensions\\guidance-architecture-validation.template.md",
+    "changelog": "guidance-architecture-validation.template.changelog.md",
+    "entries": 1
+  },
+  {
+    "source": "C:\\dev\\darioairoldi\\Learn\\.github\\templates\\01.00-article-writing\\article-review-series-for-consistency-gaps-and-extensions\\guidance-discovery-and-inventory.template.md",
+    "changelog": "guidance-discovery-and-inventory.template.changelog.md",
+    "entries": 1
+  },
+  {
+    "source": "C:\\dev\\darioairoldi\\Learn\\.github\\templates\\01.00-article-writing\\article-review-series-for-consistency-gaps-and-extensions\\guidance-research-and-extensions.template.md",
+    "changelog": "guidance-research-and-extensions.template.changelog.md",
+    "entries": 1
+  },
+  {
+    "source": "C:\\dev\\darioairoldi\\Learn\\.github\\templates\\01.00-article-writing\\article-review-series-for-consistency-gaps-and-extensions\\output-series-review-phases.template.md",
+    "changelog": "output-series-review-phases.template.changelog.md",
+    "entries": 1
+  },
+  {
+    "source": "C:\\dev\\darioairoldi\\Learn\\.github\\templates\\01.00-article-writing\\article.template.md",
+    "changelog": "article.template.changelog.md",
+    "entries": 1
+  },
+  {
+    "source": "C:\\dev\\darioairoldi\\Learn\\.github\\templates\\01.00-article-writing\\howto.template.md",
+    "changelog": "howto.template.changelog.md",
+    "entries": 1
+  },
+  {
+    "source": "C:\\dev\\darioairoldi\\Learn\\.github\\templates\\01.00-article-writing\\issue.template.md",
+    "changelog": "issue.template.changelog.md",
+    "entries": 1
+  },
+  {
+    "source": "C:\\dev\\darioairoldi\\Learn\\.github\\templates\\01.00-article-writing\\output-article-design-phases.template.md",
+    "changelog": "output-article-design-phases.template.changelog.md",
+    "entries": 1
+  },
+  {
+    "source": "C:\\dev\\darioairoldi\\Learn\\.github\\templates\\01.00-article-writing\\pattern-explanation-intro.template.md",
+    "changelog": "pattern-explanation-intro.template.changelog.md",
+    "entries": 1
+  },
+  {
+    "source": "C:\\dev\\darioairoldi\\Learn\\.github\\templates\\01.00-article-writing\\pattern-howto-intro.template.md",
+    "changelog": "pattern-howto-intro.template.changelog.md",
+    "entries": 1
+  },
+  {
+    "source": "C:\\dev\\darioairoldi\\Learn\\.github\\templates\\01.00-article-writing\\pattern-reference-intro.template.md",
+    "changelog": "pattern-reference-intro.template.changelog.md",
+    "entries": 1
+  },
+  {
+    "source": "C:\\dev\\darioairoldi\\Learn\\.github\\templates\\01.00-article-writing\\pattern-tutorial-intro.template.md",
+    "changelog": "pattern-tutorial-intro.template.changelog.md",
+    "entries": 1
+  },
+  {
+    "source": "C:\\dev\\darioairoldi\\Learn\\.github\\templates\\01.00-article-writing\\recording-analysis.template.md",
+    "changelog": "recording-analysis.template.changelog.md",
+    "entries": 1
+  },
+  {
+    "source": "C:\\dev\\darioairoldi\\Learn\\.github\\templates\\01.00-article-writing\\recording-summary.template.md",
+    "changelog": "recording-summary.template.changelog.md",
+    "entries": 1
+  },
+  {
+    "source": "C:\\dev\\darioairoldi\\Learn\\.github\\templates\\01.00-article-writing\\techsession-analysis.template.md",
+    "changelog": "techsession-analysis.template.changelog.md",
+    "entries": 1
+  },
+  {
+    "source": "C:\\dev\\darioairoldi\\Learn\\.github\\templates\\01.00-article-writing\\techsession-summary.template.md",
+    "changelog": "techsession-summary.template.changelog.md",
+    "entries": 1
+  },
+  {
+    "source": "C:\\dev\\darioairoldi\\Learn\\.github\\templates\\01.00-article-writing\\tutorial.template.md",
+    "changelog": "tutorial.template.changelog.md",
+    "entries": 1
+  },
+  {
+    "source": "C:\\dev\\darioairoldi\\Learn\\03.00-tech\\05.02-devops\\02.00-troubleshooting\\01-howto-debug-solutions-with-dependencies-as-project-references.md",
+    "changelog": "01-howto-debug-solutions-with-dependencies-as-project-references.changelog.md",
+    "entries": 2
+  },
+  {
+    "source": "C:\\dev\\darioairoldi\\Learn\\03.00-tech\\40.00-technical-writing\\00-foundations-of-technical-documentation.md",
+    "changelog": "00-foundations-of-technical-documentation.changelog.md",
+    "entries": 1
+  },
+  {
+    "source": "C:\\dev\\darioairoldi\\Learn\\03.00-tech\\40.00-technical-writing\\05-validation-and-quality-assurance.md",
+    "changelog": "05-validation-and-quality-assurance.changelog.md",
+    "entries": 2
+  },
+  {
+    "source": "C:\\dev\\darioairoldi\\Learn\\03.00-tech\\40.00-technical-writing\\07-ai-enhanced-documentation-writing.md",
+    "changelog": "07-ai-enhanced-documentation-writing.changelog.md",
+    "entries": 1
+  },
+  {
+    "source": "C:\\dev\\darioairoldi\\Learn\\06.00-idea\\self-updating-article-writing\\20260428.01-vision.v1.md",
+    "changelog": "20260428.01-vision.v1.changelog.md",
+    "entries": 6
+  },
+  {
+    "source": "C:\\dev\\darioairoldi\\Learn\\06.00-idea\\self-updating-article-writing\\20260428.02-vision-appendix-options-analysis.md",
+    "changelog": "20260428.02-vision-appendix-options-analysis.changelog.md",
+    "entries": 1
+  },
+  {
+    "source": "C:\\dev\\darioairoldi\\Learn\\06.00-idea\\self-updating-prompt-engineering\\20260531.01-vision-further-improvements.md",
+    "changelog": "20260531.01-vision-further-improvements.changelog.md",
+    "entries": 1
+  },
+  {
+    "source": "C:\\dev\\darioairoldi\\Learn\\06.00-idea\\self-updating-research\\01.000-vision.v1.md",
+    "changelog": "01.000-vision.v1.changelog.md",
+    "entries": 1
+  },
+  {
+    "source": "C:\\dev\\darioairoldi\\Learn\\06.00-idea\\self-updating-research\\01.000-vision.v1.update.md",
+    "changelog": "01.000-vision.v1.update.changelog.md",
+    "entries": 2
+  },
+  {
+    "source": "C:\\dev\\darioairoldi\\Learn\\06.00-idea\\self-updating-research\\01.001-vision-further-improvements.md",
+    "changelog": "01.001-vision-further-improvements.changelog.md",
+    "entries": 1
+  }
+]

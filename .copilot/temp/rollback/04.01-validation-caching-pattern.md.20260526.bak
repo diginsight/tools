@@ -1,0 +1,145 @@
+---
+title: "Validation caching pattern (7-day rule)"
+description: "Standardized validation metadata management and 7-day caching policy to reduce redundant processing and track validation history"
+version: "2.1.2"
+last_updated: "2026-05-21"
+domain: "prompt-engineering"
+goal: "Define the canonical guidance in this file for prompt engineering workflows"
+scope:
+  covers:
+    - "The rules and patterns documented in this file"
+  excludes:
+    - "Implementation details of consuming artifacts"
+boundaries:
+  - "MUST stay consistent with governance and metadata contracts"
+  - "MUST avoid duplicating canonical guidance from peer context files"
+rationales:
+  - "Structured metadata improves deterministic validation and safe change management"
+---
+
+# Validation Caching Pattern (7-Day Rule)
+
+**Purpose**: Standardized approach for managing validation metadata and caching validation results to reduce redundant processing.
+
+**Referenced by**: All validation prompts (grammar-review, readability-review, structure-validation, fact-checking, logic-analysis, publish-ready), metadata-manager agent
+
+---
+
+## Overview
+
+The Validation Caching Pattern implements a **7-day caching policy** where validation results are stored in metadata and reused if:
+1. Less than 7 days have passed since last validation
+2. File content has not changed since last validation
+
+This pattern reduces token usage, improves execution speed, and provides validation history tracking.
+
+---
+
+📖 **Dual YAML architecture:** `.copilot/context/90.00-learning-hub/02-dual-yaml-metadata.md`
+
+---
+
+## 7-Day Caching Logic
+
+### Decision Tree
+
+```
+Has this validation_type run before?
+├─ NO → Run validation
+└─ YES → Was last_run < 7 days ago AND content_hash unchanged?
+         ├─ YES → Skip validation, report cached result
+         └─ NO → Run validation
+```
+
+### Validation Prompt Workflow
+
+**Phase 1 — Cache Check**: Parse bottom metadata → check `validations.{type}.last_run` + `content_hash` → skip or proceed.
+
+**Phase 2 — Validation Execution**: Run validation-specific logic.
+
+**Phase 3 — Metadata Update**:
+1. Update `validations.{validation_type}` section ONLY
+2. Set `last_run` to ISO 8601 UTC, `status` to result, add type-specific metrics
+3. Update `article_metadata.content_hash` if content changed
+4. **Preserve all other validation sections unchanged**
+
+---
+
+## Metadata Structure Specification
+
+### Bottom Metadata Template (Condensed)
+
+```yaml
+---
+validations:
+  grammar:  # One entry per validation type (grammar, readability, structure, fact_checking, logic_analysis, publish_ready)
+    status: "passed" | "failed" | "warning"
+    last_run: "YYYY-MM-DDTHH:MM:SSZ"  # ISO 8601 UTC
+    model: "claude-sonnet-4.5"
+    issues_found: 0
+  # ... additional validation types follow same pattern with type-specific fields
+
+article_metadata:
+  filename: "example-article.md"
+  last_updated: "YYYY-MM-DDTHH:MM:SSZ"
+  content_hash: "sha256:a3f5b8c2d..."  # SHA-256 of article content (excluding metadata blocks)
+  word_count: 1500
+  created_date: "2025-12-01T00:00:00Z"
+---
+```
+
+### Field Specifications
+
+#### Status Values
+
+| Status | Meaning | Action Required |
+|--------|---------|-----------------|
+| `passed` | No issues found | None, can proceed |
+| `warning` | Minor issues, not blocking | Review recommended |
+| `failed` | Critical issues found | Must fix before publishing |
+
+#### Timestamp Format
+
+**Required**: ISO 8601 UTC format: `YYYY-MM-DDTHH:MM:SSZ`
+
+**Examples**:
+- Γ£à Good: `2025-12-06T10:30:00Z`
+- Γ¥î Bad: `2025-12-06` (missing time)
+- Γ¥î Bad: `12/06/2025 10:30 AM` (not ISO 8601)
+- Γ¥î Bad: `2025-12-06T10:30:00+01:00` (use UTC, not local timezone)
+
+#### Content Hash
+
+- Hash ONLY article content (exclude both YAML blocks)
+- Normalize whitespace before hashing (strip, consistent line endings)
+- Use SHA-256, prefix with `sha256:` for clarity
+
+---
+
+## Key Rules
+
+1. **Always check cache first** — Cache Check → Validation (if invalid) → Metadata Update (if ran)
+2. **Atomic metadata updates** — Parse entire block, update one section, write once. NEVER regex-replace individual sections.
+3. **Handle missing fields** — Default to `not_run` if validation entry doesn't exist
+4. **Normalize before hashing** — Strip whitespace, use `\n` line endings for consistent hashes
+5. **Force re-validation when** — User explicitly requests, content hash mismatches, cache expired (>7 days), validation logic version changes
+
+---
+
+## Version History
+
+| Version | Date | Changes | Author |
+|---------|------|---------|--------|
+| 1.0.0 | 2025-12-10 | Initial version with 7-day caching pattern | System |
+| 2.0.0 | 2026-03-15 | Removed duplicated Dual YAML section and article-specific examples | System |
+| 2.1.0 | 2026-03-19 | Compressed: removed Python pseudocode, troubleshooting, benchmarks; kept decision tree and key rules | System |
+
+---
+
+## References
+
+- **Context Engineering Principles**: `.copilot/context/00.00-prompt-engineering/01.01-context-engineering-principles.md`
+- **Tool Composition Guide**: `.copilot/context/00.00-prompt-engineering/01.04-tool-composition-guide.md`
+- **Global Instructions**: `.github/copilot-instructions.md` (Dual YAML Metadata section)
+- **Validation Prompts**: `.github/prompts/grammar-review.prompt.md`, etc.
+

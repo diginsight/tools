@@ -1,0 +1,155 @@
+---
+title: "Copilot Spaces patterns"
+description: "Decision framework for GitHub Copilot Spaces as persistent cross-project context — content types, when to use, complementary role with repo-level files"
+version: "1.1.0"
+last_updated: "2026-05-26"
+domain: "prompt-engineering"
+authoritative_sources:
+  - url: "https://docs.github.com/en/copilot/using-github-copilot/using-copilot-spaces"
+    description: "GitHub Copilot Spaces — persistent cross-project context, content types, sharing"
+goal: "Define when and how to use Copilot Spaces as persistent cross-project context complementary to repository-level customization"
+scope:
+  covers:
+    - "What Spaces are (persistent, shareable GitHub platform-level context)"
+    - "Space content types (instructions, files/repos, links, uploads, text)"
+    - "Where Spaces fit in customization stack"
+    - "Decision guide for Space vs. repository-level approaches"
+    - "Synchronization and persistence behavior"
+  excludes:
+    - "Repository-level artifact files (see pe-*-instructions.md)"
+    - "Copilot Spaces API details (see GitHub documentation)"
+boundaries:
+  - "MUST use Spaces only for cross-project persistent context"
+  - "MUST NOT duplicate repository-level patterns in Spaces"
+rationales:
+  - "Spaces fill the gap for cross-project knowledge without repo clutter"
+  - "Clear scope separation prevents artifact proliferation"
+---
+
+# Copilot Spaces Patterns
+
+**Purpose**: Decision framework for when and how to use GitHub Copilot Spaces as a persistent context layer that complements repository-level customization files.
+
+**Referenced by**: Agent files using cross-project context, orchestrator prompts referencing external knowledge, `.github/instructions/pe-agents.instructions.md`
+
+---
+
+## What Spaces Are
+
+A **Space** is a persistent, shareable container for context that lives at the **GitHub platform level** — independent of any single repository. Spaces don't replace repository-level files; they fill the gap for cross-project and ephemeral context.
+
+> **Feature status**: Public preview (February 2026). Available with any Copilot license including Free tier.
+
+## Space Content Types
+
+| Content Type | Description | How Copilot Uses It |
+|---|---|---|
+| **Instructions** | Free-text guidance (Space-level `.instructions.md`) | Injected into system prompt |
+| **Files & repos** | Code, docs from GitHub repos | Repo = searched; individual files = loaded fully |
+| **Links** | URLs to PRs, issues, GitHub content | Fetches and references |
+| **Uploads** | Local documents, images, spreadsheets | Loads into context window |
+| **Text** | Pasted notes, transcripts, specs | Loads into context window |
+
+**Key behavior**: Repository sources are **searched** (broad, large-scale). Individual files are **fully loaded** (precise, consistently prioritized). GitHub-based sources stay **automatically in sync** with the `main` branch.
+
+## Where Spaces Fit in the Customization Stack
+
+| Mechanism | Scope | Lives In | Persistence | Best For |
+|---|---|---|---|---|
+| Prompt files | Project | Repository | Versioned | Reusable task templates |
+| Instruction files | Project/path | Repository | Versioned | Coding standards |
+| Agent files | Project | Repository | Versioned | Specialized roles |
+| MCP servers | Project/global | Config files | Session | External tool access |
+| **Copilot Spaces** | **Cross-project** | **GitHub platform** | **Persistent, shareable** | **Curated knowledge, onboarding, ephemeral context** |
+
+## Decision Guide
+
+```
+Does this context belong in version control?
+├── Yes → Use .instructions.md / .prompt.md / .agent.md
+└── No → Does it need team sharing?
+    ├── Yes → Copilot Spaces (org-owned)
+    └── No → Copilot Spaces (personal) or .copilot/context/
+```
+
+**Quick rules:**
+- Code conventions, project rules → `.instructions.md`
+- Reusable tasks → `.prompt.md`
+- External tools → MCP servers
+- Cross-repo knowledge, onboarding, ephemeral docs → **Copilot Spaces**
+
+## Three Combination Patterns
+
+### Pattern 1: Space as Research + Repo as Execution
+Space contains architecture docs, ADRs, design specs → grounds *what to build*.  
+Repository instructions and agents → control *how to build*.
+
+### Pattern 2: Space for Standards + Instructions for Conventions
+Org-wide Space with coding standards, review checklists → baseline.  
+Project `.instructions.md` → repo-specific conventions on top.
+
+### Pattern 3: Space for Onboarding + Agents for Workflows
+"Getting Started" Space curates documents for new devs.  
+Project agents automate daily development workflows.
+
+## IDE Access via MCP
+
+Spaces require the **GitHub MCP server** with explicit toolset configuration:
+
+```json
+{
+  "servers": {
+    "github": {
+      "type": "http",
+      "url": "https://api.githubcopilot.com/mcp/",
+      "headers": {
+        "X-MCP-Toolsets": "default,copilot_spaces"
+      }
+    }
+  }
+}
+```
+
+- **Agent mode only** in IDE (not ask or edit mode)
+- Tools: `get_copilot_space`, `list_copilot_spaces` under MCP Server: github
+- **IDE limitation**: Repository context within a Space isn't available from IDE — attach individual files instead
+
+## Collaboration Roles
+
+| Role | Permissions |
+|---|---|
+| **Viewer** | Use Space, ask questions, view sources |
+| **Editor** | Update sources, name, instructions + Viewer |
+| **Admin** | Update sharing, delete Space + Editor |
+
+Personal Spaces can be shared publicly (view-only), with specific users, or kept private.
+
+## Current Limitations
+
+| Limitation | Workaround |
+|---|---|
+| IDE: no repo context in Spaces | Attach individual files, not repos |
+| Agent mode only (IDE) | Switch to agent mode |
+| No API for automation | Use GitHub web UI |
+| Usage counts toward limits | Choose standard models for high-volume |
+
+## Relationship to Prompt Assembly
+
+Spaces inject context **alongside** the prompt assembly pipeline documented in [01.02-prompt-assembly-architecture.md](./01.02-prompt-assembly-architecture.md). Space instructions act like an additional system prompt layer; Space sources provide grounding context. They don't change the 6-layer system prompt structure — they extend it.
+
+---
+
+## References
+
+- **Internal**: [01.02-prompt-assembly-architecture.md](./01.02-prompt-assembly-architecture.md), [01.03-file-type-decision-guide.md](./01.03-file-type-decision-guide.md)
+- **Source**: `03.00-tech/05.02-prompt-engineering/01-overview/01.01-appendix_copilot_spaces.md`
+- **External**: [GitHub Copilot Spaces](https://docs.github.com/en/copilot/concepts/context/spaces), [Creating Spaces](https://docs.github.com/en/copilot/how-tos/provide-context/use-copilot-spaces/create-copilot-spaces)
+
+---
+
+## Version History
+
+| Version | Date | Changes | Author |
+|---------|------|---------|--------|
+| 1.0.0 | 2026-02-23 | Initial version — decision framework, combination patterns, IDE setup, collaboration | System |
+

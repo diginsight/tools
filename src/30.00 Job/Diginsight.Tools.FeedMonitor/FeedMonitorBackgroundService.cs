@@ -13,6 +13,7 @@ using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json.Linq;
 using System.ComponentModel;
@@ -137,7 +138,7 @@ public class FeedMonitorBackgroundService : BackgroundService
         {
             var feedMonitorOptions = feedMonitorOptionsMonitor.CurrentValue;
 
-            var credentialProvider = new DefaultCredentialProvider(environment);
+            var credentialProvider = new DefaultCredentialProvider(environment, logger);
             var credential = credentialProvider.Get(configuration.GetSection("FeedMonitor"));
 
             var parallelOptions = new ParallelOptions { MaxDegreeOfParallelism = parallelService.MediumConcurrency, CancellationToken = cancellationToken };
@@ -734,7 +735,7 @@ public class FeedMonitorBackgroundService : BackgroundService
 
     private static CosmosClientOptions GetCosmosClientOptions(CosmosDBClientConfiguration cosmosDBClientConfiguration)
     {
-        var logger = Observability.LoggerFactory.CreateLogger<FeedMonitorBackgroundService>();
+        var logger = Observability.LoggerFactory?.CreateLogger<FeedMonitorBackgroundService>() ?? NullLogger<FeedMonitorBackgroundService>.Instance;
         var activity = Observability.ActivitySource.StartMethodActivity(logger, () => new { cosmosDBClientConfiguration });
 
         var cosmosClientOptions = new CosmosClientOptions
@@ -753,7 +754,7 @@ public class FeedMonitorBackgroundService : BackgroundService
 
     private static BlobClientOptions GetBlobClientOptions(BlobClientConfiguration blobClientConfiguration)
     {
-        var logger = Observability.LoggerFactory.CreateLogger<FeedMonitorBackgroundService>();
+        var logger = Observability.LoggerFactory?.CreateLogger<FeedMonitorBackgroundService>() ?? NullLogger<FeedMonitorBackgroundService>.Instance;
         var activity = Observability.ActivitySource.StartMethodActivity(logger, () => new { blobClientConfiguration });
 
         // Note: CustomerProvidedKey and TransferValidation are not configurable via BlobClientOptions
@@ -866,7 +867,7 @@ public class FeedMonitorBackgroundService : BackgroundService
 
     private static TableClientOptions GetTableClientOptions(TableClientConfiguration tableClientConfiguration)
     {
-        var logger = Observability.LoggerFactory.CreateLogger<FeedMonitorBackgroundService>();
+        var logger = Observability.LoggerFactory?.CreateLogger<FeedMonitorBackgroundService>() ?? NullLogger<FeedMonitorBackgroundService>.Instance;
         var activity = Observability.ActivitySource.StartMethodActivity(logger, () => new { tableClientConfiguration });
 
         TableClientOptions tableClientOptions;
@@ -984,7 +985,7 @@ public class FeedMonitorBackgroundService : BackgroundService
             else
             {
                 // Method 3: Azure AD / Managed Identity (DefaultAzureCredential)
-                var credentialProvider = new DefaultCredentialProvider(environment);
+                var credentialProvider = new DefaultCredentialProvider(environment, logger);
                 var credential = credentialProvider.Get(configuration.GetSection("FeedMonitor"));
 
                 cosmosClient = new CosmosClient(cosmosDBClientConfiguration.EndpointUri.ToString(), credential, cosmosClientOptions);

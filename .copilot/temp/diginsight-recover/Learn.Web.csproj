@@ -1,0 +1,49 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>Learn.Web</RootNamespace>
+    <AssemblyName>Learn.Web</AssemblyName>
+    <UserSecretsId>learn-web-blob-proxy</UserSecretsId>
+  </PropertyGroup>
+
+  <!-- Diginsight telemetry (core + diagnostics + AspNetCore/OpenTelemetry + Log4Net) -->
+  <ItemGroup>
+    <ProjectReference Include="$(DiginsightCoreSolutionDirectory)Diginsight.Core\Diginsight.Core.csproj" Condition="'$(DiginsightCoreDirectImport)' == 'true'" />
+    <ProjectReference Include="$(DiginsightCoreSolutionDirectory)Diginsight.Diagnostics\Diginsight.Diagnostics.csproj" Condition="'$(DiginsightCoreDirectImport)' == 'true'" />
+    <ProjectReference Include="$(DiginsightCoreSolutionDirectory)Diginsight.Diagnostics.Log4Net\Diginsight.Diagnostics.Log4Net.csproj" Condition="'$(DiginsightCoreDirectImport)' == 'true'" />
+    <ProjectReference Include="$(DiginsightCoreSolutionDirectory)Diginsight.Diagnostics.AspNetCore.OpenTelemetry\Diginsight.Diagnostics.AspNetCore.OpenTelemetry.csproj" Condition="'$(DiginsightCoreDirectImport)' == 'true'" />
+    <PackageReference Include="Diginsight.Core" Version="$(DiginsightCoreVersion)" Condition="'$(DiginsightCoreDirectImport)' != 'true'" />
+    <PackageReference Include="Diginsight.Diagnostics" Version="$(DiginsightCoreVersion)" Condition="'$(DiginsightCoreDirectImport)' != 'true'" />
+    <PackageReference Include="Diginsight.Diagnostics.Log4Net" Version="$(DiginsightCoreVersion)" Condition="'$(DiginsightCoreDirectImport)' != 'true'" />
+    <PackageReference Include="Diginsight.Diagnostics.AspNetCore.OpenTelemetry" Version="$(DiginsightCoreVersion)" Condition="'$(DiginsightCoreDirectImport)' != 'true'" />
+
+    <PackageReference Include="Diginsight.Components" Version="$(DiginsightComponentsVersion)" Condition="'$(DiginsightComponentsDirectImport)' != 'true'" />
+    <ProjectReference Include="$(DiginsightComponentsSolutionDirectory)Diginsight.Components\Diginsight.Components.csproj" Condition="'$(DiginsightComponentsDirectImport)' == 'true'" />
+    <PackageReference Include="Diginsight.Components.Configuration" Version="$(DiginsightComponentsVersion)" Condition="'$(DiginsightComponentsDirectImport)' != 'true'" />
+    <ProjectReference Include="$(DiginsightComponentsSolutionDirectory)Diginsight.Components.Configuration\Diginsight.Components.Configuration.csproj" Condition="'$(DiginsightComponentsDirectImport)' == 'true'" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Azure.Identity" Version="1.*" />
+    <PackageReference Include="Azure.Core" Version="1.*" />
+    <PackageReference Include="Azure.Extensions.AspNetCore.Configuration.Secrets" Version="1.*" />
+    <PackageReference Include="Azure.Monitor.OpenTelemetry.AspNetCore" Version="1.*" />
+
+    <!-- Blob SDK over HTTPS: forward requests to the configured storage account. -->
+    <PackageReference Include="Azure.Storage.Blobs" Version="12.*" />
+
+    <PackageReference Include="log4net" Version="3.*" />
+
+    <PackageReference Include="OpenTelemetry" Version="1.*" />
+    <PackageReference Include="OpenTelemetry.Exporter.Console" Version="1.*" />
+    <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.*" />
+    <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.*" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.*" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.Http" Version="1.*" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.Runtime" Version="1.*" />
+  </ItemGroup>
+
+</Project>

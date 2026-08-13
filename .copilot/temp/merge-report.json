@@ -1,0 +1,42 @@
+[
+  {
+    "File": ".github\\prompts\\00.02-pe-granular\\pe-gra-context-information-create-update.prompt.md",
+    "Blocks": "prompt_metadata=\"2.0\" | prompt_metadata=\"2.0.0\"",
+    "BaseKey": "prompt_metadata",
+    "FinalKey": "prompt_metadata",
+    "FinalVer": "2.0.0",
+    "FinalDate": "2026-04-28"
+  },
+  {
+    "File": ".github\\prompts\\00.02-pe-granular\\pe-gra-instruction-file-create-update.prompt.md",
+    "Blocks": "prompt_metadata=\"1.1\" | prompt_metadata=\"1.1.0\"",
+    "BaseKey": "prompt_metadata",
+    "FinalKey": "prompt_metadata",
+    "FinalVer": "1.1.0",
+    "FinalDate": "2026-04-28"
+  },
+  {
+    "File": ".copilot\\context\\00.00-prompt-engineering\\04.05-pe-meta-invocation-gates.md",
+    "Blocks": "article_metadata=\"1.0.0\" | context_metadata=\"1.0.0\"",
+    "BaseKey": "article_metadata",
+    "FinalKey": "context_metadata",
+    "FinalVer": "1.0.0",
+    "FinalDate": "2026-05-31"
+  },
+  {
+    "File": ".copilot\\context\\00.00-prompt-engineering\\05.07-pe-meta-dimension-catalog.md",
+    "Blocks": "article_metadata=\"1.5.0\" | context_metadata=\"1.7.0\"",
+    "BaseKey": "article_metadata",
+    "FinalKey": "context_metadata",
+    "FinalVer": "1.7.0",
+    "FinalDate": "2026-06-12"
+  },
+  {
+    "File": ".copilot\\context\\00.00-prompt-engineering\\05.08-pe-meta-type-checklists.md",
+    "Blocks": "article_metadata=\"1.2.0\" | context_metadata=\"1.3.0\"",
+    "BaseKey": "article_metadata",
+    "FinalKey": "context_metadata",
+    "FinalVer": "1.3.0",
+    "FinalDate": "2026-06-12"
+  }
+]

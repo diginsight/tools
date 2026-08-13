@@ -1,0 +1,10 @@
+.copilot\context\00.00-prompt-engineering\04.05-pe-meta-invocation-gates.md
+    [article_metadata="1.0.0" | context_metadata="1.0.0"] -> context_metadata v1.0.0 (2026-05-31)
+.copilot\context\00.00-prompt-engineering\05.07-pe-meta-dimension-catalog.md
+    [article_metadata="1.5.0" | context_metadata="1.7.0"] -> context_metadata v1.7.0 (2026-06-12)
+.copilot\context\00.00-prompt-engineering\05.08-pe-meta-type-checklists.md
+    [article_metadata="1.2.0" | context_metadata="1.3.0"] -> context_metadata v1.3.0 (2026-06-12)
+.github\prompts\00.02-pe-granular\pe-gra-context-information-create-update.prompt.md
+    [prompt_metadata="2.0" | prompt_metadata="2.0.0"] -> prompt_metadata v2.0.0 (2026-04-28)
+.github\prompts\00.02-pe-granular\pe-gra-instruction-file-create-update.prompt.md
+    [prompt_metadata="1.1" | prompt_metadata="1.1.0"] -> prompt_metadata v1.1.0 (2026-04-28)

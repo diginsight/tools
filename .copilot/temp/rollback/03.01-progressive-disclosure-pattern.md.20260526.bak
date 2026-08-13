@@ -1,0 +1,217 @@
+---
+title: "Progressive disclosure pattern for agent skills"
+description: "Three-level loading system for agent skills — discovery, instructions, resources — minimizing context consumption while enabling powerful capabilities"
+version: "1.2.1"
+last_updated: "2026-05-21"
+domain: "prompt-engineering"
+authoritative_sources:
+  - url: "https://code.visualstudio.com/docs/copilot/copilot-customization#_agent-skills"
+    description: "VS Code agent skills — SKILL.md structure, progressive loading, discovery via description"
+goal: "Define the canonical guidance in this file for prompt engineering workflows"
+scope:
+  covers:
+    - "The rules and patterns documented in this file"
+  excludes:
+    - "Implementation details of consuming artifacts"
+boundaries:
+  - "MUST stay consistent with governance and metadata contracts"
+  - "MUST avoid duplicating canonical guidance from peer context files"
+rationales:
+  - "Structured metadata improves deterministic validation and safe change management"
+---
+
+# Progressive Disclosure Pattern for Agent Skills
+
+**Purpose**: Documents the three-level loading system used by Agent Skills to minimize context consumption while enabling powerful capabilities.
+
+**Referenced by**: `.github/instructions/pe-skills.instructions.md`, skill creation workflows
+
+---
+
+## Overview
+
+Progressive disclosure is a design pattern where information is loaded only when needed, reducing initial context consumption and improving AI focus. Agent Skills use this pattern extensively.
+
+## The Three-Level Loading System
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  Level 1: SKILL DISCOVERY (Always Loaded)                       │
+│  ├── name: "webapp-testing"                                     │
+│  └── description: "Automated testing workflow for web apps..."  │
+│      (~50-100 tokens per skill)                                 │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼ (When prompt matches description)
+┌─────────────────────────────────────────────────────────────────┐
+│  Level 2: INSTRUCTIONS LOADING                                  │
+│  └── SKILL.md body content                                      │
+│      (~500-1500 tokens)                                         │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼ (When referenced by Copilot)
+┌─────────────────────────────────────────────────────────────────┐
+│  Level 3: RESOURCE ACCESS                                       │
+│  ├── templates/component.test.js                                │
+│  ├── examples/login-form-tests.js                               │
+│  └── scripts/setup-test-env.sh                                  │
+│      (Loaded only when explicitly needed)                       │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+## Level Details
+
+### Level 1: Skill Discovery
+
+**What loads**: Only YAML frontmatter (`name` + `description`)
+
+**When**: Always—Copilot maintains awareness of all available skills
+
+**Token impact**: ~50-100 tokens per skill (very lightweight)
+
+**Implications**:
+- You can have many skills without context bloat
+- Description quality is critical for accurate activation
+- Poor descriptions cause false activations or missed matches
+
+### Level 2: Instructions Loading
+
+**What loads**: Full SKILL.md body content
+
+**When**: User's prompt semantically matches the skill's description
+
+**Token impact**: ~500-1500 tokens (skill-dependent)
+
+**Implications**:
+- Only triggered by matching prompts
+- Keep body focused and actionable
+- Use progressive detail structure (Quick Start → Standard → Advanced)
+
+### Level 3: Resource Access
+
+**What loads**: Templates, examples, scripts, documentation
+
+**When**: Copilot explicitly references the resource
+
+**Token impact**: Variable (20-150 lines per resource)
+
+**Implications**:
+- Resources never load unless needed
+- Reference resources by relative path in SKILL.md
+- Keep templates minimal—users will expand them
+
+## Token Budget Comparison
+
+| Customization Type | Loading Pattern | Token Impact |
+|--------------------|-----------------|--------------|
+| **Instruction files** | Always (when file matches `applyTo`) | Medium (always in context) |
+| **Agent files** | When agent active | High (full persona loaded) |
+| **Prompt files** | On-demand (user invokes) | Medium (single execution) |
+| **Skills (Level 1)** | Always | Very low (~50-100 tokens) |
+| **Skills (Level 2)** | On-demand | Medium (~500-1500 tokens) |
+| **Skills (Level 3)** | Lazy load | Variable (as needed) |
+
+## Optimizing for Discovery
+
+The `description` field is the **key to effective progressive disclosure**. It determines:
+
+1. **Whether Level 2 ever loads** - Poor description = skill never activates
+2. **False activation rate** - Vague description = activates for wrong prompts
+3. **Discovery accuracy** - Specific keywords help Copilot match intent
+
+### Description Formula
+
+```
+[What it does] + [Technologies involved] + "Use when" + [Specific scenarios]
+```
+
+### Examples
+
+**✅ Good: Specific with trigger scenarios**
+```yaml
+description: >
+  Generate comprehensive test suites for React components using Jest 
+  and React Testing Library. Use when writing unit tests, creating 
+  integration tests, testing user interactions, or validating rendering.
+```
+
+**❌ Bad: Vague, no scenarios**
+```yaml
+description: Helps with testing
+```
+
+### Keyword Density
+
+Include keywords users might type:
+- Technology names: React, Jest, TypeScript, Kubernetes
+- Action verbs: generate, create, debug, configure, deploy
+- Use case phrases: "setting up", "debugging", "reviewing"
+
+## When to Use Skills vs Other Types
+
+Use the progressive disclosure pattern (skills) when:
+
+| Scenario | Use Skill? | Reason |
+|----------|-----------|--------|
+| Cross-platform workflow | ✅ Yes | Skills work in VS Code, CLI, coding agent |
+| Resource-rich task | ✅ Yes | Can include templates, scripts, examples |
+| Always-on coding standards | ❌ No | Use instructions with `applyTo` |
+| Persistent persona | ❌ No | Use agents with tool configuration |
+| Complex tool orchestration | ❌ No | Use agents with handoffs |
+
+## Capacity Guidelines
+
+Each skill adds ~50–100 tokens to every conversation (Level 1). Diminishing returns after ~30–40 skills. 50 skills = ~2,500–5,000 tokens always in context.
+
+**📖 Quantitative budgets per level:** [01.06-system-parameters.md](01.06-system-parameters.md) → Token Budgets
+
+## Advanced Patterns
+
+Structure SKILL.md body with progressive detail: **Quick Reference** (5–10 lines, scanned first) → **Detailed Workflow** (full procedure) → **Advanced Configuration** (links to resource files).
+
+- Reference other skills to avoid duplication
+- Create focused skills per environment rather than one mega-skill
+
+## Anti-Patterns
+
+### 1. Over-Broad Descriptions
+
+**Problem**: Skill activates for unrelated prompts
+
+```yaml
+# ❌ Matches almost everything
+description: General development workflow helper
+```
+
+**Solution**: Be specific about capabilities and use cases
+
+### 2. Mega-Skills
+
+**Problem**: Single skill tries to do everything, loading unnecessary content
+
+```yaml
+# ❌ Too broad
+name: complete-development-workflow
+description: Testing, deployment, review, docs, security, CI/CD...
+```
+
+**Solution**: Create focused, composable skills
+
+### 3. Heavy Level 1 Content
+
+**Problem**: Long descriptions bloat discovery phase
+
+```yaml
+# ❌ Description exceeds 1024 chars
+description: [500-word essay about testing philosophy]
+```
+
+**Solution**: Keep description concise; move details to SKILL.md body
+
+## References
+
+- [VS Code: Agent Skills](https://code.visualstudio.com/docs/copilot/customization/agent-skills) - Official documentation
+- [agentskills.io](https://agentskills.io/) - Open standard specification
+- [06.00-how_to_structure_content_for_copilot_skills.md](../../../03.00-tech/05.02-prompt-engineering/04-howto/06.00-how_to_structure_content_for_copilot_skills.md) — progressive disclosure system examples, complete skill walkthrough (security review), description best practices, resource referencing patterns
+- [01.01-context-engineering-principles.md](./01.01-context-engineering-principles.md) - Core principles including context minimization
+

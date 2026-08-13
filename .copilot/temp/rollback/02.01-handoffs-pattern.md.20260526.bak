@@ -1,0 +1,206 @@
+---
+title: "Handoffs pattern for multi-agent orchestration"
+description: "Agent handoff conventions — single responsibility, send/label modes, intermediary reports, reliability checksum, information flow strategies"
+version: "2.2.1"
+last_updated: "2026-05-21"
+domain: "prompt-engineering"
+authoritative_sources:
+  - url: "https://code.visualstudio.com/docs/copilot/copilot-customization#_custom-agents"
+    description: "VS Code custom agents — subagent orchestration, agent handoffs, send/label modes"
+goal: "Define the canonical guidance in this file for prompt engineering workflows"
+scope:
+  covers:
+    - "The rules and patterns documented in this file"
+  excludes:
+    - "Implementation details of consuming artifacts"
+boundaries:
+  - "MUST stay consistent with governance and metadata contracts"
+  - "MUST avoid duplicating canonical guidance from peer context files"
+rationales:
+  - "Structured metadata improves deterministic validation and safe change management"
+---
+
+# Handoffs Pattern for Multi-Agent Orchestration
+
+**Purpose**: Define patterns for coordinating work between specialized agents in multi-step workflows. This document establishes conventions for agent handoffs, intermediary reports, and workflow composition.
+
+**Referenced by**: `.github/instructions/pe-prompts.instructions.md`, `.github/instructions/pe-agents.instructions.md`, orchestrator prompts
+
+---
+
+## Core Principles
+
+### 1. Single Responsibility Agents
+
+**Principle**: Each agent in a handoff chain MUST have exactly one responsibility.
+
+**Agent Role Specialization**:
+
+| Role | Responsibility | Access Level | Output |
+|------|---------------|--------------|--------|
+| **Researcher** | Gather context, discover patterns | Read-only (`agent: plan`) | Research report |
+| **Builder** | Generate new files from specifications | Write (`agent: agent`) | Created file paths |
+| **Validator** | Check quality, compliance, errors | Read-only (`agent: plan`) | Validation report |
+| **Updater** | Fix identified issues | Write (`agent: agent`) | Updated file paths |
+
+### 2. Explicit Handoff Contracts
+
+**Principle**: Every handoff MUST define what information flows between agents.
+
+**Contract Structure** (YAML frontmatter `handoffs:` array):
+- `label:` — Human-readable phase name
+- `agent:` — Target agent file name
+- `send:` — `true` (send full context) or `false` (start fresh)
+- `prompt:` — Optional handoff instructions
+
+### Understanding `send: true` vs `send: false`
+
+VS Code provides a **binary** handoff mechanism — no selective filtering:
+
+| Setting | Data Transferred | Token Impact |
+|---|---|---|
+| `send: true` | **Entire conversation history** (all prior phases) | High — accumulates across phases |
+| `send: false` | **Nothing automatically** — user must paste context | Minimal (~100 tokens for handoff prompt) |
+
+**Example impact**: Agent A accumulates ~6,200 tokens (request + research + spec + build). With `send: true`, Agent B receives ALL 6,200 + handoff prompt (~6,300 total). With `send: false`, Agent B receives only the handoff prompt (~100 tokens).
+
+**Strategy selection by workflow size:**
+
+| Workflow Size | Strategy | Token Savings |
+|---|---|---|
+| 2–3 phases | Full context (`send: true`) | — (baseline) |
+| 3–5 phases | Progressive summarization | ~52% reduction |
+| 5+ phases | File-based isolation (`.copilot/temp/`) | ~83% reduction |
+
+**See**: [02.02-context-window-and-token-optimization.md](./02.02-context-window-and-token-optimization.md) for detailed flow pattern comparison.
+
+### Reliability Checksum
+
+Before each handoff, validate critical data survives:
+
+- [ ] **Goal Preservation** — refined goal from previous phase intact?
+- [ ] **Scope Boundaries** — IN/OUT scope still clear?
+- [ ] **Tool Requirements** — tool list carried forward?
+- [ ] **Critical Constraints** — boundaries included?
+- [ ] **Success Criteria** — validation criteria defined?
+
+If any fails, re-inject missing context before handoff.
+
+### 3. Intermediary Reports
+
+**Principle**: Use structured text reports (not JSON) between agent phases.
+
+**Why Text Over JSON**:
+- LLMs process natural language more reliably than structured data
+- Semantic structure provides implicit prioritization
+- Creates human-readable checkpoints for review
+- Easier to debug and verify correctness
+
+---
+
+## Handoff Patterns
+
+### Pattern 1: Linear Chain
+
+**Use When**: Tasks have clear sequential dependencies.
+
+```
+Researcher ──→ Builder ──→ Validator
+ (report)      (file)     (validation report)
+```
+
+### Pattern 2: Parallel Research
+
+**Use When**: Multiple independent information sources are needed.
+
+Launch multiple `runSubagent` calls simultaneously, aggregate results, then proceed to builder. Each subagent runs in isolated context.
+
+### Pattern 3: Validation Loop
+
+**Use When**: Quality gates require iteration until passing.
+
+```
+Builder ──→ Validator ──→ Updater ──→ Validator (repeat)
+```
+
+**Standard Fix Loop Protocol** — all orchestrators MUST reference this:
+
+- **Max iterations**: 3 per file
+- **Exit conditions**: All checks pass, user approves with issues, or max iterations reached
+- **Validator → Builder**: Issues-only format: `[SEVERITY] Line [N]: [issue] → [fix instruction]`
+- **Builder → Validator**: Fix confirmation: file path + issues fixed count
+- **Escalation**: After 3 rounds, STOP and present remaining issues to user with recommendation
+
+### Pattern 4: Supervised Handoff
+
+**Use When**: High-stakes operations require human approval.
+
+Insert a **STOP** checkpoint between phases. Present summary of planned changes. Wait for explicit "go ahead" before proceeding. NEVER proceed without user approval.
+
+---
+
+## Intermediary Report Format
+
+### Research Report Structure
+
+Research reports MUST follow the standard template:
+**📖 Template:** `.github/templates/00.00-prompt-engineering/output-researcher-report.template.md`
+
+Research reports MUST include: **Context Summary** (1-2 paragraphs) → **Key Patterns Discovered** (location, usage, relevance per pattern) → **Recommendations** (MUST/SHOULD/AVOID) → **Source References** → **Receiver Context** (instruction file, key context files for the builder) → **Handoff Notes** (for next agent + known constraints).
+
+### Builder Handoff Structure
+
+Builder handoff reports MUST follow the standard template:
+**📖 Template:** `.github/templates/00.00-prompt-engineering/output-builder-handoff.template.md`
+
+Builder handoff reports MUST include: **Operation** (action, file paths, source report) → **Requirements Traceability** (each requirement mapped to implementation status) → **Decisions and Trade-offs** (with rule ID rationale) → **Receiver Context** (governing instruction file, key context files, known limitations).
+
+### Validation Fix Report Structure
+
+Validator fix reports MUST follow the standard template:
+**📖 Template:** `.github/templates/00.00-prompt-engineering/output-validator-fixes.template.md`
+
+Validation fix reports MUST include: **Issue Summary** (severity, line, issue, rule ID, fix instruction, dependencies) → **Fix Priority Order** (dependency-aware sequencing) → **Context for Fixes** (rule references, governing instruction file).
+
+### Validation Report Structure
+
+Validation reports MUST include: **Summary** (status, issue count, severity) → **Checks Performed** (passed ✅ / failed ❌ with issues + fixes) → **Recommended Actions** (for updater agent + user review).
+
+---
+
+## Anti-Patterns
+
+| Anti-Pattern | Problem | Fix |
+|-------------|---------|-----|
+| **Monolithic Agents** | Single agent researches, builds, AND validates | Split into specialized agents with explicit handoffs |
+| **Implicit Context** | Assumes agent B has agent A's context | Use `send: true` or structured report passing |
+| **Missing Checkpoints** | No stopping points for high-risk operations | Insert user approval before destructive operations |
+| **Unbounded Loops** | Validation loop with no exit condition | Maximum iteration count (3) + escalation path |
+
+---
+
+**📖 Subagent mechanics and controls**: [02.03-orchestrator-design-patterns.md](./02.03-orchestrator-design-patterns.md)
+
+---
+
+## References
+
+- **Internal**: [01.01-context-engineering-principles.md](./01.01-context-engineering-principles.md), [01.04-tool-composition-guide.md](./01.04-tool-composition-guide.md), [02.03-orchestrator-design-patterns.md](./02.03-orchestrator-design-patterns.md)
+- **Sources** (practical examples):
+  - [12.00-how_to_manage_information_flow_during_prompt_orchestrations.md](../../../03.00-tech/05.02-prompt-engineering/04-howto/12.00-how_to_manage_information_flow_during_prompt_orchestrations.md) — 5 implementation patterns (full context, progressive summarization, file-based, user-mediated, structured report), agent→agent handoff config with data flow diagrams, communication strategies comparison matrix
+  - [10.00-how_to_design_orchestrator_prompts.md](../../../03.00-tech/05.02-prompt-engineering/04-howto/10.00-how_to_design_orchestrator_prompts.md) — handoff configuration YAML examples
+- **Templates**: `.github/templates/00.00-prompt-engineering/prompt-multi-agent-orchestration.template.md`
+- **External**: [VS Code Copilot Customization](https://code.visualstudio.com/docs/copilot/copilot-customization)
+
+---
+
+## Version History
+
+| Version | Date | Changes | Author |
+|---------|------|---------|--------|
+| 1.0.0 | 2025-12-26 | Initial version | System |
+| 1.1.0 | 2026-02-22 | Added subagent integration section, cross-references | System |
+| 1.2.0 | 2026-02-23 | Added send:true/false data flow, strategy selection, reliability checksum | System |
+| 2.0.0 | 2026-03-15 | Condensed report templates and anti-patterns for budget compliance | System |
+| 2.1.0 | 2026-03-19 | Compressed: removed redundant YAML examples, subagent section (→02.03), implementation checklist; streamlined patterns | System |
+

@@ -1,0 +1,251 @@
+---
+title: "MCP server design patterns"
+description: "MCP architecture, three primitives, transport options, decision framework (hooks vs MCP vs tools), configuration, error handling, and security for GitHub Copilot integrations"
+version: "1.1.1"
+last_updated: "2026-05-21"
+domain: "prompt-engineering"
+authoritative_sources:
+  - url: "https://code.visualstudio.com/docs/copilot/chat/mcp-servers"
+    description: "VS Code MCP servers — configuration, transport, tool integration with Copilot"
+  - url: "https://modelcontextprotocol.io/specification"
+    description: "Model Context Protocol specification — primitives (tools, resources, prompts), transport options"
+goal: "Define the canonical guidance in this file for prompt engineering workflows"
+scope:
+  covers:
+    - "The rules and patterns documented in this file"
+  excludes:
+    - "Implementation details of consuming artifacts"
+boundaries:
+  - "MUST stay consistent with governance and metadata contracts"
+  - "MUST avoid duplicating canonical guidance from peer context files"
+rationales:
+  - "Structured metadata improves deterministic validation and safe change management"
+---
+
+# MCP Server Design Patterns
+
+**Purpose**: Decision framework and implementation patterns for Model Context Protocol (MCP) servers in GitHub Copilot integrations — architecture, primitives, transport, configuration, error handling, and security.
+
+**Referenced by**: `01.04-tool-composition-guide.md`, `01.03-file-type-decision-guide.md`, `03.06-copilot-sdk-integration.md`, `skills.instructions.md`, `hooks.instructions.md`
+
+---
+
+## MCP Architecture Overview
+
+MCP follows a client-server model where the **host application** (VS Code, Copilot CLI, SDK app) connects to one or more **MCP servers** that expose capabilities to the AI model.
+
+```
+Host Application (VS Code / Copilot CLI / SDK)
+    │
+    ├── MCP Client ←→ MCP Server A (local, stdio)
+    │                    ├── Tools (actions)
+    │                    ├── Resources (data)
+    │                    └── Prompts (templates)
+    │
+    └── MCP Client ←→ MCP Server B (remote, SSE/HTTP)
+                         └── Tools, Resources, Prompts
+```
+
+**Key principle**: MCP servers are **stateless service providers** — they expose capabilities but don't control the conversation. The host's agentic loop decides when and how to use them.
+
+---
+
+## Decision Framework: MCP vs Hooks vs Built-in Tools
+
+| Need | Mechanism | Why |
+|------|-----------|-----|
+| Standard file/search/terminal ops | **Built-in tools** | Already available, no config needed |
+| External APIs, databases, persistent state | **MCP server** | Extends capabilities beyond workspace |
+| Deterministic lifecycle automation | **Agent hooks** | Shell commands at specific events, no LLM reasoning |
+| File-specific coding standards | **Instruction files** | Auto-applied via `applyTo` glob |
+| Complex LLM reasoning workflows | **Prompts/agents** | Requires model intelligence |
+
+### When to Build an MCP Server
+
+**Build one when you need:**
+- External data access the AI can't reach via built-in tools (APIs, databases, SaaS platforms)
+- Reusable tool capabilities across multiple projects or clients
+- Stateful operations with managed lifecycle (connections, caches, auth tokens)
+- Cross-platform tool availability (VS Code, CLI, SDK, other MCP-compatible clients)
+
+**Don't build one when:**
+- A built-in tool already covers the use case (file read/write, search, terminal)
+- The task is a one-time automation → use a prompt or agent instead
+- The logic is purely deterministic without external I/O → use hooks instead
+
+---
+
+## The Three MCP Primitives
+
+| Primitive | Purpose | Control | Examples |
+|-----------|---------|---------|----------|
+| **Tools** | Actions the model can invoke | Model-initiated, user-approved | Query database, call API, run computation |
+| **Resources** | Data the client can read | Application-controlled | Config files, logs, database schemas |
+| **Prompts** | Reusable prompt templates | User-initiated | Slash commands, completion templates |
+
+### Tools (Most Common)
+
+Tools are functions the AI model calls during its agentic loop. Each tool MUST define:
+
+```json
+{
+  "name": "query_database",
+  "description": "Executes a read-only SQL query against the project database",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "query": { "type": "string", "description": "SQL SELECT query" }
+    },
+    "required": ["query"]
+  }
+}
+```
+
+**Design rules for tools:**
+- **Descriptive names** — The AI discovers tools by name and description; clarity determines usage quality
+- **Narrow scope** — One action per tool. Prefer `get_user`, `list_users`, `create_user` over a generic `manage_users`
+- **Input validation** — Validate all inputs server-side; the AI generates inputs, which may be malformed
+- **Idempotent reads** — GET-style tools SHOULD be safe to retry
+- **Explicit side effects** — Document in the description if a tool modifies state
+
+### Resources
+
+Resources expose read-only data addressable by URI. Useful for providing context to the AI without creating tools.
+
+```
+resource://config/database → database connection settings
+resource://schema/users → user table schema
+resource://logs/recent → last 50 log entries
+```
+
+**When to use resources vs tools:** Use resources for static or slowly-changing data the AI reads for context. Use tools for actions or dynamic queries.
+
+### Prompts
+
+MCP prompts are server-defined prompt templates. Less commonly used in VS Code Copilot integrations (`.prompt.md` files already cover this). Useful when the same MCP server is consumed by multiple non-VS-Code clients that need consistent prompt patterns.
+
+---
+
+## Transport Configuration
+
+MCP supports three transport mechanisms:
+
+| Transport | Config | Best for | Trade-offs |
+|-----------|--------|----------|------------|
+| **stdio** | `"command"` + `"args"` | Local servers, CLI tools | Simple, fast; single-machine only |
+| **SSE** | `"url"` (HTTP) | Shared/remote servers | Network latency; requires HTTP server |
+| **Streamable HTTP** | `"url"` (HTTP) | Modern remote servers | Replaces SSE; better connection management |
+
+### VS Code Configuration (`mcp.json` or `settings.json`)
+
+**Workspace-level** (`.vscode/mcp.json` — preferred for team sharing):
+
+```json
+{
+  "servers": {
+    "my-server": {
+      "command": "node",
+      "args": ["./src/mcp-server/index.js"],
+      "env": { "DB_URL": "${input:dbUrl}" }
+    }
+  },
+  "inputs": [
+    { "id": "dbUrl", "type": "promptString", "description": "Database URL" }
+  ]
+}
+```
+
+**User-level** (`settings.json` — for personal servers):
+
+```jsonc
+{
+  "mcp": {
+    "servers": {
+      "remote-docs": {
+        "url": "https://docs-mcp.example.com/sse"
+      }
+    }
+  }
+}
+```
+
+### Scoping MCP Tools in Prompts and Agents
+
+Use the `mcp:` prefix in `tools:` YAML frontmatter to restrict which MCP tools are available:
+
+```yaml
+# Only tools from the "my-server" MCP server
+tools: ['mcp: my-server']
+```
+
+📖 **Full tool scoping rules:** [01.04-tool-composition-guide.md](./01.04-tool-composition-guide.md)
+
+---
+
+## Error Handling Patterns
+
+MCP servers MUST handle errors gracefully — the AI model interprets error responses and adjusts its behavior.
+
+| Error Type | Server Response | AI Behavior |
+|------------|----------------|-------------|
+| **Invalid input** | Return error with clear message describing what's wrong | Model retries with corrected input |
+| **Transient failure** | Return error suggesting retry | Model may retry the same call |
+| **Permanent failure** | Return error explaining why it can't work | Model falls back to alternative approach |
+| **Auth failure** | Return specific auth error | Model informs user |
+
+**Rules:**
+- NEVER return raw stack traces — they consume tokens and confuse the model
+- ALWAYS include actionable information in error messages
+- Use MCP's structured error response format, not raw text
+
+---
+
+## Security Considerations
+
+| Risk | Mitigation |
+|------|------------|
+| **Untrusted input** | Validate all tool inputs server-side; never trust AI-generated parameters |
+| **Credential exposure** | Use environment variables or VS Code input prompts (`${input:name}`); never hardcode secrets |
+| **SQL/command injection** | Use parameterized queries; never interpolate AI input into commands |
+| **Excessive permissions** | Apply principle of least privilege; read-only tools SHOULD NOT have write access |
+| **Data exfiltration** | MCP servers SHOULD NOT send workspace data to external services without explicit user consent |
+| **SSRF** | Validate and allowlist any URLs the AI provides as tool parameters |
+
+### MCP Registry-Based Allowlists
+
+As of April 2026, Copilot CLI supports custom registry-based MCP allowlists for organizational governance. This lets administrators define which MCP servers are permitted across an organization, preventing unauthorized tool access.
+
+**Implications for PE artifacts:**
+- MCP servers referenced in prompts/agents SHOULD be on the organization allowlist
+- Plugin-provided MCP servers are implicitly trusted when the plugin is installed
+- Workspace-level MCP servers still require user trust approval at startup
+
+---
+
+## Anti-Patterns
+
+| Anti-Pattern | Problem | Fix |
+|-------------|---------|-----|
+| **God server** | Single MCP server with 20+ tools | Split into focused servers by domain |
+| **Tool overloading** | One tool that does different things based on a `mode` parameter | Separate tools with clear names |
+| **Missing descriptions** | Empty or vague tool descriptions | Write descriptions that explain when and why to use the tool |
+| **Ignoring errors** | Swallowing exceptions, returning empty results | Return structured errors with actionable messages |
+| **Stateful assumptions** | Expecting tools to be called in a specific order | Design each tool to work independently |
+
+---
+
+## References
+
+- **External**: [MCP Specification](https://modelcontextprotocol.io/), [VS Code MCP docs](https://code.visualstudio.com/docs/copilot/chat/mcp-servers), [MCP TypeScript SDK](https://github.com/modelcontextprotocol/typescript-sdk)
+- **Internal**: [01.04-tool-composition-guide.md](./01.04-tool-composition-guide.md), [01.03-file-type-decision-guide.md](./01.03-file-type-decision-guide.md), [03.06-copilot-sdk-integration.md](./03.06-copilot-sdk-integration.md), [03.03-agent-hooks-reference.md](./03.03-agent-hooks-reference.md)
+
+---
+
+## Version History
+
+| Version | Date | Changes |
+|---------|------|---------|
+| 0.1.0 | 2026-03-15 | Placeholder created with stub structure |
+| 1.0.0 | 2026-03-15 | Full content: architecture, decision framework, three primitives, transport, configuration, error handling, security, anti-patterns |
+| 1.1.0 | 2026-04-27 | Added MCP registry-based allowlists for organizational governance | 
+

@@ -1,0 +1,15 @@
+{
+    "hooks": {
+        "PostToolUse": [
+            {
+                "matchers": {
+                    "toolName": "create_file|replace_string_in_file|multi_replace_string_in_file"
+                },
+                "command": "pwsh -NoProfile -File .github/hooks/scripts/pe-file-modification-tracker.ps1",
+                "timeout": 10,
+                "type": "command",
+                "windows": "powershell -NoProfile -ExecutionPolicy Bypass -File .github/hooks/scripts/pe-file-modification-tracker.ps1"
+            }
+        ]
+    }
+}

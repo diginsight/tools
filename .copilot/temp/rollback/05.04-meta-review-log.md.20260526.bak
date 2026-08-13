@@ -1,0 +1,208 @@
+---
+title: "PE meta-review log"
+description: "Audit trail of meta-workflow executions — tracks when each mode was last run, what sources were analyzed, and what changes were applied. Enables staleness detection and 'already reviewed' checks."
+version: "1.3.1"
+last_updated: "2026-05-21"
+domain: "prompt-engineering"
+goal: "Define the canonical guidance in this file for prompt engineering workflows"
+scope:
+  covers:
+    - "The rules and patterns documented in this file"
+  excludes:
+    - "Implementation details of consuming artifacts"
+boundaries:
+  - "MUST stay consistent with governance and metadata contracts"
+  - "MUST avoid duplicating canonical guidance from peer context files"
+rationales:
+  - "Structured metadata improves deterministic validation and safe change management"
+---
+
+# PE Meta-Review Log
+
+**Purpose**: Canonical audit trail for PE system meta-reviews. Records when each meta-workflow mode was executed, what external sources were processed, and what changes resulted. Enables the session-start hook and scheduled review prompts to detect whether a review is overdue or a source has already been analyzed.
+
+**Referenced by**: `pe-staleness-check` hook, `pe-meta-scheduled-review` prompt, `pe-meta-update` prompt, `meta-validator` agent
+
+---
+
+## How to Use This Log
+
+### Reading (staleness detection)
+
+1. Check the `last_updated` date in the YAML frontmatter — if >30 days old, a meta-review is overdue
+2. Find the relevant mode in the review history below — check whether recent external sources have been processed
+3. The session-start hook (`pe-staleness-check.json`) automates step 1 on every session
+
+### Writing (after a meta-review)
+
+After completing a meta-review, append a new entry to the appropriate mode section using this format:
+
+```markdown
+### YYYY-MM-DD — [mode] [scope]
+
+- **Source**: [what triggered or was analyzed]
+- **Dimensions**: [which dimensions were checked]
+- **Findings**: [count] issues ([count] CRITICAL, [count] HIGH, [count] MEDIUM, [count] LOW)
+- **Changes applied**: [brief list of files modified, or "None (plan only)"]
+- **Health score**: [before] → [after] (or "N/A" for first run)
+```
+
+After appending, update the `last_updated` field in the YAML frontmatter to today's date.
+
+---
+
+## Authoritative Sources (curated)
+
+A user-maintained list of trusted external sources. `meta-researcher` MUST consult these sources first before general internet research to improve signal-to-noise ratio. `pe-meta-release-monitor` uses this list to supplement its standard fetch targets.
+
+| # | Source | URL | Type | Last checked | Trust level |
+|---|---|---|---|---|---|
+| 1 | VS Code Copilot Customization docs | `https://code.visualstudio.com/docs/copilot/copilot-customization` | Official docs | 2026-04-27 | High |
+| 2 | GitHub Copilot Extensions docs | `https://docs.github.com/en/copilot` | Official docs | — | High |
+| 3 | Anthropic Prompt Engineering Guide | `https://docs.anthropic.com/en/docs/build-with-claude/prompt-engineering/overview` | Vendor docs | — | High |
+| 4 | OpenAI Prompt Engineering Guide | `https://platform.openai.com/docs/guides/prompt-engineering` | Vendor docs | — | High |
+| 5 | VS Code Release Notes | `https://code.visualstudio.com/updates` | Official docs | 2026-04-27 | High |
+| 6 | GitHub Copilot Changelog | `https://github.blog/changelog/label/copilot/` | Official docs | 2026-04-27 | High |
+| 7 | MCP Specification | `https://modelcontextprotocol.io/specification` | Spec | — | High |
+
+**Maintenance**: Add or remove sources as needed. Update "Last checked" after each `meta-researcher` or `release-monitor` run that consulted the source.
+
+---
+
+## Last Processed Versions
+
+Track the latest external source version that has been fully analyzed. Prevents re-processing the same release notes.
+
+| Source | Last processed version | Date processed |
+|---|---|---|
+| VS Code release notes | 1.117 | 2026-04-27 |
+| GitHub Copilot changelog | April 27, 2026 | 2026-04-27 |
+| VS Code Insiders preview | — | — |
+
+---
+
+## Last Apply-Mode Run File Manifest
+
+Records the `last_updated` date of each PE artifact at the time of the most recent apply-mode run. Used by `--incremental` mode to determine which files have changed since then.
+
+_No apply-mode runs recorded yet — manifest will be populated after the first apply-mode run._
+
+---
+
+## Review History
+
+### Plan-mode runs
+
+#### 2026-03-15 — healthcheck all structure+coherence+references+budgets
+
+- **Source**: Phase 6 end-to-end validation of PE improvement plan (Phases 1-5 completed)
+- **Dimensions**: structure, coherence, references, budgets
+- **Phases executed**: 2R (structure), 3R (coherence), 4R (content/budgets), 8 (report+log)
+- **Findings**: 11 issues (0 CRITICAL, 1 HIGH, 5 MEDIUM, 5 LOW)
+- **Changes applied**: None (healthcheck — report only)
+- **Health score**: 70% (first run — no baseline)
+
+**Structure (Phase 2R):** PASS
+- Builder/validator symmetry: 7 triads + 1 validator-only + 4 meta agents = 26 agents ✓
+- Dependency map accuracy: All 26 agent handoff targets match YAML frontmatter ✓
+- Mode/tool alignment: All plan-mode = read-only, all agent-mode = read+write ✓
+- Cross-references: 50 agent/prompt refs resolved, 114 context refs (all valid) ✓
+- [MEDIUM] ~~Empty file: `03.04-mcp-server-design-patterns.md` = 0 bytes, referenced by 6+ files~~ **RESOLVED 2026-03-15**: Populated with full content (architecture, decision framework, 3 primitives, transport, config, error handling, security, anti-patterns)
+
+**Coherence (Phase 3R):** PASS with 1 HIGH
+- Handoff chains: All verified consistent post-Phase 1 corrections ✓
+- Orchestrator/agent separation: "Thin orchestrator" principle applied ✓
+- [HIGH] Prompt budget ambiguity: `01.06-system-parameters.md` defines single 1,500-token prompt budget without distinguishing orchestrator prompts (241-461 lines) from simple prompts (137-207 lines)
+
+**Budgets (Phase 4R):** 10 violations
+- Context files over 2,500 tokens: `01.04-tool-composition-guide.md` (778 lines, +108%), `04.02` (695, +85%), `04.01` (666, +78%), `01.01-context-engineering-principles.md` (578, +54%), `02.01-handoffs-pattern.md` (450, +20%)
+- Instruction files over 1,500 tokens: `context-files.instructions` (431, +92%), `skills.instructions` (308, +37%), `agents.instructions` (264, +17%)
+- Prompt files: All 15 orchestrators exceed 1,500-token budget but within 2,500-token range the improvement plan used as working target
+- Agent files: All 26 under 375 lines ✓
+- [LOW] `01.06-system-parameters.md` internal inconsistency: Token Budgets table says 2,500 max for context files, Content Length Guidelines says 3,000 max recommended
+
+### Apply-mode runs
+
+#### 2026-04-28 — fullcheck all (current state + internet research)
+
+- **Source**: Current state analysis + VS Code 1.117 release notes + Copilot customization docs
+- **Dimensions**: all (structure, consistency, content)
+- **Phases executed**: 1 (source research), 2 (structure), 3 (consistency), 4 (content), 5 (approval), 6 (apply), 7 (regression), 8 (report+log)
+- **Findings**: 9 issues (1 CRITICAL, 2 HIGH, 4 MEDIUM, 2 LOW)
+- **Changes applied**: 7 changes
+  1. Deleted 9 unprefixed instruction files (duplicate pairs with pe-prefixed versions) — ~10,800 tokens saved per context window
+  2. Deleted 2 unprefixed skill folders (artifact-coherence-check, prompt-engineering-validation) — eliminates non-deterministic discovery
+  3. Added 00.03-metadata-contracts.md to STRUCTURE-README File Index + governance category, fixed file count 29→31, fixed version history typo 18→17 categories
+  4. Bumped pe-meta-researcher and pe-meta-validator to version 1.1.0, last_updated 2026-04-28 (post-change reconciliation for category migration changes)
+  5. copilot-instructions.md — no changes needed (no unprefixed PE instruction refs found)
+  6. Deleted legacy old/ directory from .github/prompts/00.02-pe-granular/
+  7. Documented asymmetric prompt coverage in 05.03-pe-workflow-entry-points.md (hooks/snippets intentionally have only create-update)
+- **Regression test**: PASS — 0 broken capabilities, all handoff chains resolve, all instruction/skill coverage maintained
+- **Health score**: 97% (100 - 0×25 - 0×10 - 0×3 - 0×1 = 100, minus 3 for pre-existing budget violations from 2026-03-15 healthcheck)
+
+#### 2026-04-27 — release-monitor VS Code 1.117 / Copilot April 2026
+
+- **Source**: VS Code 1.117 release notes (Apr 22, 2026), Copilot customization docs (Apr 22, 2026), GitHub Copilot Changelog (through Apr 27, 2026)
+- **Dimensions**: context, instructions
+- **Findings**: 12 PE-relevant features identified, 8 changes applied across 8 files
+- **Changes applied**:
+  - `01.03-file-type-decision-guide.md`: Added Agent Plugins (Preview) — decision flowchart, comparison section
+  - `03.02-model-specific-optimization.md`: Added GPT-5.5, Claude Opus 4.7, BYOK section
+  - `01.02-prompt-assembly-architecture.md`: Added instruction priority hierarchy (Personal > Repo > Org), org instructions GA, agent plugin injection
+  - `03.04-mcp-server-design-patterns.md`: Added MCP registry-based allowlists
+  - `03.06-copilot-sdk-integration.md`: Updated SDK to public preview, added BYOK
+  - `05.03-pe-workflow-entry-points.md`: Added built-in `/create-*` commands section
+  - `pe-instruction-files.instructions.md`: Added `.claude/rules` and configurable paths awareness
+  - `pe-copilot-instructions-file.instructions.md`: Added org instructions priority hierarchy
+- **Health score**: N/A (first release monitor run — baseline established)
+
+### Optimize-mode runs
+
+_No optimize-mode runs recorded yet._
+
+---
+
+## Paradigm Challenge Tracking
+
+Tracks when paradigm challenge phases run during scheduled reviews (every 4th run). Prevents local-optima convergence by periodically questioning the PE architecture.
+
+| Date | Scheduled review # | Challenge ran? | Key findings | Action taken |
+|---|---|---|---|---|
+| — | 0 | — | _No scheduled reviews recorded yet_ | — |
+
+**Next paradigm challenge due at**: scheduled review #4
+
+---
+
+## Override History
+
+Tracks cases where the user overrides a CRITICAL or UNSAFE finding during Phase 5 approval in the meta-update pipeline. Each override is logged here so the next scheduled review can check whether overridden findings have manifested as real problems.
+
+| Date | Finding | Severity | User decision | Rationale (if provided) | Follow-up due | Follow-up result |
+|---|---|---|---|---|---|---|
+| — | _No overrides recorded yet_ | — | — | — | — | — |
+
+**How to use**:
+- **pe-meta-update** appends a row here whenever the user approves a change rated UNSAFE or overrides a CRITICAL finding during Phase 5
+- **pe-meta-scheduled-review** checks this table in Phase 1.3 for entries with blank "Follow-up result" and evaluates whether the overridden issue has manifested
+- After follow-up, update the "Follow-up result" column with the outcome
+
+---
+
+## References
+
+- **📖 Staleness thresholds**: [01.06-system-parameters.md](01.06-system-parameters.md)
+- **📖 Lifecycle stages**: [05.02-artifact-lifecycle-management.md](05.02-artifact-lifecycle-management.md)
+- **📖 Workflow entry points**: [05.03-pe-workflow-entry-points.md](05.03-pe-workflow-entry-points.md)
+- **Hook**: `.github/hooks/pe-staleness-check.json`
+
+---
+
+## Version History
+
+| Version | Date | Changes | Author |
+|---------|------|---------|--------|
+| 1.0.0 | 2026-03-13 | Initial version — log structure, entry format, last-processed-versions tracker | System |
+| 1.1.0 | 2026-03-15 | Added "Authoritative Sources" curated list for improving meta-researcher signal-to-noise ratio. Added "Paradigm Challenge Tracking" section for periodic architecture review. | System |
+| 1.2.0 | 2026-03-15 | Added "Override History" section for dissent logging when user overrides CRITICAL/UNSAFE findings. Enables follow-up tracking in scheduled reviews. | System |
+

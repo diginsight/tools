@@ -1,0 +1,249 @@
+---
+title: "Agent workflow patterns"
+description: "Behavioral workflow patterns shared across PE agents — domain expertise activation, escalation protocol, internet validation, scope control, output schema compliance, complexity gating, and tool call discipline. Split from 02.04 to restore token budget compliance."
+version: "1.0.1"
+last_updated: "2026-05-21"
+domain: "prompt-engineering"
+goal: "Define the canonical guidance in this file for prompt engineering workflows"
+scope:
+  covers:
+    - "The rules and patterns documented in this file"
+  excludes:
+    - "Implementation details of consuming artifacts"
+boundaries:
+  - "MUST stay consistent with governance and metadata contracts"
+  - "MUST avoid duplicating canonical guidance from peer context files"
+rationales:
+  - "Structured metadata improves deterministic validation and safe change management"
+---
+
+# Agent Workflow Patterns
+
+**Purpose**: Centralizes behavioral and workflow patterns used by PE agents during execution phases. Each pattern is defined once here and referenced by agents via `📖`. Complements `02.04-agent-shared-patterns.md` (structural patterns).
+
+**Referenced by**: All PE agents in `.github/agents/00.01-pe-consolidated/`, `00.02-pe-granular/`, `00.09-pe-meta/`, and `pe-agents.instructions.md`
+
+**Canonical ownership note**: Tool alignment and mode-alignment rules are canonical in [01.04-tool-composition-guide.md](01.04-tool-composition-guide.md); this file applies those rules to workflow behavior and escalation.
+
+---
+
+## Domain Expertise Activation (Phase -1)
+
+Before Phase 0, activate domain expertise when the target artifact operates in a domain outside prompt engineering. This is NOT optional for non-PE artifacts — domain activation changes how every subsequent phase operates.
+
+### Step 1: Extract Domain Signals
+
+Identify the target domain from ALL available sources:
+
+| Signal source | What to extract | Example |
+|---|---|---|
+| User requirements | Explicit domain statements | "reverse-engineer Azure infrastructure" |
+| Artifact purpose/description | Implied domain from the task | "infrastructure analysis" → Azure + DevOps |
+| Target folder path | Domain prefix mapping | `02.01-azure/` → Azure domain |
+| Referenced context files | Domain-specific context existence | `.copilot/context/02.01-azure/` exists |
+| Tool selection hints | Domain-specific tools in scope | MCP Azure tools → Azure operations |
+
+### Step 2: Formulate Compound Expertise
+
+Combine signals into a practitioner-level compound expertise. A single label like "Azure expert" is insufficient — use the compound formula:
+
+**Formula**: "As an expert **[methodology role]** specializing in **[domain knowledge]**, with deep understanding of **[judgment criteria]**"
+
+| Task type | Compound expertise example |
+|---|---|
+| Azure infrastructure reverse-engineering | "Expert solution architect for Azure applications, software engineer expert in code-to-infrastructure analysis, with deep understanding of security boundaries and service dependencies" |
+| Article-writing agent creation | "Expert technical writer following MWSG and Diátaxis, with deep understanding of readability metrics, accessibility, and audience calibration" |
+| DevOps pipeline prompt | "Expert DevOps engineer specializing in CI/CD pipeline design, IaC patterns, and deployment risk assessment" |
+
+### Step 3: Integrate with PE Role
+
+Activate and MAINTAIN domain perspective throughout the entire workflow:
+- "For this task, I operate as [compound expertise] while maintaining PE structural discipline"
+- Domain expertise is **persistent** — it informs Phase 0 field validation, Phase 1 research, Phase 2 pattern discovery, and all subsequent phases
+- Do NOT switch back after a single step — the activated expertise enriches every decision
+
+### Step 4: Load Domain Context
+
+Search `.copilot/context/` for domain-specific context files:
+- If domain context exists → load and read through the activated domain lens
+- If domain context doesn't exist → flag gap in research report + work with general LLM domain knowledge
+- Domain context files are READ WITH UNDERSTANDING (what the content means for the domain), not just structurally checked
+
+---
+
+## Internet Research Validation Protocol
+
+When using `fetch_webpage` for external research, apply structured validation instead of subjective assessment. This protocol replaces vague "flag unverifiable" rules with actionable criteria.
+
+### Source Quality Assessment
+
+| Criterion | Pass | Fail |
+|---|---|---|
+| **Authoritativeness** | Official docs, recognized experts, academic papers | Anonymous blogs, forums without verification |
+| **Recency** | Published within 12 months OR covers stable technology | Over 24 months for rapidly evolving topics |
+| **Verifiability** | Claims can be tested or cross-referenced | Opinions without evidence |
+| **Consistency** | Aligns with existing context file knowledge | Contradicts verified context without explanation |
+
+### Validation Steps
+
+1. **Cross-reference**: Check finding against existing context files in `.copilot/context/`
+2. **Source classify**: Assign 📘 Official / 📗 Verified / 📒 Community / 📕 Unverified (per `04-reference-classification.md`)
+3. **Contradiction check**: If finding contradicts context → flag with both sources for user resolution
+4. **Recency check**: Note publication date; flag if >12 months for evolving topics
+5. **Actionability check**: Finding must be actionable (changes a rule, adds capability, fixes gap) — exclude findings that don't lead to a concrete improvement
+
+### Integration Rule
+
+Only integrate findings that pass ALL criteria. Findings that fail any criterion:
+- 📕 Unverified sources → **exclude** from recommendations
+- Contradicts context → **flag** with both sources, don't auto-resolve
+- Not actionable → **exclude** (informational-only findings waste tokens)
+
+---
+
+## Standard Escalation Protocol
+
+When an agent encounters a situation it cannot resolve autonomously, follow this protocol instead of ad-hoc handling. Every agent references this protocol — specific agents may override max attempts for their domain but MUST follow the same action patterns.
+
+| Situation | Action | Max attempts |
+|---|---|---|
+| **Required input missing** | REQUEST from user with specific field list | 2 rounds |
+| **Input contradicts PE conventions** | EXPLAIN convention + ASK for confirmation or correction | 1 round |
+| **External research unverifiable** | FLAG source as 📕 Unverified + PROCEED with caveat in report | N/A |
+| **Builder/validator cycle stalled** | ESCALATE to user with options: accept-with-warnings, manual-fix, redesign | 3 iterations |
+| **Scope too broad** | CHALLENGE with decomposition proposal | 1 challenge |
+| **Context budget exhausted** | SUMMARIZE accumulated context + RECOMMEND new session if >20K tokens | N/A |
+| **Unfamiliar domain** | DECLARE limitation + APPLY domain expertise activation (Phase -1) + REQUEST user domain review | 1 round |
+| **File not found at expected path** | SEARCH for the file via `grep_search`/`file_search` + report actual location or confirm absence | 1 search |
+| **Handoff data incomplete** | REQUEST missing fields from sender (user or orchestrator), list exactly what's needed | 2 rounds |
+
+### Escalation behavior rules
+
+- **NEVER silently assume** — if information is missing, ASK rather than guessing
+- **NEVER loop indefinitely** — after max attempts, STOP and report what was attempted and what remains unresolved
+- **Always explain WHY** — when escalating, state the specific convention/rule/constraint that triggered the escalation
+- **Preserve work done** — when escalating, include all progress made so far so the user or next agent can continue
+
+---
+
+## Scope Control Convention
+
+Orchestrators can restrict researcher capabilities per invocation via handoff data instructions. This allows agents to retain tool capabilities while orchestrators control scope dynamically.
+
+**Pattern**: When an orchestrator wants local-only research (e.g., `--no-external` flag or internal-only audit), it includes the following in the handoff data:
+
+```
+Scope: local-only — do NOT use fetch_webpage
+```
+
+The researcher honors the instruction for that invocation but retains `fetch_webpage` in its tool list. This is preferred over hardcoding tool restrictions — it lets the orchestrator decide per invocation.
+
+**When to use scope control**:
+- Meta-update with `--no-external` flag — restrict to local workspace analysis only
+- Internal consistency audits — external sources would introduce noise
+- Token-constrained sessions — `fetch_webpage` calls are expensive (~5,000-10,000 tokens each)
+
+**When NOT to restrict**:
+- Domain artifact creation — researchers benefit from verifying patterns against authoritative sources
+- Scheduled reviews — detecting external changes requires internet access
+- Gap analysis — external benchmarks improve quality
+
+---
+
+## Output Schema Compliance
+
+Every agent output that feeds a handoff MUST follow these structural guarantees:
+
+### Structure Compliance
+- Follow the assigned output template — do not add, remove, or reorder sections
+- Include ALL required fields — mark empty fields as "N/A" with reason, NEVER omit
+- Use prescribed format for tables, lists, severity tags — do not invent alternatives
+
+### Evidence Grounding
+- Every factual claim MUST cite a source: context file path, file:line, URL, or tool output
+- Citation format: `[source: path/file.md]` or `[source: tool_name → result summary]`
+- NEVER cite files you did not read in this session
+- NEVER cite content you did not find — if not found, state "NOT FOUND in [searched locations]"
+
+### Receiver Verification
+Receivers (builders, validators) MUST spot-check 2+ evidence citations from the sender:
+- Read the cited file/section
+- Verify the claim matches the cited content
+- If mismatch found → flag as EVIDENCE_MISMATCH and escalate per escalation protocol
+
+### Requirement Traceability (Builders)
+Builder agents MUST include a traceability table in their output mapping each research requirement to implementation status:
+
+| # | Research requirement | Status | Implementation location |
+|---|---|---|---|
+| 1 | [Requirement from research report] | ✅ Implemented / ❌ Deferred / ⚠️ Partial | [file:line or section] |
+
+Any requirement marked ❌ Deferred MUST include a documented reason.
+
+### Cross-Handoff Verification (Validators)
+When a research report is available in context, validator agents MUST cross-reference the created file against the research requirements:
+- Every requirement marked ✅ in builder's traceability → verify it exists in the file
+- Any content in the file NOT traceable to a requirement → flag as UNTRACED_CONTENT (potential hallucination)
+- Any requirement marked ❌ Deferred → verify reason is documented
+
+---
+
+## Complexity Gate (Phase 0.5)
+
+After Phase 0 validation and before main workflow phases, assess operation complexity to select the appropriate processing depth. This prevents over-processing simple operations and under-processing complex ones.
+
+### Complexity Assessment
+
+| Signal | Simple | Standard | Complex |
+|---|---|---|---|
+| **Scope** | Single field/section change | New file or multi-section update | Multi-file, multi-dependency |
+| **Consumer count** | 0–2 | 3–5 | 6+ |
+| **Context files needed** | 1–2 | 3–4 | 5+ |
+| **Tool calls expected** | ≤5 | 6–12 | 13+ |
+
+**Classification rule**: Use the HIGHEST complexity signal across all dimensions. If ANY signal is Complex, use the Deep path. If in doubt, default to Standard — never guess Simple.
+
+### Fast Path (Simple operations)
+- Skip consumer impact analysis
+- Skip similar-artifact search (researchers)
+- Load only the governing instruction file (not full context set)
+- Output: abbreviated report (Decision + Specification + Requirements only)
+
+### Standard Path
+- Full workflow as defined in each agent's Process section
+
+### Deep Path (Complex operations)
+- Extended similar-artifact search (5–7 matches vs standard 3–5)
+- Full consumer impact with migration assessment
+- Domain expertise acquisition if cross-domain
+- Additional evidence verification passes
+
+---
+
+## Tool Call Discipline
+
+Minimize tool calls without sacrificing thoroughness:
+
+- **Batch searches**: Use targeted queries with alternation (`pattern1|pattern2`) instead of separate searches
+- **Read large ranges**: Use `read_file` with wide line ranges (50+ lines) instead of multiple small reads
+- **Early termination**: If Phase 0 finds the input is invalid, STOP — don't proceed to load context files
+- **Lazy context loading**: Load context files only when their content is needed by the current phase, not all at once in Phase 1
+- **Parallelize reads**: When multiple independent files need reading, request them together rather than sequentially
+
+---
+
+## References
+
+- **📖 Structural patterns (Phase 0, boundaries, output minimization)**: [02.04-agent-shared-patterns.md](02.04-agent-shared-patterns.md)
+- **📖 Production readiness patterns**: [04.03-production-readiness-patterns.md](04.03-production-readiness-patterns.md)
+- **📖 System parameters (boundary minimums)**: [01.06-system-parameters.md](01.06-system-parameters.md)
+- **📖 Agent instructions**: `.github/instructions/pe-agents.instructions.md`
+
+---
+
+## Version History
+
+| Version | Date | Changes |
+|---------|------|---------|
+| 1.0.0 | 2026-03-20 | Initial version — split from `02.04-agent-shared-patterns.md` to restore token budget compliance. Contains: Domain Expertise Activation, Internet Research Validation Protocol, Standard Escalation Protocol, Scope Control Convention, Output Schema Compliance, Complexity Gate, Tool Call Discipline |
+

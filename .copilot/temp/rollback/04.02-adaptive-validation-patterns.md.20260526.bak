@@ -1,0 +1,236 @@
+---
+title: "Adaptive validation patterns for prompt engineering"
+description: "Challenge-based validation methodology — complexity assessment, use case challenge templates, role validation, workflow reliability testing, boundary actionability"
+version: "2.0.2"
+last_updated: "2026-05-21"
+domain: "prompt-engineering"
+goal: "Define the canonical guidance in this file for prompt engineering workflows"
+scope:
+  covers:
+    - "The rules and patterns documented in this file"
+  excludes:
+    - "Implementation details of consuming artifacts"
+boundaries:
+  - "MUST stay consistent with governance and metadata contracts"
+  - "MUST avoid duplicating canonical guidance from peer context files"
+rationales:
+  - "Structured metadata improves deterministic validation and safe change management"
+---
+
+# Adaptive Validation Patterns for Prompt Engineering
+
+This context file provides detailed patterns, templates, and examples for validating prompt requirements through challenge-based discovery. Use these patterns when creating or updating prompt files to ensure goals, roles, and workflows are reliable and well-scoped.
+
+## Table of Contents
+
+1. [Complexity Assessment Criteria](#complexity-assessment-criteria)
+2. [Use Case Challenge Templates](#use-case-challenge-templates)
+3. [Role Validation Methodology](#role-validation-methodology)
+4. [Workflow Reliability Testing](#workflow-reliability-testing)
+5. [Tool Requirement Mapping](#tool-requirement-mapping)
+6. [Boundary Actionability Validation](#boundary-actionability-validation)
+
+---
+
+## Complexity Assessment Criteria
+
+### Complexity Indicators
+
+| Complexity Level | Indicators | Validation Depth |
+|------------------|------------|------------------|
+| **Simple** | Single clear task, well-defined scope, standard tools | **Quick** (3 use cases, basic role check) |
+| **Moderate** | Multiple objectives, some ambiguity, tool selection unclear | **Standard** (5 use cases, role + workflow check) |
+| **Complex** | Broad scope, multiple roles, novel workflow, >7 tools | **Deep** (7 use cases, full role/workflow/tool analysis) |
+
+### Simple Prompts
+
+✅ Goal has 1-2 clear objectives  
+✅ Role is standard (reviewer, generator, analyzer)  
+✅ Tools are obvious from task description  
+✅ Workflow follows existing patterns  
+**Example:** "Create a prompt for grammar checking"
+
+### Moderate Prompts
+
+⚠️ Goal has 3+ objectives or some ambiguity  
+⚠️ Role requires domain expertise  
+⚠️ Tools need discovery from use cases  
+⚠️ Workflow has some novel phases  
+**Example:** "Create a prompt for reviewing API documentation completeness"
+
+### Complex Prompts
+
+🔴 Goal could be interpreted multiple ways  
+🔴 Role is novel or requires multiple personas  
+🔴 Tools are unclear or >7 needed  
+🔴 Workflow is entirely novel  
+🔴 Multiple handoffs or orchestration needed  
+**Example:** "Create a prompt for modernizing legacy codebases"
+
+---
+
+## Use Case Challenge Templates
+
+### Use Case Template Structure
+
+```markdown
+**Scenario [N]:** [Realistic situation that goal should handle]
+**Test Question:** [Specific question about goal's applicability]
+**Current Goal Guidance:** [What does current goal say to do?]
+**Gap Identified:** [What's missing, ambiguous, or contradictory]
+**Tool Requirement Discovered:** [If scenario reveals need for specific tool]
+**Scope Boundary Discovered:** [If scenario reveals in/out-of-scope question]
+**Refinement Needed:** [Specific change to goal]
+```
+
+📖 **Worked examples:** `.github/templates/00.00-prompt-engineering/reference-validation-examples.template.md`
+
+---
+
+## Role Validation Methodology
+
+### Validation Tests
+
+1. **Authority Test:** Can this role make necessary judgments?
+2. **Expertise Test:** Does role imply required knowledge?
+3. **Specificity Test:** Is role concrete or generic?
+4. **Pattern Search:** Find similar roles in existing prompts
+5. **Refinement:** Adjust role if needed
+
+📖 **Worked examples:** `.github/templates/00.00-prompt-engineering/reference-validation-examples.template.md`
+
+---
+
+## Workflow Reliability Testing
+
+### Failure Mode Analysis Process
+
+1. **For each proposed phase:** Ask "What could go wrong?"
+2. **Identify missing phases:** Input validation, error handling, dependency discovery
+3. **Pattern validation:** Compare against similar prompts in workspace
+4. **Refinement:** Add missing phases, adjust sequence
+
+
+📖 **Worked examples:** `.github/templates/00.00-prompt-engineering/reference-validation-examples.template.md`
+
+---
+
+## Tool Requirement Mapping
+
+### Phase → Tool Mapping Process
+
+1. **For each phase:** What capabilities are needed?
+2. **Cross-reference:** `.copilot/context/00.00-prompt-engineering/01.04-tool-composition-guide.md`
+3. **Validate count:** 3-7 tools is optimal (>7 causes tool clash)
+4. **Verify alignment:** agent mode matches tools (plan → read-only, agent → write)
+
+📖 **Worked examples:** `.github/templates/00.00-prompt-engineering/reference-validation-examples.template.md`
+
+---
+
+## Boundary Actionability Validation
+
+### Validation Process
+
+1. **For each boundary:** Can AI determine compliance?
+2. **Refine vague boundaries:** Make specific and testable
+3. **Ensure all three tiers populated:** Always Do / Ask First / Never Do
+4. **Check coverage:** Do boundaries prevent failure modes identified in workflow testing?
+
+
+📖 **Worked examples:** `.github/templates/00.00-prompt-engineering/reference-validation-examples.template.md`
+
+---
+
+## Quick Reference: Validation Decision Trees
+
+### Should I Ask User for Clarification?
+
+```
+Is goal clear and testable across all use cases?
+├─ YES → Proceed to role validation
+└─ NO → How severe is the ambiguity?
+    ├─ CRITICAL (multiple interpretations, different tool sets)
+    │   └─ BLOCK: Ask user to choose interpretation
+    ├─ HIGH (affects scope or major workflow phases)
+    │   └─ ASK: Present options with implications
+    └─ MEDIUM (minor edge case handling)
+        └─ PROPOSE: Suggest refinement, proceed if approved
+```
+
+### Should I Split This Prompt?
+
+```
+Does goal require >7 tools OR multiple distinct expertise areas?
+├─ YES → Consider splitting
+│   ├─ Different roles needed? → Split by role (orchestrator pattern)
+│   ├─ Phases independent? → Split by phase (linear handoff)
+│   └─ Scale issue? → Split by batch processing
+└─ NO → Keep unified, optimize tool selection
+```
+
+### What Validation Depth Should I Use?
+
+```
+Assess complexity indicators:
+├─ 1-2 objectives, standard role, obvious tools → SIMPLE (3 use cases)
+├─ 3+ objectives, domain expertise, tool discovery needed → MODERATE (5 use cases)
+└─ Broad scope, novel role, >7 tools, novel workflow → COMPLEX (7 use cases)
+```
+
+---
+
+## Anti-Patterns to Avoid
+
+### ❌ Passive Acceptance
+**Bad:** "User wants validation, so I'll make a validation prompt"  
+**Good:** "What does 'validation' mean here? Let me test with 3-5 scenarios"
+
+### ❌ Feature Creep
+**Bad:** "While validating API docs, let's also check security and performance"  
+**Good:** "API completeness is scope. Security/performance are separate prompts"
+
+### ❌ Generic Roles
+**Bad:** "Helpful assistant"  
+**Good:** "Technical documentation reviewer with REST API expertise"
+
+### ❌ Untested Workflows
+**Bad:** Phase 1: Read, Phase 2: Analyze, Phase 3: Report (no failure mode testing)  
+**Good:** Test each phase with "What if [failure scenario]?" and add handling
+
+### ❌ Vague Boundaries
+**Bad:** "Be careful and thorough"  
+**Good:** "ALWAYS validate all 5 criteria: X, Y, Z, A, B. NEVER skip validation even if docs seem complete"
+
+---
+
+## Usage Guidelines
+
+**When to use this context file:**
+- Creating new prompt files with complex requirements
+- Updating existing prompts that need better validation
+- Investigating why a prompt is failing or producing inconsistent results
+- Teaching prompt engineering best practices
+
+**How to reference in prompts:**
+```markdown
+## Requirements Validation
+
+**📖 Validation Methodology:** `.copilot/context/00.00-prompt-engineering/04.02-adaptive-validation-patterns.md`
+
+Follow the adaptive validation process:
+1. Assess complexity (simple/moderate/complex)
+2. Generate use cases (3/5/7 based on complexity)
+3. Challenge goal with scenarios
+4. Validate role appropriateness
+5. Test workflow reliability
+6. Map tool requirements
+7. Verify boundary actionability
+```
+
+**Integration with other context files:**
+- Pair with `context-engineering-principles.md` for overall prompt structure
+- Use `tool-composition-guide.md` for tool selection patterns
+- Apply `validation-caching-pattern.md` for validation prompts
+- Combine with `handoffs-pattern.md` when orchestrating multiple agents
+
