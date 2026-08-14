@@ -398,3 +398,9 @@ FodyWeavers.xsd
 
 # JetBrains Rider
 *.sln.iml
+
+# Quarto site output (rendered in CI). Leading slash keeps src/docs tracked.
+/docs/
+/.quarto/
+
+**/*.quarto_ipynb

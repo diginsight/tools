@@ -1,0 +1,7 @@
+# Paths excluded from the Quarto project scan.
+# src/ holds the .NET solution (bin, obj, .vs) — scanning it is slow and
+# breaks when Visual Studio rewrites its index mid-render.
+src/
+.vs/
+.vscode/
+.copilot/

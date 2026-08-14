@@ -22,20 +22,10 @@ jobs:
     
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
-      with:
-        lfs: true
-      
-    - name: Verify LFS files
-      run: |
-        echo "Checking if LFS files are available:"
-        ls -la diginsight-repos-overview.png
-        file diginsight-repos-overview.png || echo "file command not available"
-        
+      uses: actions/checkout@v5
+
     - name: Setup Quarto
       uses: quarto-dev/quarto-actions/setup@v2
-      with:
-        version: pre-release
         
     - name: Check for Python requirements
       id: check-python
@@ -48,7 +38,7 @@ jobs:
         
     - name: Setup Python (if needed for computations)
       if: steps.check-python.outputs.python-needed == 'true'
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: '3.11'
         cache: 'pip'
@@ -68,14 +58,11 @@ jobs:
       with:
         r-version: '4.3.0'
 
-    - name: Install TinyTeX
-      run: quarto install tinytex
-        
     - name: Render Quarto Project
       run: quarto render
       
     - name: Setup Pages
-      uses: actions/configure-pages@v4
+      uses: actions/configure-pages@v5
       
     - name: Upload Pages artifact
       uses: actions/upload-pages-artifact@v3

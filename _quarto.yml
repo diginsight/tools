@@ -1,0 +1,19 @@
+project:
+  type: website
+  output-dir: docs
+  # Restricted to the landing page for now; add entries as site content lands.
+  render:
+    - index.qmd
+
+website:
+  title: "Diginsight Tools"
+  repo-url: https://github.com/diginsight/tools
+  navbar:
+    left:
+      - href: index.qmd
+        text: Home
+
+format:
+  html:
+    theme: cosmo
+    toc: true

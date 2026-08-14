@@ -206,8 +206,10 @@ Note that `--force-evaluate` is a `restore`-only switch; passing it to `dotnet b
 Applied after the 3.7 upgrade was verified green on `net8.0`, so the two changes stay independently attributable.
 
 - All 8 projects: `<TargetFramework>net8.0</TargetFramework>` → `net10.0`.
-- `src/global.json`: SDK pin `8.0.*` → `10.0.*`.
+- `global.json`: moved from `src/` to the repository root, and the SDK pin changed from the wildcard `8.0.*` to the exact `10.0.100` with `rollForward: latestMajor`.
 - `.github/workflows/20.DeployTools.yml`: `DOTNET_VERSION` `8.0.x` → `10.0.x`, and the publish step `--framework net8.0` → `net10.0`.
+
+**The previous SDK pin never applied — for two independent reasons.** First, `sdk.version` does not support wildcards: a `global.json` containing `99.0.*` is silently ignored and `dotnet --version` still reports the newest installed SDK with exit code 0, whereas the exact `99.0.100` correctly fails. Second, the CLI resolves `global.json` from the **current working directory** upwards, not from the project directory — and CI runs `dotnet restore src/Diginsight.Tools.sln` from the repository root, so `src/global.json` was never even read. Both defects are fixed by the move plus the exact version.
 
 The Azure App Service runtime stack for `diginsighttools-Testmc-job-itn-01` must be switched to .NET 10 before the next deployment — the workflow does not configure it.
 
@@ -295,6 +297,7 @@ These were not required for the upgrade to be correct, but they close the remain
 - **`NU1605` downgrade errors are a signal, not an obstacle.** They revealed that Diginsight 3.7 had moved to the .NET 10 extension packages — but checking the `lib/` folders of those packages showed `net8.0` assets were still present, which avoided an unnecessary framework migration.
 - **Reflection beats guessing for undocumented signature changes.** String-scanning the assembly metadata for `DefaultCredentialProvider` was inconclusive; a throwaway console project that loaded the package and enumerated constructors gave the exact answer immediately.
 - **Push-to-pull refactors leak nullability.** Converting `ObservabilityRegistry` callbacks into a static accessor turns a formerly non-null field into a nullable property, so every static logging call site needs a `NullLogger` fallback.
+- **An SDK pin that never fires is worse than no pin.** `src/global.json` was inert twice over — wildcard versions are silently discarded, and the file was in the wrong directory relative to the CI working directory. Both failure modes are silent, so the repository appeared pinned for as long as the default SDK happened to be new enough.
 - **Dead code hides behind overload resolution.** FeedMonitor's local `AddObservability` looked wired up, but an extension method with the same name from `Diginsight.Components.Configuration` was winning the overload match — so HTTP instrumentation and dynamic log levels had silently never been active. Nothing failed; the telemetry was simply thinner than intended.
 - **Separate the compatibility fix from the modernisation.** Verifying the 3.7 upgrade on `net8.0` before touching target frameworks meant that when something broke afterwards, there was only one candidate cause.
 

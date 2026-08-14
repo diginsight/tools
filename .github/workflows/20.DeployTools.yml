@@ -27,23 +27,25 @@ jobs:
       webappname: ${{ steps.setvars.outputs.webappname }}
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Checkout 'tools.internal' Repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: diginsight/tools.internal
           path: tools.internal
           token: ${{ secrets.INTERNAL_REPOSITORY_TOKEN }}
 
       - name: Set up .NET Core
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
           dotnet-quality: 'ga'
 
       - name: Display dotnet version
-        run: dotnet --version
+        run: |
+          dotnet --version
+          dotnet --list-sdks
 
       - name: Set up dependency caching for faster builds
         uses: actions/cache@v4
@@ -54,7 +56,7 @@ jobs:
             ${{ runner.os }}-nuget-
 
       - name: Restore Samples # Step 3: Restore dependencies and build the Samples solution/project
-        run: dotnet restore --interactive src/Diginsight.Tools.sln
+        run: dotnet restore src/Diginsight.Tools.sln
 
       - name: Copy Diginsight.Tools.FeedMonitor appsettings.*.json from tools.internal
         run: |
