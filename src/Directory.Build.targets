@@ -1,5 +1,19 @@
 <Project>
-  
+
+  <PropertyGroup Condition="'$(GITHUB_ACTIONS)' == 'true'">
+    <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+  </PropertyGroup>
+
+  <!-- MIPDocumentInspector targets net472/net5.0-windows and lives in its own solution; leave it on legacy defaults. -->
+  <PropertyGroup Condition="!$(MSBuildProjectDirectory.Contains('MIPDocumentInspector'))">
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+  </PropertyGroup>
+
+  <ItemGroup Condition="!$(MSBuildProjectDirectory.Contains('MIPDocumentInspector'))">
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.*" PrivateAssets="all" />
+  </ItemGroup>
+
   <ItemGroup>
     <None Remove="**\*.DotSettings" />
   </ItemGroup>

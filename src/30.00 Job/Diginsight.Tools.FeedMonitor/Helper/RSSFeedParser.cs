@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -12,12 +12,8 @@ namespace Diginsight.Tools.FeedMonitor;
 
 public class RSSFeedParser : FeedParserBase
 {
-    private readonly ILogger<RSSFeedParser> logger;
-
-    public RSSFeedParser(ILogger<RSSFeedParser> logger = null!)
-    {
-        this.logger = logger;
-    }
+    private static ILogger? cachedLogger;
+    private static ILogger logger => cachedLogger ??= Observability.LoggerFactory?.CreateLogger(typeof(RSSFeedParser)) ?? NullLogger.Instance;
 
     public override FeedType SupportedFeedType => FeedType.RSS20;
 
@@ -38,7 +34,6 @@ public class RSSFeedParser : FeedParserBase
 
     public static RSSFeedChannel ParseRSS(string xmlContent)
     {
-        var logger = Observability.LoggerFactory?.CreateLogger<RSSFeedParser>() ?? NullLogger<RSSFeedParser>.Instance;
         using var activity = Observability.ActivitySource.StartMethodActivity(logger, () => new { });
 
         var doc = XDocument.Parse(xmlContent);
@@ -109,8 +104,7 @@ public class RSSFeedParser : FeedParserBase
     private static RSSFeedItem ParseRSSItem(XElement item, XNamespace itunesNs, XNamespace dcNs, XNamespace contentNs, XNamespace wfwNs, XNamespace slashNs)
     {
         var guidValue = item?.Element("guid")?.Value;
-        
-        var logger = Observability.LoggerFactory?.CreateLogger<RSSFeedParser>() ?? NullLogger<RSSFeedParser>.Instance;
+
         using var activity = Observability.ActivitySource.StartMethodActivity(logger, () => new { guidValue, itunesNs }, logLevel: LogLevel.Trace);
 
         var author = item.Element("author")?.Value;

@@ -1,4 +1,4 @@
-﻿using System.Xml.Linq;
+using System.Xml.Linq;
 using Diginsight.Diagnostics;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -7,12 +7,8 @@ namespace Diginsight.Tools.FeedMonitor;
 
 public class AtomFeedParser : FeedParserBase
 {
-    private readonly ILogger<AtomFeedParser> logger;
-
-    public AtomFeedParser(ILogger<AtomFeedParser> logger = null!)
-    {
-        this.logger = logger;
-    }
+    private static ILogger? cachedLogger;
+    private static ILogger logger => cachedLogger ??= Observability.LoggerFactory?.CreateLogger(typeof(AtomFeedParser)) ?? NullLogger.Instance;
 
     public override FeedType SupportedFeedType => FeedType.Atom;
 
@@ -23,7 +19,7 @@ public class AtomFeedParser : FeedParserBase
 
     public override FeedChannelBase ParseFeed(string xmlContent)
     {
-        using var activity = logger != null ? Observability.ActivitySource.StartMethodActivity(logger, () => new { }) : null;
+        using var activity = Observability.ActivitySource.StartMethodActivity(logger, () => new { });
 
         FeedChannelBase result = ParseAtom(xmlContent);
         
@@ -33,7 +29,6 @@ public class AtomFeedParser : FeedParserBase
 
     public static AtomFeedChannel ParseAtom(string xmlContent)
     {
-        var logger = Observability.LoggerFactory?.CreateLogger<AtomFeedParser>() ?? NullLogger<AtomFeedParser>.Instance;
         using var activity = Observability.ActivitySource.StartMethodActivity(logger, () => new { xmlContent });
 
         var doc = XDocument.Parse(xmlContent);

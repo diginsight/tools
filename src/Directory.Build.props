@@ -1,10 +1,14 @@
 <Project>
 
   <PropertyGroup>
-    <!--<LangVersion>11</LangVersion>-->
     <ImplicitUsings>enable</ImplicitUsings>
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
     <NoWarn>$(NoWarn);CS1591</NoWarn>
+  </PropertyGroup>
+
+  <!-- MIPDocumentInspector targets net472/net5.0-windows and lives in its own solution; leave it on legacy defaults. -->
+  <PropertyGroup Condition="!$(MSBuildProjectDirectory.Contains('MIPDocumentInspector'))">
+    <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <!-- TODO Address all INTEGRATIONFEATURES conditional compilation sections, then remove this -->
@@ -65,6 +69,8 @@
     <DiginsightCoreVersion>3.7.*</DiginsightCoreVersion>
     <DiginsightSmartcacheVersion>3.7.*</DiginsightSmartcacheVersion>
     <DiginsightComponentsVersion>1.*</DiginsightComponentsVersion>
+    <OpenTelemetryVersion>1.*</OpenTelemetryVersion>
+    <OpenTelemetryBetaVersion>1.5.*-*</OpenTelemetryBetaVersion>
     <PackageTags>diginsight;telemetry</PackageTags>
   </PropertyGroup>
 

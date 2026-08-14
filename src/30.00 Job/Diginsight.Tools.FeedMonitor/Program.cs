@@ -33,15 +33,10 @@ internal class Program
         IConfiguration configuration = hostBuilder.Configuration;
         IServiceCollection services = hostBuilder.Services;
 
-        services.AddHttpContextAccessor();
-        
-        // Manually register IHttpContextFactory required by AddAspNetCoreObservability
-        // This is normally registered automatically in web applications but not in console apps
+        // AddAspNetCoreObservability needs IHttpContextFactory, which only web hosts register automatically.
         services.TryAddSingleton<Microsoft.AspNetCore.Http.IHttpContextFactory, Microsoft.AspNetCore.Http.DefaultHttpContextFactory>();
 
-        services.AddAspNetCoreObservability(configuration, hostEnvironment, out IOpenTelemetryOptions openTelemetryOptions);
-        services.AddObservability(configuration, hostEnvironment, out openTelemetryOptions);
-        observabilityManager.AttachTo(services);
+        services.AddObservability(observabilityManager, configuration, hostEnvironment);
 
         services.AddParallelService(configuration);
 

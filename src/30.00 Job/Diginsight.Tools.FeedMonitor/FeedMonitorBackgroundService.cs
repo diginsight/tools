@@ -40,7 +40,8 @@ public class FeedMonitorBackgroundService : BackgroundService
     private readonly IOptionsMonitor<BlobClientConfiguration> blobStorageOptionsMonitor;
     private readonly IOptionsMonitor<FileStorageClientConfiguration> fileStorageOptionsMonitor;
     private readonly IOptionsMonitor<QueueStorageClientConfiguration> queueStorageOptionsMonitor;
-    private readonly ILogger<FeedMonitorBackgroundService> logger;
+    private static ILogger? cachedLogger;
+    private static ILogger logger => cachedLogger ??= Observability.LoggerFactory?.CreateLogger(typeof(FeedMonitorBackgroundService)) ?? NullLogger.Instance;
     private readonly IConfiguration configuration;
     private readonly IHostEnvironment environment;
     private readonly IParallelService parallelService;
@@ -50,7 +51,6 @@ public class FeedMonitorBackgroundService : BackgroundService
     //private readonly IMonitoringRepository monitoringRepository;
 
     public FeedMonitorBackgroundService(
-            ILogger<FeedMonitorBackgroundService> logger,
             IOptionsMonitor<FeedMonitorConfiguration> feedMonitorOptionsMonitor,
             IOptionsMonitor<CosmosDBClientConfiguration> cosmosDBOptionsMonitor,
             IOptionsMonitor<BlobClientConfiguration> blobStorageOptionsMonitor,
@@ -64,7 +64,6 @@ public class FeedMonitorBackgroundService : BackgroundService
             IHostApplicationLifetime applicationLifetime,
             IFeedParserFactory feedParserFactory)
     {
-        this.logger = logger;
         this.environment = environment;
 
         this.feedMonitorOptionsMonitor = feedMonitorOptionsMonitor;
@@ -671,6 +670,8 @@ public class FeedMonitorBackgroundService : BackgroundService
 
     private async Task UploadBlobAsync(string blobPath, string content, string contentType, CancellationToken cancellationToken)
     {
+        using var activity = Observability.ActivitySource.StartMethodActivity(logger, () => new { blobPath, contentType, content });
+
         var blobClient = blobContainerClient.GetBlobClient(blobPath);
         using var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(content));
 
@@ -735,8 +736,7 @@ public class FeedMonitorBackgroundService : BackgroundService
 
     private static CosmosClientOptions GetCosmosClientOptions(CosmosDBClientConfiguration cosmosDBClientConfiguration)
     {
-        var logger = Observability.LoggerFactory?.CreateLogger<FeedMonitorBackgroundService>() ?? NullLogger<FeedMonitorBackgroundService>.Instance;
-        var activity = Observability.ActivitySource.StartMethodActivity(logger, () => new { cosmosDBClientConfiguration });
+        using var activity = Observability.ActivitySource.StartMethodActivity(logger, () => new { cosmosDBClientConfiguration });
 
         var cosmosClientOptions = new CosmosClientOptions
         {
@@ -754,8 +754,7 @@ public class FeedMonitorBackgroundService : BackgroundService
 
     private static BlobClientOptions GetBlobClientOptions(BlobClientConfiguration blobClientConfiguration)
     {
-        var logger = Observability.LoggerFactory?.CreateLogger<FeedMonitorBackgroundService>() ?? NullLogger<FeedMonitorBackgroundService>.Instance;
-        var activity = Observability.ActivitySource.StartMethodActivity(logger, () => new { blobClientConfiguration });
+        using var activity = Observability.ActivitySource.StartMethodActivity(logger, () => new { blobClientConfiguration });
 
         // Note: CustomerProvidedKey and TransferValidation are not configurable via BlobClientOptions
         // They must be set per-operation on BlobClient methods
@@ -867,8 +866,7 @@ public class FeedMonitorBackgroundService : BackgroundService
 
     private static TableClientOptions GetTableClientOptions(TableClientConfiguration tableClientConfiguration)
     {
-        var logger = Observability.LoggerFactory?.CreateLogger<FeedMonitorBackgroundService>() ?? NullLogger<FeedMonitorBackgroundService>.Instance;
-        var activity = Observability.ActivitySource.StartMethodActivity(logger, () => new { tableClientConfiguration });
+        using var activity = Observability.ActivitySource.StartMethodActivity(logger, () => new { tableClientConfiguration });
 
         TableClientOptions tableClientOptions;
 
@@ -1002,6 +1000,7 @@ public class FeedMonitorBackgroundService : BackgroundService
     private BlobServiceClient GetBlobServiceClient(BlobClientConfiguration blobClientConfiguration)
     {
         using var activity = Observability.ActivitySource.StartMethodActivity(logger, () => new { blobClientConfiguration });
+        
         BlobServiceClient blobServiceClient;
         BlobClientOptions blobClientOptions = GetBlobClientOptions(blobClientConfiguration);
 
@@ -1027,8 +1026,11 @@ public class FeedMonitorBackgroundService : BackgroundService
             }
             else
             {
+                var credentialProvider = new DefaultCredentialProvider(environment, logger);
+                var credential = credentialProvider.Get(configuration.GetSection("FeedMonitor"));
+
                 // Method 4: Azure AD / Managed Identity (DefaultAzureCredential)
-                blobServiceClient = new BlobServiceClient(endpoint, new DefaultAzureCredential(), blobClientOptions);
+                blobServiceClient = new BlobServiceClient(endpoint, credential, blobClientOptions);
             }
         }
         else
@@ -1068,8 +1070,11 @@ public class FeedMonitorBackgroundService : BackgroundService
             }
             else
             {
+                var credentialProvider = new DefaultCredentialProvider(environment, logger);
+                var credential = credentialProvider.Get(configuration.GetSection("FeedMonitor"));
+
                 // Method 4: Azure AD / Managed Identity (DefaultAzureCredential)
-                tableServiceClient = new TableServiceClient(endpoint, new DefaultAzureCredential(), tableClientOptions);
+                tableServiceClient = new TableServiceClient(endpoint, credential, tableClientOptions);
             }
         }
         else

@@ -8,7 +8,7 @@ env:
   DEPLOY_ENVIRONMENT: Testmc
   AZURE_WEBAPP_NAME: diginsighttools-testmc-job-itn-01    # Name of your Azure Web App
   AZURE_WEBAPP_PACKAGE_PATH: './publish'                  # Path to the published output
-  DOTNET_VERSION: '8.0.x'                                 # .NET version to use
+  DOTNET_VERSION: '10.0.x'                                # .NET version to use
 
 on:
   # push:
@@ -64,7 +64,7 @@ jobs:
         run: dotnet build src/Diginsight.Tools.sln --configuration Release
 
       - name: Publish Diginsight.Tools.FeedMonitor
-        run:  dotnet publish "src/30.00 Job/Diginsight.Tools.FeedMonitor/Diginsight.Tools.FeedMonitor.csproj" --configuration Release --framework net8.0 --output ./publish/Diginsight.Tools.FeedMonitor
+        run:  dotnet publish "src/30.00 Job/Diginsight.Tools.FeedMonitor/Diginsight.Tools.FeedMonitor.csproj" --configuration Release --framework net10.0 --output ./publish/Diginsight.Tools.FeedMonitor
 
       - name: Upload Published Samples # Step 5: Upload the published output as an artifact (if you want to persist the build)
         uses: actions/upload-artifact@v4
