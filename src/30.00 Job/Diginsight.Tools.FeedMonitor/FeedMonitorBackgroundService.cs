@@ -107,14 +107,18 @@ public class FeedMonitorBackgroundService : BackgroundService
         using var activity = Observability.ActivitySource.StartMethodActivity(logger);
 
         // Collection of async operations to execute based on configuration
-        List<Func<CancellationToken, Task>> asyncInvocations = new();
+        List<Func<Task>> asyncInvocations = new() { () => ReadAllFeedsAsync(cancellationToken) };
 
-        asyncInvocations.Add(async ct => { await ReadAllFeedsAsync(ct); });
+        var parallelOptions = new ParallelOptions
+        {
+            MaxDegreeOfParallelism = parallelService.MediumConcurrency,
+            CancellationToken = cancellationToken
+        };
 
         try
         {
-            // Execute all configured processing modes concurrently
-            await Task.WhenAll(asyncInvocations.Select(f => f(cancellationToken)));
+            // Execute all configured processing modes with bounded concurrency
+            await parallelService.WhenAllAsync(asyncInvocations, parallelOptions);
         }
         catch (OperationCanceledException)
         {
