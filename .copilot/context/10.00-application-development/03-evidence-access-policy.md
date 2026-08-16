@@ -9,6 +9,7 @@ scope:
     - "Environment preference order and how environments are established"
     - "Production announcement protocol and refusable reads"
     - "Read-only enforcement per source kind"
+    - "Reaching an external configuration root through a declared pointer"
     - "Sensitive-material classification test"
     - "Provenance record form"
   excludes:
@@ -96,6 +97,7 @@ On refusal, record a gap (📖 `02-evidence-dossier-schema.md`) rather than proc
 | Source kind | Permitted | Forbidden |
 |---|---|---|
 | **Repository** | read files, read history | any write outside `src/docs/` |
+| **External configuration root** | read the files the declared pointer resolves to | reaching it by any route other than that pointer; enumerating outside the root it names; copying its files into this repository |
 | **Database** | schema, index and shape inspection; bounded sampling only where required to establish a shape | bulk extraction, exports, any DDL or DML, long-running scans |
 | **Cloud portal** | inventory and configuration views, captures | create, modify, delete, scale, restart, secret reveal |
 | **CI portal** | pipeline definitions, run history, logs | queue a run, cancel a run, modify a definition, read protected variables |
@@ -103,6 +105,8 @@ On refusal, record a gap (📖 `02-evidence-dossier-schema.md`) rather than proc
 | **Running application** | navigate and observe | submit data, mutate state, authenticate as another principal |
 
 Databases are the sharpest case: the stream needs **shape**, not **contents**. Record the schema, the keys, the indexes and the cardinality class — never the rows.
+
+An **external configuration root** is the second sharpest, for two reasons. It sits outside the repository, so the only legitimate way to it is the pointer the repository itself declares — following a guessed or searched-for path turns an investigation into filesystem trawling. And it exists precisely to hold what the repository does not commit, so treat its contents as `credential`-bearing until established otherwise: record which settings it overrides, never the values it overrides them with.
 
 ---
 
@@ -152,10 +156,11 @@ A live-sourced record without provenance is downgraded to `claimed` confidence a
 | Version | Date | Change | Author |
 |---|---|---|---|
 | 1.0.0 | 2026-08-16 | Initial version | System |
+| 1.1.0 | 2026-08-16 | Added the external configuration root as a source kind, reachable only through the declared pointer and credential-bearing by default | System |
 
 <!--
 context_metadata:
-  version: "1.0.0"
+  version: "1.1.0"
   last_updated: "2026-08-16"
   created: "2026-08-16"
 -->

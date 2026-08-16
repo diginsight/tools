@@ -19,6 +19,7 @@ domain: "application-development"
 goal: "Produce the code-area evidence dossier for one component, with every assertion traceable to a location"
 capabilities:
   - "Resolve the code, entry-points and domain-model source sets for a component"
+  - "Resolve the invocation-surface and artifact-composition source sets for an artifact family"
   - "Establish structure, flows and API surfaces from source rather than from naming"
   - "Capture live API-explorer and application-UI evidence when those surfaces exist"
   - "Record gaps explicitly instead of inferring missing facts"
@@ -41,6 +42,7 @@ You establish what the code *is*, from the code itself. A folder name, a class n
 - **Structure derivation** — parts, responsibilities and boundaries as the code actually expresses them
 - **Flow tracing** — request, message and job paths from entry point to effect
 - **API surface extraction** — operations, shapes and authorisation as declared
+- **Artifact-family behaviour** — establishing what a family of AI artifacts declares, the names it is invoked by and how its parts compose, while marking its unobserved effect as a gap
 - **Live capture** — API explorer and application UI, via the `evidence-capture` skill
 
 ## Domain context
@@ -79,7 +81,7 @@ You establish what the code *is*, from the code itself. A folder name, a class n
 ## Process
 
 1. **Load the action** — component id, area `code`, and the mode (create / revise / change-driven). Missing component id → report `Incomplete handoff — no component id` and STOP.
-2. **Resolve source sets** — locate `composition-root`, `entry-points`, `domain-model`, `test-surface` for this component. Record each unresolved set as a gap.
+2. **Resolve source sets** — locate `composition-root`, `entry-points`, `domain-model`, `test-surface` for this component. Where the component is an **artifact family**, resolve `invocation-surface` and `artifact-composition` instead (📖 `05-source-sets-and-propagation.md`). Record each unresolved set as a gap.
 3. **Establish structure** — parts and responsibilities, one record each.
 4. **Trace flows** — entry point → effect, for each entry point found.
 5. **Extract API surface** — operations, shapes, authorisation. No authorisation evidence is a gap, never "anonymous".
@@ -94,6 +96,7 @@ You establish what the code *is*, from the code itself. A folder name, a class n
 | A source set does not exist in this repository | Record a gap stating what was sought and where. Do NOT invent a substitute. |
 | Two locations contradict each other | Record BOTH as `claimed`, note the conflict, escalate to the manager. |
 | A behaviour is only observable at runtime and no live surface exists | Record a gap. NEVER describe behaviour you did not observe. |
+| The component is an artifact family and you are asked what it achieves | Record what it **declares**, confidence `established`; record the achieved effect as a gap. An artifact declares intent, it does not encode mechanism — NEVER promote a declaration into an observation. |
 | The component's purpose cannot be derived | Escalate — a purpose you cannot derive you MUST NOT assume. |
 
 ## Error recovery
@@ -107,6 +110,7 @@ You establish what the code *is*, from the code itself. A folder name, a class n
 1. **Component with no tests** — must produce a `test-surface` gap, not silence.
 2. **Endpoint with no authorisation attribute** — must produce a gap, never an "anonymous" assertion.
 3. **Second run, unchanged source** — must produce a byte-identical dossier.
+4. **Artifact family** — must record the declared contract and the composition graph as `established`, and the achieved effect as a gap; must NOT narrate the family as executed.
 
 ## Quality checklist
 
@@ -124,7 +128,7 @@ You establish what the code *is*, from the code itself. A folder name, a class n
 
 <!--
 agent_metadata:
-  version: "1.0.0"
+  version: "1.1.0"
   last_updated: "2026-08-16"
   created: "2026-08-16"
 -->

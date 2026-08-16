@@ -8,6 +8,7 @@ scope:
     - "Progressive disclosure applied to a page"
     - "Content preservation: move, user-added valid detail, superseded, evidence-contradicted, ambiguous"
     - "How missing information is represented"
+    - "The declared-versus-observed rule and where the boundary is drawn"
     - "Diagram policy and when a diagram is warranted"
     - "The stop-and-return rule for authors"
   excludes:
@@ -95,6 +96,24 @@ Never acceptable: a hedge that reads as fact ("typically configured via…"), a 
 
 ---
 
+## 🔎 Declared versus observed
+
+A dossier record's `confidence` says whether a fact was established. It does not say **what kind** of fact it is — and for some evidence the distinction between *the repository says this* and *this is what happens* is the whole meaning.
+
+| The record established | The page MAY state | The page MUST NOT state |
+|---|---|---|
+| A declaration — what a file says about itself | "it declares X", "it is configured to X" | "it does X", "it achieves X" |
+| An observation — a captured run or a traced path | "it does X" | — |
+| A declared order | "they are declared to run A then B" | "A runs, then B runs" |
+
+The rule bites hardest on **AI artifacts**, whose bodies are instruction interpreted at run time: a declared goal is authoritative evidence of the declaration and no evidence at all of the outcome (📖 `05-source-sets-and-propagation.md` § Establishing an artifact's behaviour). It applies equally to a code comment stating intent, a README claim and a pipeline step's display name.
+
+The unobserved effect of an artifact family is classified **peripheral**: the page's core purpose is what the family is and how it is used, both fully established by the declared contract, invocation surface, composition graph and bindings. So the author **marks the gap in place and continues** — stopping would suppress a page whose core purpose was met.
+
+Never acceptable: promoting a declaration into an observation by dropping the qualifier, or narrating a declared sequence as an execution.
+
+---
+
 ## 📊 Diagram policy
 
 A diagram is warranted when a relationship is **hard to hold in prose** — more than three interacting parts, a sequence with branches, or a topology. Otherwise prose is faster to read and far cheaper to keep true.
@@ -123,10 +142,11 @@ Speculative arrows are the most common way an architecture page acquires a syste
 | Version | Date | Change | Author |
 |---|---|---|---|
 | 1.0.0 | 2026-08-16 | Initial version | System |
+| 1.1.0 | 2026-08-16 | Added the declared-versus-observed rule and classified the artifact effect gap as peripheral | System |
 
 <!--
 context_metadata:
-  version: "1.0.0"
+  version: "1.1.0"
   last_updated: "2026-08-16"
   created: "2026-08-16"
 -->

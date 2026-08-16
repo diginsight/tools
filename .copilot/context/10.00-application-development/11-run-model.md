@@ -105,7 +105,7 @@ Deterministic, so two runs produce the same sequence and a resume lands in the s
 | Components | registry priority — 🔴 Core, then 🟠 Supporting, then 🟡 Tooling, then ⚪ Peripheral; ties broken by registry order |
 | Chapters | fixed chapter sequence 1–11 (📖 `04-documentation-structure.md`) |
 | Within a chapter | overview page last, so it summarises pages that already exist |
-| Investigation | all six areas for a component complete before authoring starts on it |
+| Investigation | every **applicable** area for a component complete before authoring starts on it; an inapplicable area counts as complete only when it carries an inapplicability record (📖 `02-evidence-dossier-schema.md`) |
 
 ---
 
@@ -154,10 +154,11 @@ A run that produced nothing because everything was already current is a **succes
 | Version | Date | Change | Author |
 |---|---|---|---|
 | 1.0.0 | 2026-08-16 | Initial version | System |
+| 1.1.0 | 2026-08-16 | Investigation ordering now requires every applicable area, with inapplicable areas complete only when recorded | System |
 
 <!--
 context_metadata:
-  version: "1.0.0"
+  version: "1.1.0"
   last_updated: "2026-08-16"
   created: "2026-08-16"
 -->

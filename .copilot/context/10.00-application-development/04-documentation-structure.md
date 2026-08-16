@@ -21,7 +21,7 @@ boundaries:
   - "Every page shape MUST bind to exactly one template, and every template MUST be bound by at least one shape"
 rationales:
   - "A fixed chapter set is what lets a reader move between two documented repositories without relearning the layout"
-  - "Deriving the template count from page shapes rather than chapters prevents fifteen near-identical templates or one template stretched over incompatible content"
+  - "Deriving the template count from page shapes rather than chapters prevents eleven near-identical templates or one template stretched over incompatible content"
   - "Realising chapters through metadata.yml keeps existing folder names and their inbound links intact"
 ---
 
@@ -76,13 +76,18 @@ The authority that decides the template count. Every shape binds to exactly one 
 | Environment | `doc-infrastructure-environment.template.md` | Infrastructure |
 | Security posture | `doc-security-posture.template.md` | Security |
 | Security control family | `doc-security-control-family.template.md` | Security |
+| Security requirement | `doc-security-requirement.template.md` | Security |
+| Security requirement index | `doc-security-requirement-index.template.md` | Security |
 | Pipeline | `doc-devops-pipeline.template.md` | DevOps |
 | Validation unit | `doc-validation-unit.template.md` | Validation |
 | Minor component | `doc-component-minor.template.md` | Other Components, Appendix |
+| Artifact family | `doc-artifact-family.template.md` | Other Components, Appendix |
 
 Three further templates are **structural** rather than page shapes — `doc-documentation-structure.template.md`, `doc-evidence-dossier.template.md`, `doc-mermaid-patterns.template.md` — and one belongs to the robustness stream, `finding-record.template.md`.
 
-> **Security control family** is conditional: it is produced only when the repository declares a control catalogue to document against. Absent a catalogue, Security carries its overview and posture pages only.
+> The four **Security** shapes above are conditional together: they are produced only when the repository declares an assessment catalogue (📖 `12-security-assessment-model.md`). Absent a catalogue, Security carries its overview and posture pages only. Where a catalogue is declared, the control-family, requirement-index and requirement shapes are produced for **every dimension it declares** — covering one declared dimension and not another is a recorded non-conformance, never a silent omission.
+
+> **Artifact family** is conditional in the same way: it is produced only where discovery derived artifact families (📖 `01-discovery-model.md`). It exists because the minor-component shape is code-shaped — *Deployed*, *What it does*, *Dependencies* — and has no slot for the facts that describe an artifact family: the names it is invoked by, the order its parts run in, what they bind to, and what they emit. A 🔴 Core or 🟠 Supporting family does **not** use this shape; it is documented in the main chapters with the ordinary shapes above, like any other major component.
 
 ---
 
@@ -94,6 +99,29 @@ Three further templates are **structural** rather than page shapes — `doc-docu
 | 🟡 Tooling, ⚪ Peripheral | *Other Components* and the Appendix, and nowhere else |
 
 A 🔴 Core component whose only page sits under *Other Components* is a **defect**, not a stylistic choice — it means discovery mis-tiered it or placement ignored the tier.
+
+---
+
+## 🔐 Security chapter layout
+
+Where a catalogue is declared, Security carries more than a flat page set. Its layout follows the ordinary component-pivot rule — the `{component}` segment is present only when two or more components are relevant to the chapter, and omitted otherwise. It introduces no new layout mode.
+
+```
+security/
+  overview.md
+  {component}/
+    overview.md
+    posture.md
+    posture.internal.md              # never in navigation
+    control-families/
+      overview.md                    # index across every declared dimension
+      {family}.md
+    requirements/
+      overview.md                    # every requirement, grouped by family, sorted by id
+      {CONTROL-ID}-{title-slug}.md   # applicable requirements only
+```
+
+Two rules travel with this layout and are stated in full in `12-security-assessment-model.md`: a requirement page is **never** named by its control id alone, because two dimensions routinely reuse an id for unrelated controls; and families from different dimensions are **peers**, never nested beneath a node marking their origin.
 
 The reverse is equally a defect: a build script promoted into Architecture inflates the apparent system and buries the components that matter.
 
@@ -145,20 +173,23 @@ A fact that resolves to two chapters is written **once** in the chapter that own
 ## References
 
 - **📖** `01-discovery-model.md` — component priority and layout mode
+- **📖** `12-security-assessment-model.md` — dimensions, families, requirements and the conformance rule behind the Security shapes
 - **📖** `05-source-sets-and-propagation.md` — how a changed source role maps to affected pages
 - **📖** `07-documentation-authoring-criteria.md` — how a page is written once placed
 - **📖** `08-verification-gates.md` — navigation coverage and placement gates
-- **📖** `.github/templates/10.00-application-development/` — the fifteen templates bound above
+- **📖** `.github/templates/10.00-application-development/` — the eighteen templates bound above
 
 ## Version history
 
 | Version | Date | Change | Author |
 |---|---|---|---|
 | 1.0.0 | 2026-08-16 | Initial version | System |
+| 1.1.0 | 2026-08-16 | Added the Artifact family page shape; template count fifteen to sixteen | System |
+| 1.2.0 | 2026-08-16 | Added the Security requirement and Security requirement index shapes and the Security chapter layout; template count sixteen to eighteen | System |
 
 <!--
 context_metadata:
-  version: "1.0.0"
+  version: "1.2.0"
   last_updated: "2026-08-16"
   created: "2026-08-16"
 -->

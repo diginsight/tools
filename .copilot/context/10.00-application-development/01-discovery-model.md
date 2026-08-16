@@ -8,6 +8,7 @@ scope:
     - "Stack profile: the facts discovered about languages, build, tests, deployment and configuration"
     - "Capability matrix: which live evidence surfaces the repository actually exposes"
     - "Component registry: id, path, purpose, priority, dependencies"
+    - "Artifact families: artifact-type roots, the derivation ladder and family tiering"
     - "Priority taxonomy and what it drives"
     - "Layout mode: single-component versus multi-component"
     - "Purpose derivation and its evidence requirement"
@@ -23,6 +24,7 @@ boundaries:
 rationales:
   - "Hard-coding a stack is what makes a documentation agent unportable; resolving through a discovered profile is what makes the same artifacts run on any repository"
   - "Purpose derivation is the direct counter-measure to remove-it recommendations aimed at deliberate sample code"
+  - "A registry derived from build participation alone cannot see artifacts that are never built, so those need a discovery source of their own"
   - "Both streams reading one registry is what prevents them disagreeing about what the repository contains"
 ---
 
@@ -48,10 +50,18 @@ The set of facts **discovered**, never assumed, about the repository. Every late
 | **Dependency strategy** | how dependencies are declared and whether versions are locked |
 | **Test surface** | which test projects or suites exist, and what they cover |
 | **Deployment targets** | where artifacts are meant to run, per deployable component |
-| **Configuration mechanism** | how settings reach the running process, and how environments differ |
+| **Configuration mechanism** | how settings reach the running process, how environments differ, and whether any settings source resolves **outside the repository** |
 | **Observability** | how the repository emits logs, traces and metrics, if at all |
 
 Each entry records **where it was established from**. A profile entry without an evidence location is incomplete.
+
+### Out-of-tree configuration
+
+A repository may resolve part of its configuration from a location **outside its own tree** — an external configuration root supplied at run time by a variable, whose value is declared in a run profile alongside the environment name.
+
+Where this mechanism is present, the profile records three things: the **composition-root site** that reads the variable, the **variable** itself, and the **run profiles** that declare values for it. It also records that the root's contents are not versioned with this repository.
+
+Discovering the pointer is what stops a configuration investigation reporting a **partial precedence chain as a complete one** — the failure mode where an override that actually wins at run time is documented as not existing.
 
 ---
 
@@ -130,6 +140,61 @@ Both are recorded as purpose findings, not as removal recommendations (📖 `00-
 
 ---
 
+## 🤖 Artifact families
+
+Not every component is reached by build participation. A repository's **AI artifacts** — its prompt-engineering customization files — have no project file, build entry point or deployment descriptor, so a registry derived from build roots alone never sees them. They are discovered from **artifact-type roots** and grouped into **families** before they reach the registry.
+
+This section produces nothing on a repository that carries no such artifacts, which is a recorded absence like any other (📖 § Capability matrix).
+
+### Artifact-type roots
+
+An artifact-type root is a subtree holding one kind of AI artifact. Roots are discovered from the artifact kinds the repository actually carries — never assumed from a fixed list, since the set of kinds changes as tooling evolves.
+
+A root MUST be an **artifact-type subtree, never a shared parent**. Artifact roots frequently sit under a parent that also holds automation definitions — already owned by `pipeline-definition` — so claiming the parent would give two investigators the same paths, and two dossiers that then disagree (📖 `05-source-sets-and-propagation.md`).
+
+### Family derivation ladder
+
+A **family** is a set of artifacts, possibly spanning several artifact types, that share a grouping key and are used together. The family — not the individual file — is the unit that gets a registry row, a dossier set and a page.
+
+Applied per artifact; the first signal yielding a valid key wins.
+
+| # | Signal | Key |
+|---|---|---|
+| 1 | **Metadata** — a frontmatter domain declaration, present and valid | the declared value, normalized |
+| 2 | **Folder** — the enclosing folder under an artifact-type root | the folder name, normalized |
+| 3 | **Usage** — the artifact's reference-graph neighbours, inbound and outbound | the family most common among them |
+| 4 | none of the three | **unparented** |
+
+**Normalization** strips a leading numeric ordering prefix, lowercases and trims. Folder tokens commonly carry an ordering prefix that metadata values lack; normalizing is what makes the two signals produce joinable keys instead of two disjoint partitions of the same set.
+
+A metadata value is **invalid** when it is empty or contains unsubstituted template syntax. An invalid value falls through to signal 2 and is additionally raised as a finding — a placeholder trusted blindly becomes a phantom family named after the placeholder.
+
+**Usage resolves by adjacency vote, never by connected component.** Shared artifacts are referenced from everywhere, so a component-based partition collapses most of a repository into a single family. The vote resolves only on a clear majority; a tie falls through to unparented rather than picking arbitrarily. Edges are collected across all artifacts and inverted, so an artifact with no outbound references still inherits a family from those that reference it.
+
+### Unparented artifacts
+
+Signal 4 is a real outcome, not an error path. Unparented artifacts are carried as one named group — never merged into a nearby family for tidiness, never dropped.
+
+An artifact that is invocable but belongs to nothing is itself worth surfacing: it is the usual way an artifact becomes unmaintained.
+
+### Family tiering
+
+Families are tiered by the same taxonomy as any other component, using derivation source 3 — deployment descriptors establish whether a component is product or tooling.
+
+| Evidence | Tier |
+|---|---|
+| The artifacts are what the repository ships — a packaging manifest, release or distribution mechanism carries them as the deliverable | 🔴 Core |
+| The artifacts support production of something else the repository ships | 🟡 Tooling |
+| The artifacts are experiments, samples or scratch | ⚪ Peripheral |
+
+Where no evidence resolves the tier, the family is **escalated** under the standard underivable-purpose rule rather than assigned a default.
+
+### Granularity
+
+Derivation is mechanical, so it can over-split — several families at different granularities where a reader expects one. Rather than a merge heuristic, which would be tuned to one repository and wrong on the next, the derived family set and the unparented count are **reported at the registry checkpoint** (📖 `11-run-model.md`), where grouping is confirmed before it costs a chapter.
+
+---
+
 ## 💾 Persistence and staleness
 
 | Concern | Rule |
@@ -155,10 +220,12 @@ Both are recorded as purpose findings, not as removal recommendations (📖 `00-
 | Version | Date | Change | Author |
 |---|---|---|---|
 | 1.0.0 | 2026-08-16 | Initial version | System |
+| 1.1.0 | 2026-08-16 | Added artifact families: artifact-type roots, the four-signal derivation ladder, unparented artifacts, family tiering and checkpoint reporting | System |
+| 1.2.0 | 2026-08-16 | Stack profile now establishes out-of-tree configuration — the pointer, its declaring run profiles and its unversioned contents | System |
 
 <!--
 context_metadata:
-  version: "1.0.0"
+  version: "1.2.0"
   last_updated: "2026-08-16"
   created: "2026-08-16"
 -->

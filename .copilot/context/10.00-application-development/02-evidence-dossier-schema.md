@@ -8,6 +8,7 @@ scope:
     - "Dossier location, naming and lifecycle"
     - "Record shape: assertion, evidence location, evidence kind, environment, timestamp, confidence"
     - "Gap records and why an empty section differs from a gap-free section"
+    - "Inapplicability records and the role-resolution test that produces them"
     - "Coverage declaration per area"
     - "Sensitive-material split between the dossier and its internal sibling"
     - "The six investigation areas"
@@ -22,6 +23,7 @@ boundaries:
 rationales:
   - "The dossier is the load-bearing artifact: role separation buys nothing if the handoff format is loose enough for an author to guess"
   - "Explicit gap records are what let the verifier tell 'nothing here' from 'nothing found here', which are opposite signals"
+  - "An inapplicable area must assert its own inapplicability, because a silent skip is byte-identical to an investigator that never ran"
   - "Both streams consuming the same dossier is what stops documentation and robustness findings disagreeing about the code"
 ---
 
@@ -101,7 +103,47 @@ A fact that was **sought and not found** is recorded explicitly.
 - **Blocked by**: access, absence, or ambiguity
 ```
 
-An **empty section** ("this area recorded nothing") and a **gap-free section** ("everything asked was found") are opposite signals and MUST be distinguishable. A dossier area with neither records nor gaps is itself a defect — it means the investigator did not run.
+An **empty section** ("this area recorded nothing") and a **gap-free section** ("everything asked was found") are opposite signals and MUST be distinguishable. A dossier area with neither records, gaps nor an inapplicability record is itself a defect — it means the investigator did not run.
+
+---
+
+## 🚫 Inapplicability records
+
+Some areas cannot apply to some components. A component that persists nothing has no `data` area to investigate. Skipping it silently produces a dossier byte-identical to one whose investigator crashed, so inapplicability is **asserted**, never assumed.
+
+### The role-resolution test
+
+An area is inapplicable to a component when **none of the source-set roles its investigator owns resolves to anything that component uses** (📖 `05-source-sets-and-propagation.md`).
+
+Resolution is **not confined to the component's own subtree**. A role that resolves to a location elsewhere in the repository, or outside it through a pointer the repository declares, has resolved — and the area is applicable. Reading "resolves" as "resolves to a path under this folder" would mark an area inapplicable precisely where its evidence is hardest to find.
+
+A repository-level role resolves for a component when it **names or covers** that component. A declared assessment catalogue that lists a component therefore makes `security` applicable to it, whatever the component's own sources show.
+
+This is mechanical and carries no stack assumption: it asks only whether the roles resolve, never what technology the component uses. The same test that makes `data` inapplicable to a documentation-only component makes it applicable to one that gains a schema next week.
+
+```markdown
+### Inapplicable: {area}
+
+- **Roles tested**: every source-set role this area owns, listed by name
+- **Result**: none resolved to a path inside this component
+- **Reason**: one sentence, stated in role terms
+- **Observed**: ISO date
+```
+
+### What separates the four outcomes
+
+| Situation | Recorded as |
+|---|---|
+| Roles resolve, facts found | records |
+| Roles resolve, facts sought and not found | gap |
+| No role resolves | inapplicability record |
+| Investigator did not run | **defect** — nothing is recorded at all |
+
+Three rules keep the boundary sharp:
+
+- The investigator **still runs**. It resolves its roles, finds none, and records that result — inapplicability is an output of investigation, not a reason to skip it.
+- **One resolving role makes the area applicable.** Partial resolution is applicability with gaps, never inapplicability.
+- An area MUST NOT be recorded inapplicable because it found nothing interesting. Roles that resolve to real paths holding no facts produce a **gap**.
 
 ---
 
@@ -114,8 +156,10 @@ Each dossier opens by declaring which questions its area is responsible for answ
 
 | Question | Status |
 |---|---|
-| {question owned by this area} | ✅ answered by `code-04` / 🕳️ gap |
+| {question owned by this area} | ✅ answered by `code-04` / 🕳️ gap / 🚫 not applicable |
 ```
+
+An **inapplicable area still declares its full question list**, every entry marked 🚫 not applicable. Dropping the questions would make an inapplicable area look like an unrun one at exactly the point where the difference matters, and would hide the moment a component grows a surface the area now owns.
 
 ---
 
@@ -152,10 +196,13 @@ A page may cite the stub — it may never cite, link or quote the internal file.
 | Version | Date | Change | Author |
 |---|---|---|---|
 | 1.0.0 | 2026-08-16 | Initial version | System |
+| 1.1.0 | 2026-08-16 | Added the inapplicable area state, the role-resolution test and inapplicable coverage declaration | System |
+| 1.2.0 | 2026-08-16 | Role resolution is no longer confined to the component's own subtree, so out-of-tree evidence cannot mark an area inapplicable | System |
+| 1.3.0 | 2026-08-16 | A repository-level role resolves for a component it names, so a declared assessment catalogue makes `security` applicable | System |
 
 <!--
 context_metadata:
-  version: "1.0.0"
+  version: "1.3.0"
   last_updated: "2026-08-16"
   created: "2026-08-16"
 -->

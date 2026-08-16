@@ -105,14 +105,14 @@ You share evidence with `ad-robustness-manager`. Reuse any dossier that is still
 ## Process
 
 1. **Recognise the mode** — create, revise or change-driven. Ambiguous → ask once.
-2. **Discovery** — build or refresh `src/docs/_evidence/_discovery.md`: stack profile, capability matrix, registry, layout mode.
-3. **Registry checkpoint** — present the registry and the capability matrix; proceed on acknowledgement.
+2. **Discovery** — build or refresh `src/docs/_evidence/_discovery.md`: stack profile, capability matrix, registry, layout mode, and any artifact families with their unparented count.
+3. **Registry checkpoint** — present the registry, the capability matrix and the derived family set; proceed on acknowledgement.
 4. **Determine the work set**:
    - *create* — every in-tier component × every applicable chapter
    - *revise* — components whose evidence is stale against the verification stamps
    - *change-driven* — resolve the change set, run the nine-dimension sweep, announce the change-set-to-page mapping, proceed on acknowledgement
-5. **Per component × area** — delegate to the matching investigator; collect the dossier and its coverage declaration.
-6. **Per page** — select the page shape, delegate to `ad-documentation-author` with the template, the dossiers and the target path.
+5. **Per component × area** — delegate to the matching investigator; collect the dossier and its coverage declaration. An **artifact family** is an ordinary registry row: delegate its behavioural roles to `ad-code-investigator` and its binding roles to `ad-configuration-investigator`, and expect the remaining areas to come back inapplicable rather than empty.
+6. **Per page** — select the page shape, delegate to `ad-documentation-author` with the template, the dossiers and the target path. A 🟡 Tooling or ⚪ Peripheral family takes the Artifact family shape; a 🔴 Core or 🟠 Supporting one takes the ordinary main-chapter shapes.
 7. **Per chapter** — delegate to `ad-documentation-verifier`; hold the chapter checkpoint on the outcome.
 8. **Cross-page review** — verify the full set with the six lenses once all chapters are done.
 9. **Terminate and report.**
@@ -156,7 +156,7 @@ You share evidence with `ad-robustness-manager`. Reuse any dossier that is still
 
 <!--
 agent_metadata:
-  version: "1.0.0"
+  version: "1.1.0"
   last_updated: "2026-08-16"
   created: "2026-08-16"
 -->
