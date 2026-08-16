@@ -1,6 +1,6 @@
 ---
 description: Status marking rules for plan files — suffix notation, section/item classification, and consistency enforcement
-applyTo: '*plan*'
+applyTo: '**/*.plan.md'
 domain: "prompt-engineering"
 goal: "Single source of truth for plan marking format — referenced by documentation.instructions.md and plan-execution.instructions.md"
 rationales:
@@ -97,6 +97,6 @@ The suffix notation defined here is the canonical format for status marking acro
 
 <!--
 instruction_metadata:
-  version: "1.4.0"
-  last_updated: "2026-06-23"
+  version: "1.5.0"
+  last_updated: "2026-08-16"
 -->

@@ -129,7 +129,7 @@ All Markdown files and PE artifacts **MUST** be saved as **UTF-8** (with or with
 
 All plan marking rules (status notation, section/item classification, consistency enforcement) are defined in a dedicated instruction file auto-loaded for plan files:
 
-📖 **Full rules:** `.github/instructions/plan-marking.instructions.md` (applyTo: `*plan*`)
+📖 **Full rules:** `.github/instructions/plan-marking.instructions.md` (applyTo: `**/*.plan.md`)
 
 **Quick reference:** Use suffix-only notation — `(✅ done)`, `(🟡 todo)`, `(📌 next steps)`. Never use checkbox syntax `[x]`. Mark both section headings and list items. Classify sections as Action/Analysis/Proposal before marking.
 

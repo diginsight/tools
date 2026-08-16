@@ -1,6 +1,6 @@
 ---
 description: Authoring discipline for vision-amendment plans — per-item scope tags, principle-impact tagging, coverage promises — so plans cannot silently absorb scope expansion
-applyTo: '*vision*plan*.md'
+applyTo: '**/*vision*plan*.md'
 domain: "prompt-engineering"
 goal: "Force vision-amendment plans to declare per-item scope, principle impact, and downstream landing so scope expansion is visible at authoring time"
 rationales:
@@ -96,6 +96,6 @@ The canonical reference is [01-vision-usecase-plan-rules-plan.md](../../src/docs
 
 <!--
 instruction_metadata:
-  version: "1.0.0"
-  last_updated: "2026-05-31"
+  version: "1.0.1"
+  last_updated: "2026-08-16"
 -->

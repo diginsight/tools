@@ -29,6 +29,8 @@ The following rules are defined in context files and instruction files. They app
 | **Documentation structure** | `.github/instructions/documentation.instructions.md` | All `.md` files |
 | **PE artifacts** | `.copilot/context/00.00-prompt-engineering/00.00-context-structure-index.md` | PE customization files |
 | **Reference classification** | `.copilot/context/90.00-learning-hub/04-reference-classification.md` | All references |
+| **Plan files** | `.github/instructions/plan-execution.instructions.md` | Any doc declaring `status:` — MUST be created as `<NN>-<kebab-name>.plan.md` |
+| **Repository-derived docs** | `.github/instructions/repository-docs.instructions.md` | Generated pages and evidence files under `src/docs/` |
 
 ---
 
@@ -44,6 +46,19 @@ The following rules are defined in context files and instruction files. They app
 | **Template files** | `.github/templates/{domain}/` | `📖` reference from consumers |
 | **Prompt snippets** | `.github/prompt-snippets/` | `#file:` reference |
 | **copilot-instructions** | `.github/copilot-instructions.md` (this file) | Always injected last |
+
+### Repository documentation and robustness streams
+
+Two autonomous streams read a repository's own source and live surfaces and produce documentation pages under `src/docs/` and a tiered findings plan. Both are entered through a manager agent — the other nine agents in the domain are delegation targets, not user entry points.
+
+| Stream | Entry point | Produces |
+|---|---|---|
+| **Documentation** | `@ad-documentation-manager` | Chapter pages under `src/docs/` |
+| **Robustness** | `@ad-robustness-manager` | Tiered findings + a plan file |
+
+Elementary actions (each re-runnable on its own): `/01.00-ad-docs-discover` · `/01.01-ad-docs-investigate` · `/01.02-ad-docs-write` · `/01.03-ad-docs-verify` · `/01.04-ad-docs-update-from-changes` · `/02.00-ad-harden-scan` · `/02.01-ad-harden-plan`.
+
+**📖 Domain context**: `.copilot/context/10.00-application-development/`
 
 **📖 Full file-type decision guide**: `.copilot/context/00.00-prompt-engineering/01.03-file-type-decision-guide.md`
 
