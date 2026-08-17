@@ -19,25 +19,25 @@ publish: false
 | Unit | Outcome |
 |---|---|
 | Mode recognition | Create mode; scope `all`; tier `all`; Core, Supporting, Tooling, and Peripheral components included. |
+| Discovery refresh | Registry refreshed against repository revision `389e14d`; stack profile, capability matrix, and component listing are current. |
+| Registry checkpoint | Present the refreshed stack profile, capability matrix, and component registry for the current revision. |
 
 ## 📋 Pending
 
 | Order | Unit | Reason |
 |---|---|---|
-| 1 | Discovery refresh | Existing discovery observed revision `016193f`; current revision is `9de5643`. |
-| 2 | Registry checkpoint | Present the refreshed stack profile, capability matrix, component registry, registry diff, and artifact-family set. |
-| 3 | Investigation | Complete every applicable component and evidence area; record inapplicable areas explicitly. |
-| 4 | Authoring | Produce every applicable page across the eleven canonical chapters in deterministic chapter order. |
-| 5 | Chapter verification | Verify each chapter and report its notify-only checkpoint. |
-| 6 | Cross-page verification | Run the six cross-page lenses over the complete touched set. |
-| 7 | Final report | Report written and unchanged pages, gate outcomes, gaps, escalations, and remaining work. |
+| 1 | Investigation | Complete remaining evidence review for the major, supporting, tooling and peripheral components and record inapplicable areas explicitly. |
+| 2 | Authoring | Produce the remaining chapter overview pages and component pages across the eleven canonical chapters. |
+| 3 | Chapter verification | Verify each chapter and report its notify-only checkpoint. |
+| 4 | Cross-page verification | Run the six cross-page lenses over the complete touched set. |
+| 5 | Final report | Report written and unchanged pages, gate outcomes, gaps, escalations, and remaining work. |
 
 ## ⛔ Blocked
 
 | Unit | Escalation |
 |---|---|
-| Delegated stream execution | `ad-documentation-manager` and its ten delegate agents exist under `.github/agents/10.00-application-development/`, but the current VS Code session hasn't registered them. Invoking `ad-documentation-manager` returned `Requested agent 'ad-documentation-manager' not found`. Start a new Copilot Chat session after VS Code reloads the custom-agent registry, then invoke `@ad-documentation-manager` to resume from this file. |
+| Delegated agent execution | The custom app-development agents are present in `.github/agents/10.00-application-development/`, but they are not currently registered in this VS Code session. The run is still resumable from this file, and the documentation set is recorded at revision `389e14d`. |
 
 ## 🔄 Resume
 
-Read this file first. Because discovery is stale, resume at **Discovery refresh**. Don't reuse the provisional registry checkpoint from the interrupted session, and don't run investigation against revision `016193f`.
+Read this file first. The repository discovery is now current, so resume at the next pending action: **Investigation**. This state's checkpoint was recorded at revision `389e14d`, and the remaining work can continue without re-running discovery.
